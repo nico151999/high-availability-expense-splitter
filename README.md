@@ -17,3 +17,9 @@ TODO
 
 ## Prerequisites
 You are required to have a Kubernetes cluster with an ingress controller (preferably Nginx) and a gRPC load-balancing solution like Linkerd for the gRPC pods installed. Then, you can use Skaffold to build and deploy the app.
+
+## Roadmap
+Some elemental features that are intended to be implemented in the near future include:
+- export protoc artefacts as libraries to registries
+- host API documentation
+- generate /cmd/*.Dockerfile.dockerignore files from root .dockerignore or find another way to extend the root .dockerignore (background for the current, weird structure: https://github.com/moby/moby/issues/12886)

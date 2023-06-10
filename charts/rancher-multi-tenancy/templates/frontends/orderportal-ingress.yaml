@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ include "frontend-name-ingress" (include "expenseSplitterFrontend-shortName" .) }}"
+  annotations:
+    {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.services.reflection.linkerdMesh) }}
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    {{- end}}
+spec:
+  ingressClassName: "{{ .Values.haExpenseSplitter.ingressClassName }}"
+  rules:
+    - host: "{{ .Values.haExpenseSplitter.frontends.expenseSplitter.ingress.host }}"
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: "{{ include "frontend-name-service" (include "expenseSplitterFrontend-shortName" .) }}"
+                port:
+                  name: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
+  tls:
+    - hosts:
+        - "{{.Values.haExpenseSplitter.frontends.expenseSplitter.ingress.host}}"
+      secretName: "{{.Values.haExpenseSplitter.frontends.expenseSplitter.ingress.certSecret}}"

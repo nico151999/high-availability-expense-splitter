@@ -1,0 +1,14 @@
+{{- $selectorParam := (dict "shortName" (include "expenseSplitterFrontend-shortName" .) "releaseName" .Release.Name) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "frontend-name-service" (include "expenseSplitterFrontend-shortName" .) }}"
+spec:
+  ports:
+    - name: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
+      port: {{ include "frontend-port" . }}
+      protocol: TCP
+      targetPort: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
+  selector:
+    {{- include "frontend-selectorLabels-pod" $selectorParam | nindent 4 }}
+  type: ClusterIP

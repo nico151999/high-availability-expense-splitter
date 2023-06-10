@@ -1,0 +1,4 @@
+packages:
+  # all packages in subdirs of components/
+  - 'frontend/expense_splitter'
+  - 'gen/lib/ts'

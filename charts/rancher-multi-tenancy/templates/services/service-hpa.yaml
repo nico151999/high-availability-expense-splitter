@@ -1,0 +1,31 @@
+{{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+---
+{{- if ge $.Capabilities.KubeVersion.Minor "23" }}
+apiVersion: autoscaling/v2
+{{- else }}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "service-name-hpa" $serviceName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "service-name-deployment" $serviceName }}
+  minReplicas: {{ $serviceSpec.autoscaling.minReplicas }}
+  maxReplicas: {{ $serviceSpec.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $serviceSpec.autoscaling.CPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $serviceSpec.autoscaling.memoryUtilizationPercentage }}
+{{- end}}

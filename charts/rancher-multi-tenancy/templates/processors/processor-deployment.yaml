@@ -1,0 +1,98 @@
+{{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
+{{- $selectorParam := (dict "shortName" $processorName "releaseName" $.Release.Name) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "processor-name-deployment" $processorName }}"
+  labels:
+    {{- include "processor-selectorLabels-deployment" $selectorParam | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "processor-selectorlabels-pod" $selectorParam | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "processor-selectorlabels-pod" $selectorParam | nindent 8 }}
+      {{- if $processorSpec.linkerdMesh }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
+    spec:
+      serviceAccountName: "{{ include "processor-name-serviceaccount" $processorName }}"
+      {{- include "imagepullsecrets" (dict "primary" $processorSpec.imagePullSecrets "fallback" $.Values.haExpenseSplitter.imagePullSecrets) | nindent 6 }}
+      {{- include "securitycontext" (dict "primary" $processorSpec.securityContext "fallback" $.Values.haExpenseSplitter.securityContext) | nindent 6 }}
+      initContainers:
+        - name: wait-for-nats
+          image: {{ include "busyboxImage" $ }}
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until nc -z "${{ include "global-natsServerHostKey" . }}" "${{ include "global-natsServerPortKey" . }}"
+              do
+                echo \"waiting for NATS\"
+                sleep 1
+              done
+          env:
+            - name: {{ include "global-natsServerHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerHostKey" . }}
+            - name: {{ include "global-natsServerPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerPortKey" . }}
+      containers:
+        # TODO: add init container that waits for dependencies to become available
+        - name: "{{ $.Chart.Name }}-{{ $processorName }}"
+          image: "{{ $processorSpec.image.repository }}:{{ $processorSpec.image.tag }}"
+          imagePullPolicy: "{{default $.Values.haExpenseSplitter.imagePullPolicy $processorSpec.imagePullPolicy}}"
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          resources:
+            {{- toYaml $processorSpec.resources | nindent 12 }}
+          env:
+            - name: {{ include "global-globalDomainKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-globalDomainKey" . }}
+            - name: {{ include "global-k8sGetRequestErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-k8sGetRequestErrorReasonKey" . }}
+            - name: {{ include "global-natsServerHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerHostKey" . }}
+            - name: {{ include "global-natsServerPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerPortKey" . }}
+            {{- range $_, $configurableServiceName := $processorSpec.dependencies }}
+            # {{ $configurableServiceName }} service the processor depends on
+            - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $configurableServiceName }}
+                  key: {{ include "service-serverHostnameKey" . }}
+            - name: {{ include "service-serverPortKeyName" $configurableServiceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $configurableServiceName }}
+                  key: {{ include "service-serverPortKey" . }}
+            {{- end}}
+{{- end }}

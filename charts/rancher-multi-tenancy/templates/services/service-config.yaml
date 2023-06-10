@@ -1,0 +1,26 @@
+{{- range $serviceName, $serviceSpecs := merge (merge (dict "documentation" .Values.haExpenseSplitter.documentation) .Values.haExpenseSplitter.services.specs) (dict "reflection" .Values.haExpenseSplitter.services.reflection) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service-name-configMap" $serviceName }}
+data:
+  {{ include "service-serverHostnameKey" . }}: "{{ include "service-name" $serviceName }}"
+  {{ include "service-serverPortKey" . }}: "{{ include "service-serverPort" . }}"
+  {{ include "service-corsConfigFileName" $serviceName }}: |
+    urlPatterns:
+    {{- range $frontendName, $frontendSpecs := $.Values.haExpenseSplitter.frontends }}
+    - "{{ $frontendSpecs.ingress.host }}"
+    {{- end }}
+    {{- range $_, $corsPattern := $.Values.haExpenseSplitter.services.cors.additionalUrlPatterns }}
+    - "{{ $corsPattern }}"
+    {{- end }}
+    allowedHeaders:
+    {{- range $_, $corsHeader := $.Values.haExpenseSplitter.services.cors.allowedHeaders }}
+    - "{{ $corsHeader }}"
+    {{- end }}
+    allowedMethods:
+    {{- range $_, $corsMethod := $.Values.haExpenseSplitter.services.cors.allowedMethods }}
+    - "{{ $corsMethod }}"
+    {{- end }}
+{{- end }}

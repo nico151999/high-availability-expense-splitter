@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: "{{ include "service-name-ingress" (include "reflectionService-shortName" .) }}"
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+      nginx.ingress.kubernetes.io/server-snippet: "grpc_read_timeout 86400s; grpc_send_timeout 86400s;"
+      cert-manager.io/cluster-issuer: {{ .Values.haExpenseSplitter.clusterCertIssuer }}
+      {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.services.reflection.linkerdMesh) }}
+      nginx.ingress.kubernetes.io/service-upstream: "true"
+      {{- end}}
+spec:
+    ingressClassName: "{{ .Values.haExpenseSplitter.ingressClassName }}"
+    rules:
+      - host: "{{ .Values.haExpenseSplitter.services.ingress.host }}"
+        http:
+            paths:
+                - path: '/grpc.reflection.v1alpha.ServerReflection'
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: "{{ include "service-name-service" (include "reflectionService-shortName" .) }}"
+                      port:
+                        name: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
+                - path: '/grpc.reflection.v1.ServerReflection'
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: "{{ include "service-name-service" (include "reflectionService-shortName" .) }}"
+                      port:
+                        name: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
+    tls:
+      - hosts:
+          - "{{.Values.haExpenseSplitter.services.ingress.host}}"
+        secretName: "{{.Values.haExpenseSplitter.services.ingress.certSecret}}"

@@ -1,0 +1,146 @@
+global:
+  domain: localhost
+  busybox:
+    image:
+      repository: busybox
+      tag:
+
+haExpenseSplitter:
+  clusterCertIssuer: cluster-cert-issuer # the issuer name
+  linkerdMesh: &linkerdMesh true # adds deployments to Linkerd mesh by adding the required annotation; requires Linkerd to be installed
+  imagePullPolicy: &imagePullPolicy "IfNotPresent"
+  imagePullSecrets: &imagePullSecrets []
+  ingressClassName: nginx
+  readOnlyRootFilesystem: true
+  securityContext: &securityContext
+    runAsUser: 1000
+    runAsNonRoot: true
+  frontends:
+    expenseSplitter:
+      ingress:
+        host: expense-splitter.ha-expense-splitter.localhost
+        certSecret: "frontend-ingress-cert"
+      imagePullPolicy: *imagePullPolicy
+      imagePullSecrets: *imagePullSecrets
+      linkerdMesh: *linkerdMesh
+      securityContext: *securityContext
+      image:
+        repository: "my-registry/my-group/my-expense-splitter-frontend-repo"
+        tag: "latest"
+  documentation:
+    ingress:
+      host: "documentation.ha-expense-splitter.localhost"
+      certSecret: "doc-ingress-cert"
+    imagePullPolicy: *imagePullPolicy
+    imagePullSecrets: *imagePullSecrets
+    linkerdMesh: *linkerdMesh
+    securityContext: *securityContext
+    image:
+      repository: "my-registry/my-group/my-doc-repo"
+      tag: "latest"
+  services:
+    cors:
+      additionalUrlPatterns: [] # in addition to the the frontends' ingress hosts
+      allowedHeaders: ["*"]
+      allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    ingress:
+      host: "services.ha-expense-splitter.localhost"
+      certSecret: "svc-ingress-cert"
+      port: 443 # this does not actually deploy an ingress controller listening on this port but only tells other services which port they can reach the ingress controller on
+      secure: true # same comment as for port
+    nats:
+      server: # the nats server if it is not installed via subchart
+        host: my-nats-server.localhost
+        port: 6222
+    reflection:
+      imagePullPolicy: *imagePullPolicy
+      imagePullSecrets: *imagePullSecrets
+      linkerdMesh: *linkerdMesh
+      securityContext: *securityContext
+      resources:
+        limits:
+          cpu: 250m
+          memory: 250Mi
+        requests:
+          cpu: 25m
+          memory: 50Mi
+      autoscaling:
+        minReplicas: 1
+        maxReplicas: 10
+        CPUUtilizationPercentage: 80
+        memoryUtilizationPercentage: 80
+      image:
+        repository: "my-registry/my-group/my-reflection-repo"
+        tag: "latest"
+    specs:
+      group:
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.group\.v1\.GroupService/CreateGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/GetGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/GetGroups$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/GetGroupIds$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-group-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
+        clusterRoleRules:
+          - apiGroups:
+              - management.cattle.io
+            resources:
+              - projects
+            verbs: ["get"]
+  processors:
+    specs:
+      group:
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-group-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []

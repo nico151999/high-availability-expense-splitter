@@ -1,0 +1,55 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/nico151999/high-availability-expense-splitter/gen/lib/go
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/envoyproxy/protoc-gen-validate
+      - buf.build/grpc-ecosystem/grpc-gateway
+plugins:
+  - plugin: buf.build/protocolbuffers/go:v1.30.0
+    out: gen/lib/go
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/bufbuild/connect-go:v1.6.0
+    out: gen/lib/go
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: gen/lib/go
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+  - plugin: buf.build/grpc-ecosystem/gateway:v2.15.2
+    out: gen/lib/go
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/bufbuild/validate-go:v0.10.1
+    out: gen/lib/go
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.15.2
+    out: gen/doc
+    opt:
+      - json_names_for_fields=false
+      - proto3_optional_nullable=true
+      - allow_merge=true
+      - allow_delete_body=true
+      - omit_enum_default_value=true
+      - output_format=yaml
+      - disable_default_responses=true
+      - use_go_templates=true
+  - remote: buf.build/sawadashota/plugins/protoc-gen-doc:v1.5.1
+    out: gen/doc
+    opt:
+      - html
+      - index.html
+  - plugin: buf.build/bufbuild/es:v1.2.0
+    out: gen/lib/ts
+    opt:
+      - target=ts
+  - plugin: buf.build/bufbuild/connect-web:v0.8.6
+    out: gen/lib/ts
+    opt:
+      - target=ts

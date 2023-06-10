@@ -1,0 +1,14 @@
+{{- $selectorParam := (dict "shortName" (include "reflectionService-shortName" .) "releaseName" .Release.Name) }}
+apiVersion: v1
+kind: Service
+metadata:
+    name: "{{ include "service-name-service" (include "reflectionService-shortName" .) }}"
+spec:
+    ports:
+      - name: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
+        port: {{ include "service-serverPort" . }}
+        protocol: TCP
+        targetPort: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
+    selector:
+        {{- include "service-selectorlabels-pod" $selectorParam | nindent 8 }}
+    type: ClusterIP

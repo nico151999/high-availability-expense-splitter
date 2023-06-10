@@ -1,0 +1,3 @@
+syntax = "proto3";
+
+package service.person.v1;

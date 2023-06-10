@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package service.user.v1;
+
+// a service that is responsible for user management, e.g. registering users, managing roles, etc. with Ory Kratos

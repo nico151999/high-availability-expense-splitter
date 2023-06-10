@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package processor.group.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "validate/validate.proto";
+
+// An event with metadata containing information about a project that is requested to be created
+message GroupCreationRequested {
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+  ];
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+  string requestor_email = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.email = true
+  ];
+}

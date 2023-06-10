@@ -1,0 +1,271 @@
+syntax = "proto3";
+
+package service.group.v1;
+
+import "common/group/v1/group.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service GroupService {
+  // Requests the creation of a group with the provided specs
+  rpc CreateGroup(CreateGroupRequest) returns (CreateGroupResponse) {
+    option (google.api.http) = {post: "/v1/groups"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested group";
+            schema: {
+              json_schema: {ref: ".service.group.v1.CreateGroupResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets a group
+  rpc GetGroup(GetGroupRequest) returns (GetGroupResponse) {
+    option (google.api.http) = {get: "/v1/groups/{group_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested group";
+            schema: {
+              json_schema: {ref: ".service.group.v1.GetGroupResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets all groups
+  rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse) {
+    option (google.api.http) = {get: "/v1/groups"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested groups";
+            schema: {
+              json_schema: {ref: ".service.group.v1.GetGroupsResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets all group IDs
+  rpc GetGroupIds(GetGroupIdsRequest) returns (GetGroupIdsResponse) {
+    option (google.api.http) = {get: "/v1/groups:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested group IDs";
+            schema: {
+              json_schema: {ref: ".service.group.v1.GetGroupIdsResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+}
+
+message CreateGroupRequest {
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+}
+
+message CreateGroupResponse {
+  // the ID of the group
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+  ];
+}
+
+message GetGroupRequest {
+  // the ID of the group
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+  ];
+}
+
+message GetGroupResponse {
+  common.group.v1.GroupProperties group = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message GetGroupsRequest {}
+
+message GetGroupsResponse {
+  repeated common.group.v1.GroupProperties groups = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.message.required = true
+  ];
+}
+
+message GetGroupIdsRequest {}
+
+message GetGroupIdsResponse {
+  repeated string group_ids = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+  ];
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package common.documentation.v1;
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Rancher Multi Tenancy";
+    version: "0.0.1";
+    description: "A REST mapping of the gRPC API for managing a Rancher multi tenancy environment";
+  };
+  schemes: HTTPS;
+};

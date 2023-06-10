@@ -1,0 +1,50 @@
+/gen
+/.kpt-pipeline
+/.idea
+/charts/**/charts/*.tgz
+/skaffold-overrides.yaml
+/.env
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+Dockerfile.cross
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Frontend
+**/node_modules
+/frontend/**/build
+/frontend/**/.svelte-kit
+/frontend/**/package
+/frontend/**/.env
+/frontend/**/.env.*
+!/frontend/**/.env.example
+/frontend/**/.vercel
+/frontend/**/.output
+/frontend/**/vite.config.js.timestamp-*
+/frontend/**/vite.config.ts.timestamp-*
+
+# temporary dockerignores
+/cmd/processor/*.Dockerfile.dockerignore
+/cmd/service/*.Dockerfile.dockerignore
+/frontend/expense_splitter/dev.Dockerfile.dockerignore
+/frontend/expense_splitter/Dockerfile.dockerignore
+# temporary Dockerfile links for namespaced dockerignores
+/cmd/processor/*.Dockerfile
+/cmd/service/*.Dockerfile

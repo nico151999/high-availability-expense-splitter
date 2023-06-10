@@ -1,0 +1,9 @@
+{{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ include "service-name-clusterrole" $serviceName }}"
+rules:
+  {{- toYaml $serviceSpec.clusterRoleRules | nindent 2 }}
+{{- end }}
