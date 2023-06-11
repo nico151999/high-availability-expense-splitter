@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ha-expense-splitter
-description: A Helm chart for Kubernetes that deploys an app which allows to maintain a Rancher environment with multiple tenants
+description: A Helm chart for Kubernetes that deploys an app which allows to split expenses inside a group of people
 
 # A chart can be either an 'application' or a 'library' chart.
 #

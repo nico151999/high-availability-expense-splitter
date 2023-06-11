@@ -7,6 +7,26 @@ func GetGroupServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "GROUP_SERVER_PORT")
 }
 
+func GetGroupDbUser(ctx context.Context) string {
+	return MustLookupString(ctx, "GROUP_DB_USER")
+}
+
+func GetGroupDbPassword(ctx context.Context) string {
+	return MustLookupString(ctx, "GROUP_DB_PASSWORD")
+}
+
+func GetGroupDbHost(ctx context.Context) string {
+	return MustLookupString(ctx, "GROUP_DB_HOST")
+}
+
+func GetGroupDbPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "GROUP_DB_PORT")
+}
+
+func GetGroupDbName(ctx context.Context) string {
+	return MustLookupString(ctx, "GROUP_DB_NAME")
+}
+
 // GetServerPort returns the port the service will run on
 func GetReflectionServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "REFLECTION_SERVER_PORT")

@@ -23,5 +23,3 @@
 /frontend/expense_splitter/**/.output
 /frontend/expense_splitter/**/vite.config.js.timestamp-*
 /frontend/expense_splitter/**/vite.config.ts.timestamp-*
-
-/charts/ha-expense-splitter-definitions/templates/ha-expense-splitter.caas.telekom.de_customerprojects.yaml

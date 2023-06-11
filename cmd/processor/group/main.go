@@ -13,8 +13,10 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 )
 
+const processorName = "groupProcessor"
+
 func main() {
-	log := logging.GetLogger().Named("groupProcessor")
+	log := logging.GetLogger().Named(processorName)
 	ctx := logging.IntoContext(context.Background(), log)
 
 	// ensure mandatory environment variables are set

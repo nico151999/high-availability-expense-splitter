@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"testing"
-	"time"
 
 	natsserver "github.com/nats-io/gnatsd/server"
 	natstestserver "github.com/nats-io/nats-server/test"
@@ -18,7 +17,10 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -42,7 +44,7 @@ func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) *client.Client[gro
 	return catClient
 }
 
-func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, *server.Server) {
+func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, func(ctx context.Context) error) {
 	ln := bufconn.Listen(1024 * 1024)
 	log := logging.GetLogger()
 	ctx := logging.IntoContext(context.Background(), log)
@@ -57,7 +59,7 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, *s
 	natsPort := 6222
 	s := runNATSServerOnPort(natsPort)
 
-	catServer, err := group.NewGroupServerWithDBClient(dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
+	groupServer, err := group.NewGroupServerWithDBClient(dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {
 		t.Fatal("failed to create group server", err)
 	}
@@ -65,11 +67,11 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, *s
 	grpcServer, err := server.NewServer[groupv1connect.GroupServiceHandler](
 		ctx,
 		ln,
-		catServer,
+		groupServer,
 		groupv1.RegisterGroupServiceHandler,
 		groupv1connect.NewGroupServiceHandler,
 		"TestGroupService",
-		"test-trace-collector-url", // TODO: mock a trace collector
+		tracetest.NewInMemoryExporter(),
 		[]string{"*"},
 		[]string{"*"},
 		[]string{"GET", "POST", "PUT", "PATCH", "DELETE"},
@@ -85,16 +87,15 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, *s
 		); err != nil {
 			t.Error("server exited with error", err)
 		}
-		if err := catServer.Close(); err != nil {
-			t.Error("server exited with error", err)
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		if err := grpcServer.Close(ctx); err != nil {
-			t.Error(err)
-		}
-		s.Shutdown()
 	}()
 
-	return ln, grpcServer
+	return ln, func(ctx context.Context) error {
+		errGroup, ctx := errgroup.WithContext(ctx)
+		errGroup.Go(groupServer.Close)
+		errGroup.Go(func() error {
+			return grpcServer.Close(ctx)
+		})
+		s.Shutdown()
+		return eris.Wrap(errGroup.Wait(), "at least one resource could not be closed")
+	}
 }

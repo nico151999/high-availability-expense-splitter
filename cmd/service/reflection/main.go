@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/bufbuild/connect-go"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
@@ -18,7 +19,7 @@ import (
 const serviceName = "reflectionService"
 
 func main() {
-	log := logging.GetLogger().Named("reflectionSvc")
+	log := logging.GetLogger().Named(serviceName)
 	ctx := logging.IntoContext(context.Background(), log)
 
 	// ensure mandatory environment variables are set
@@ -31,7 +32,7 @@ func main() {
 		groupv1connect.GroupServiceName,
 	)
 
-	if err := server.ListenAndServe(
+	srv, err := server.ListenAndServe(
 		ctx,
 		serverAddress,
 		svc,
@@ -51,10 +52,17 @@ func main() {
 			environment.GetTraceCollectorPort(ctx)),
 		[]string{"*"},
 		[]string{"*"},
-		[]string{"POST"}); err != nil {
+		[]string{"POST"})
+	if err != nil {
 		log.Panic(
-			"failed running servers",
-			logging.Error(err),
-		)
+			"failed running server",
+			logging.Error(err))
 	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		if err := srv.Close(ctx); err != nil {
+			log.Error("failed closing server on shutdown", logging.Error(err))
+		}
+	}()
 }

@@ -14,13 +14,12 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// initTracer configures an OpenTelemetry exporter and trace provider
-func initTracer(ctx context.Context, serviceName, collectorUrl string) (*sdktrace.TracerProvider, error) {
+func createOtlpExporter(ctx context.Context, collectorUrl string) (sdktrace.SpanExporter, error) {
 	log := logging.FromContext(ctx)
 
 	log.Debug("creating OpenTelemetry exporter")
 	exporter, err := otlptrace.New(
-		context.Background(),
+		ctx,
 		otlptracegrpc.NewClient(
 			otlptracegrpc.WithEndpoint(collectorUrl),
 		),
@@ -28,6 +27,12 @@ func initTracer(ctx context.Context, serviceName, collectorUrl string) (*sdktrac
 	if err != nil {
 		return nil, eris.Wrap(err, "failed creating exporter")
 	}
+	return exporter, nil
+}
+
+// initTracer configures a trace provider based on an otlp trace exporter
+func initTracer(ctx context.Context, serviceName string, exporter sdktrace.SpanExporter) (*sdktrace.TracerProvider, error) {
+	log := logging.FromContext(ctx)
 
 	log.Debug("creating resources for trace provider")
 	resources, err := resource.New(

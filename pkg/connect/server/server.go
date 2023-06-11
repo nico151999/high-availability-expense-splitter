@@ -14,6 +14,7 @@ import (
 	logginggrpc "github.com/nico151999/high-availability-expense-splitter/pkg/logging/grpc"
 	"github.com/rotisserie/eris"
 	"github.com/rs/cors"
+	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -39,6 +40,7 @@ func (server *Server) Close(ctx context.Context) error {
 	return errGr.Wait()
 }
 
+// Serve serves the underlying server
 func (server *Server) Serve(
 	ctx context.Context,
 	ln net.Listener,
@@ -66,6 +68,7 @@ func Listen(addr string) (net.Listener, error) {
 	return ln, nil
 }
 
+// ListenAndServe combines the actions of listening, creating a new server and serving
 func ListenAndServe[CONNECT_HANDLER any](
 	ctx context.Context,
 	addr string,
@@ -77,10 +80,14 @@ func ListenAndServe[CONNECT_HANDLER any](
 	corsPatterns []string,
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
-) error {
+) (*Server, error) {
 	ln, err := Listen(addr)
 	if err != nil {
-		return eris.Wrapf(err, "failed to listen on %s", addr)
+		return nil, eris.Wrapf(err, "failed to listen on %s", addr)
+	}
+	spanExporter, err := createOtlpExporter(ctx, traceCollectorUrl)
+	if err != nil {
+		return nil, eris.Wrap(err, "failed creating OTLP span exporter")
 	}
 	server, err := NewServer(
 		ctx,
@@ -89,21 +96,21 @@ func ListenAndServe[CONNECT_HANDLER any](
 		registerServiceHandler,
 		createServiceHandler,
 		serviceName,
-		traceCollectorUrl,
+		spanExporter,
 		corsPatterns,
 		allowedCorsHeaders,
 		allowedCorsMethods,
 	)
 	if err != nil {
-		return eris.Wrap(err, "failed to create server")
+		return nil, eris.Wrap(err, "failed to create server")
 	}
 	if err := server.Serve(
 		ctx,
 		ln,
 	); err != nil {
-		return eris.Wrap(err, "failed serving services")
+		return nil, eris.Wrap(err, "failed serving services")
 	}
-	return nil
+	return server, nil
 }
 
 func NewServer[CONNECT_HANDLER any](
@@ -113,7 +120,7 @@ func NewServer[CONNECT_HANDLER any](
 	registerServiceHandler ServiceHandlerRegistrarFunc,
 	createServiceHandler ServiceHandlerCreatorFunc[CONNECT_HANDLER],
 	serviceName string,
-	traceCollectorUrl string,
+	spanExporter trace.SpanExporter,
 	corsPatterns []string,
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
@@ -122,7 +129,7 @@ func NewServer[CONNECT_HANDLER any](
 	log := logging.FromContext(ctx).Named("Server")
 	ctx = logging.IntoContext(ctx, log)
 
-	tp, err := initTracer(ctx, serviceName, traceCollectorUrl)
+	tp, err := initTracer(ctx, serviceName, spanExporter)
 	if err != nil {
 		return nil, eris.Wrap(err, "tracer could not be initialised")
 	}

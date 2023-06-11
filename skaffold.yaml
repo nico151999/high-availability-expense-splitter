@@ -10,7 +10,7 @@ build:
     inputDigest: {}
   artifacts:
     # Frontends:
-    - image: &expenseSplitterFrontendImage mtr.devops.telekom.de/caas/ha-expense-splitter-expense-splitter-frontend
+    - image: &expenseSplitterFrontendImage ghcr.io/nico151999/ha-expense-splitter-user-frontend
       context: ./
       hooks:
         before:
@@ -29,7 +29,7 @@ build:
           - "frontend/expense_splitter/static/**/*"
 
     # Tools supporting third-party devs
-    # - image: &documentationSvcImage mtr.devops.telekom.de/caas/ha-expense-splitter-documentation
+    # - image: &documentationSvcImage ghcr.io/nico151999/ha-expense-splitter-documentation
     #   hooks:
     #     before:
     #       # concatenate main dockerignore and templated documentation dockerignore
@@ -46,7 +46,7 @@ build:
     #     buildArgs:
     #       SERVICE_NAME: "documentation"
     #       SVC_OUT_DIR_PARAM: "DOCUMENTATION_OUT_DIR"
-    - image: &reflectionSvcImage mtr.devops.telekom.de/caas/ha-expense-splitter-reflection-service
+    - image: &reflectionSvcImage ghcr.io/nico151999/ha-expense-splitter-reflection-service
       context: ./
       hooks:
         before:
@@ -67,7 +67,7 @@ build:
           SVC_OUT_DIR_PARAM: "REFLECTION_SVC_OUT_DIR"
 
     # Microservices for handling requests against a resource
-    - image: &groupSvcImage mtr.devops.telekom.de/caas/ha-expense-splitter-group-service
+    - image: &groupSvcImage ghcr.io/nico151999/ha-expense-splitter-group-service
       context: ./
       hooks:
         before:
@@ -86,7 +86,7 @@ build:
           SVC_OUT_DIR_PARAM: "INGRESS_URL_SVC_OUT_DIR"
 
     # Processors for handling events effecting their respective resource
-    - image: &groupProcessorImage mtr.devops.telekom.de/caas/ha-expense-splitter-group-processor
+    - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
       context: ./
       hooks:
         before:
@@ -109,6 +109,25 @@ deploy:
     flags:
       install: ["--timeout", "20m"] # the initial image pulling can take quite a while depending on the internet connection
       upgrade: ["--timeout", "15m"]
+    hooks:
+      before:
+        - host:
+            command:
+              - sh
+              - -c
+              - |
+                for varName in 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD'; do
+                  eval "var=\$$varName"
+                  if [ -z "$var" ]; then
+                    echo "$varName must not be blank" && exit 1
+                  fi
+                done
+                for ns in $(echo $SKAFFOLD_NAMESPACES | sed "s/,/ /g"); do
+                  kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f -
+                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" -n "$ns"
+                done
+            os: [darwin, linux]
+            # TODO: create windows equivalent
     releases:
       - name: metrics-server
         repo: "https://kubernetes-sigs.github.io/metrics-server/"
@@ -294,19 +313,21 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/1/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/1/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
     patches:
       - op: remove
-        path: /deploy/helm/releases/1/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/hooks/before/0
+      - op: remove
+        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: SKIP_DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=

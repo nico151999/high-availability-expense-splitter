@@ -14,6 +14,6 @@ func (rpProcessor *groupProcessor) groupCreationRequested(ctx context.Context, r
 		logging.String("groupId", req.GetGroupId()),
 		logging.String("requestorEmail", req.GetRequestorEmail()))
 	// TODO: actually process message
-	// TODO: publish event telling that greoup was created
+	// TODO: publish event telling that group was created
 	return nil
 }

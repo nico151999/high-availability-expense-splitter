@@ -21,14 +21,14 @@ func TestGetGroup(t *testing.T) {
 	client, closeServer, _ := setupGroupTest(t, bun.NewDB(db, pgdialect.New()))
 	// we want to close the server only which cascadingly closes the client as well
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
-		if err := closeServer.Close(ctx); err != nil {
-			t.Errorf("failed closing customer project client: %+v", err)
+		if err := closeServer(ctx); err != nil {
+			t.Errorf("failed closing group server: %+v", err)
 		}
 	}()
 
-	t.Run("Get Rancher project successfully", func(t *testing.T) {
+	t.Run("Get Group successfully", func(t *testing.T) {
 		groupName := "test-group"
 		mock.ExpectQuery("SELECT (.+) FROM \"groups\" (.+)").WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
 		resp, err := client.GetGroup(context.Background(), &groupsvcv1.GetGroupRequest{
@@ -45,7 +45,7 @@ func TestGetGroup(t *testing.T) {
 		}
 	})
 
-	t.Run("Fail getting Rancher project due to empty ID", func(t *testing.T) {
+	t.Run("Fail getting Group due to empty ID", func(t *testing.T) {
 		resp, err := client.GetGroup(context.Background(), &groupsvcv1.GetGroupRequest{
 			GroupId: "",
 		})

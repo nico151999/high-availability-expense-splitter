@@ -73,7 +73,7 @@ generate-dockerfile-links:
 
 # performs all code generation tasks
 .PHONY: generate
-generate: generate-proto generate-manifests
+generate: generate-proto generate-dockerfile-links
 
 # initializes the ts workspace of the generated proto files
 .PHONY: prepare-ts-proto
@@ -129,12 +129,12 @@ build-group-processor: generate-proto
 
 # starts the dev mode of skaffold
 .PHONY: skaffold-dev
-skaffold-dev: generate-manifests generate-dockerfile-links
+skaffold-dev: generate-dockerfile-links
 	skaffold dev
 
 # builds and deploys the entire app
 .PHONY: skaffold-run
-skaffold-run: lint test generate-manifests generate-dockerfile-links
+skaffold-run: lint test generate-dockerfile-links
 	skaffold run
 
 .PHONY: skaffold-delete
