@@ -45,7 +45,7 @@ build:
     #     dockerfile: ./cmd/service/documentation.Dockerfile
     #     buildArgs:
     #       SERVICE_NAME: "documentation"
-    #       SVC_OUT_DIR_PARAM: "DOCUMENTATION_OUT_DIR"
+    #       SVC_OUT_DIR_PARAM: "DOCUMENTATION_SVC_OUT_DIR"
     - image: &reflectionSvcImage ghcr.io/nico151999/ha-expense-splitter-reflection-service
       context: ./
       hooks:
@@ -83,7 +83,7 @@ build:
         dockerfile: ./cmd/service/group.Dockerfile
         buildArgs:
           SERVICE_NAME: "group"
-          SVC_OUT_DIR_PARAM: "INGRESS_URL_SVC_OUT_DIR"
+          SVC_OUT_DIR_PARAM: "GROUP_SVC_OUT_DIR"
 
     # Processors for handling events effecting their respective resource
     - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
@@ -123,8 +123,8 @@ deploy:
                   fi
                 done
                 for ns in $(echo $SKAFFOLD_NAMESPACES | sed "s/,/ /g"); do
-                  kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f -
-                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" -n "$ns"
+                  kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f - || exit 1
+                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" --save-config --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" -n "$ns" --dry-run=client -o yaml | kubectl apply -f - || exit 1
                 done
             os: [darwin, linux]
             # TODO: create windows equivalent
@@ -134,34 +134,48 @@ deploy:
         remoteChart: metrics-server
         namespace: "metrics-server"
         createNamespace: true
-        version: 0.19.14
+        version: 3.10.0
         wait: true
+        setValues:
+          replicas: 3
+          args:
+            - --kubelet-insecure-tls # TODO: this is not ready for production but just temporary
       - name: cert-manager # reference https://magda.io/docs/how-to-setup-https-to-local-cluster.html
         repo: "https://charts.jetstack.io"
-        remoteChart: metrics-server
+        remoteChart: cert-manager
         namespace: "cert-manager"
         createNamespace: true
         version: 1.12.1
         wait: true
+        setValues:
+          installCRDs: true
       - name: linkerd-crds
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-crds
-        namespace: "linkerd"
+        namespace: &linkerdNamespace "linkerd"
         createNamespace: true
         version: 1.6.1
         wait: true
+      - name: linkerd-cert-config # in accordance with https://linkerd.io/2.13/tasks/automatically-rotating-control-plane-tls-credentials/
+        chartPath: charts/linkerd-cert-config
+        namespace: *linkerdNamespace
+        createNamespace: true
+        setFiles:
+          caCrt: &linkerdCaCrt gen/cert/ca.crt
+          caKey: gen/cert/ca.key
       - name: linkerd-control-plane
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-control-plane
-        namespace: "linkerd"
+        namespace: *linkerdNamespace
         createNamespace: true
         version: 1.12.3
         wait: true
         setFiles:
-          identityTrustAnchorsPEM: gen/cert/ca.crt
-          identity.issuer.tls.crtPEM: gen/cert/issuer.crt
-          identity.issuer.tls.keyPEM: gen/cert/issuer.key
+          identityTrustAnchorsPEM: *linkerdCaCrt
         setValues:
+          identity:
+            issuer:
+              scheme: kubernetes.io/tls
           proxy:
             cores: 1
             resources:
@@ -178,6 +192,7 @@ deploy:
         createNamespace: true
         version: 30.8.3
         wait: true
+      # TODO: setup persistence for grafana
       - name: grafana
         repo: "https://grafana.github.io/helm-charts"
         remoteChart: grafana
@@ -185,6 +200,7 @@ deploy:
         createNamespace: true
         version: 6.49.0
         wait: true
+      # TODO: Fix: Error: INSTALLATION FAILED: rendered manifests contain a resource that already exists. Unable to continue with install: NetworkAuthentication "kube-api-server" in namespace "linkerd-viz" exists and cannot be imported into the current release: invalid ownership metadata; annotation validation error: key "meta.helm.sh/release-name" must equal "linkerd-viz": current value is "jaeger"
       - name: linkerd-viz
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-viz
@@ -313,13 +329,13 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -327,52 +343,54 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/9/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: SKIP_DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/2/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+        path: /deploy/helm/releases/9/setValueTemplates/nats.jetstream.fileStorage.storageClassName
   - name: SKIP_NATS_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=
+      - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/9
+  - name: SKIP_NGINX_INGRESS_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_NGINX_INGRESS_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/8
-  - name: SKIP_NGINX_INGRESS_INSTALLATION
+  - name: SKIP_LINKERD_VIZ_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_NGINX_INGRESS_INSTALLATION=
+      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_VIZ_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/7
-  - name: SKIP_LINKERD_VIZ_INSTALLATION
-    activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_VIZ_INSTALLATION=
-    patches:
       - op: remove
         path: /deploy/helm/releases/6
       - op: remove
         path: /deploy/helm/releases/5
-      - op: remove
-        path: /deploy/helm/releases/4
   - name: SKIP_LINKERD_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_INSTALLATION=
+      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_INSTALLATION=true
     patches:
+      - op: remove
+        path: /deploy/helm/releases/4
       - op: remove
         path: /deploy/helm/releases/3
       - op: remove
         path: /deploy/helm/releases/2
   - name: SKIP_CERT_MANAGER_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_CERT_MANAGER_INSTALLATION=
+      - env: HA_EXPENSE_SPLITTER_SKIP_CERT_MANAGER_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/1
   - name: SKIP_METRICS_SERVER_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_METRICS_SERVER_INSTALLATION=
+      - env: HA_EXPENSE_SPLITTER_METRICS_SERVER_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/0

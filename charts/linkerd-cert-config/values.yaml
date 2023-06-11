@@ -1,0 +1,12 @@
+caCrt: |
+  -----BEGIN CERTIFICATE-----
+  87654321HGFEDCBA
+  -----END CERTIFICATE-----
+
+caKey: |
+  -----BEGIN EC PRIVATE KEY-----
+  ABCDEFGH12345678
+  -----END EC PRIVATE KEY-----
+
+tlsTrustAnchorName: linkerd-trust-anchor
+identityIssuerName: linkerd-identity-issuer # this is a reserved name by Linkerd and should usually not be changed

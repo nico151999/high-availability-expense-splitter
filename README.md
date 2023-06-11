@@ -9,6 +9,11 @@ Basically, it provides a frontend for ordering and managing project as well as s
 ## General notes
 Dockerfiles are expected to have the repository root as their context
 
+# Prerequisites
+- You are expected to have the go commandline tool installed
+- You are expected to have kubectl installed
+- You are expected to have a K8s cluster up and running (for development purposes kind is recommended)
+
 ## Adding a service
 TODO
 
