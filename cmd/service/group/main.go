@@ -75,7 +75,7 @@ func main() {
 			logging.Error(err))
 	}
 	defer func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 		if err := srv.Close(ctx); err != nil {
 			log.Error("failed closing server on shutdown", logging.Error(err))

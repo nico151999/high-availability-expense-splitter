@@ -9,6 +9,7 @@
 /.idea
 **/README.md
 /LICENSE
+/.env.dist
 /skaffold-overrides.yaml
 **/*_test.go
 **/node_modules

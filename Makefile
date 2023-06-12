@@ -54,10 +54,8 @@ endif
 install-kubeconform:
 ifeq (,$(wildcard $(HELM_INSTALL_LOCATION)))
 	echo "Make sure you install helm before installing plugins..." || exit 1
-else
-ifeq ($(findstring kubeconform,$(shell $(HELM_INSTALL_LOCATION) plugin list)),)
+else ifeq ($(findstring kubeconform,$(shell $(HELM_INSTALL_LOCATION) plugin list)),)
 	$(HELM_INSTALL_LOCATION) plugin install https://github.com/jtyr/kubeconform-helm
-endif
 endif
 
 # install golang-ci llinter
@@ -112,7 +110,7 @@ generate-proto: install-buf
 ifeq (,$(wildcard $(DOC_OUT_DIR))$(wildcard $(LIB_OUT_DIR)))
 	buf generate
 else
-	echo 'There are buf generated files already. Skipping proto generation...'
+	echo 'There are buf generated files already. Consider cleaning them first. Skipping proto generation...'
 endif
 
 # generate Dockerfile links required for using namespaced dockerignore files: https://github.com/moby/moby/issues/12886#issuecomment-480575928
@@ -157,6 +155,13 @@ endif
 .PHONY: clean-lib
 clean-lib:
 	rm -rf $(LIB_OUT_DIR)
+
+.PHONY: clean-doc
+clean-doc:
+	rm -rf $(DOC_OUT_DIR)
+
+.PHONY: clean-proto
+clean-proto: clean-doc clean-lib
 
 .PHONY: clean-application
 clean-application:
@@ -212,6 +217,7 @@ skaffold-delete: generate-dockerfile-links
 .PHONY: kind-create
 kind-create: install-kind
 	kind create cluster --config ./kind-config.yaml --name $(KIND_CLUSTER_NAME)
+# TODO: install Metallb
 
 .PHONY: kind-delete
 kind-delete: install-kind

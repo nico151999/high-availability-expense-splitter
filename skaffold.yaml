@@ -188,7 +188,7 @@ deploy:
       - name: jaeger
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-jaeger
-        namespace: &linkerdVizNamespace "linkerd-viz"
+        namespace: "linkerd-jaeger"
         createNamespace: true
         version: 30.8.3
         wait: true
@@ -196,15 +196,14 @@ deploy:
       - name: grafana
         repo: "https://grafana.github.io/helm-charts"
         remoteChart: grafana
-        namespace: *linkerdVizNamespace
+        namespace: "linkerd-grafana"
         createNamespace: true
         version: 6.49.0
         wait: true
-      # TODO: Fix: Error: INSTALLATION FAILED: rendered manifests contain a resource that already exists. Unable to continue with install: NetworkAuthentication "kube-api-server" in namespace "linkerd-viz" exists and cannot be imported into the current release: invalid ownership metadata; annotation validation error: key "meta.helm.sh/release-name" must equal "linkerd-viz": current value is "jaeger"
       - name: linkerd-viz
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-viz
-        namespace: *linkerdVizNamespace
+        namespace: linkerd-viz
         createNamespace: true
         version: 30.8.3
         wait: true
@@ -214,7 +213,7 @@ deploy:
         namespace: "ingress-nginx"
         createNamespace: true
         version: 4.6.1
-        wait: true
+        wait: false # TODO: find out why the installation times out when set to true
         setValues:
           controller:
             podAnnotations:
@@ -350,6 +349,12 @@ profiles:
     patches:
       - op: remove
         path: /deploy/helm/releases/9/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+  - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/10
   - name: SKIP_NATS_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true

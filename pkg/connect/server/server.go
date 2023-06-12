@@ -14,7 +14,6 @@ import (
 	logginggrpc "github.com/nico151999/high-availability-expense-splitter/pkg/logging/grpc"
 	"github.com/rotisserie/eris"
 	"github.com/rs/cors"
-	"go.opentelemetry.io/otel/sdk/trace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -120,7 +119,7 @@ func NewServer[CONNECT_HANDLER any](
 	registerServiceHandler ServiceHandlerRegistrarFunc,
 	createServiceHandler ServiceHandlerCreatorFunc[CONNECT_HANDLER],
 	serviceName string,
-	spanExporter trace.SpanExporter,
+	spanExporter sdktrace.SpanExporter,
 	corsPatterns []string,
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,

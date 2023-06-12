@@ -256,19 +256,11 @@ K8S_GET_REQUEST_ERROR_REASON
 
 {{/* Accepts the helm root as parameter */}}
 {{- define "global-natsServerHost" -}}
-{{- if $.Values.nats.install -}}
-{{- include "nats.fullname" .Subcharts.nats -}}
-{{- else -}}
 {{- .Values.haExpenseSplitter.services.nats.server.host -}}
-{{- end -}}
 {{- end}}
 
 {{- define "global-natsServerPort" -}}
-{{- if $.Values.nats.install -}}
-6222
-{{- else -}}
 {{- .Values.haExpenseSplitter.services.nats.server.port -}}
-{{- end -}}
 {{- end}}
 
 {{- define "global-natsServerHostKey" -}}

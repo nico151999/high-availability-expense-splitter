@@ -10,7 +10,7 @@ import (
 
 func main() {
 	log := logging.GetLogger().Named("documentationSvc")
-	ctx = logging.IntoContext(context.Background(), log)
+	ctx := logging.IntoContext(context.Background(), log)
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
