@@ -166,7 +166,7 @@ func NewServer[CONNECT_HANDLER any](
 	grpcMux.Handle(createServiceHandler(
 		svc,
 		connect.WithInterceptors(
-			otelconnect.NewInterceptor(), // TODO: add otel tracer interceptor
+			otelconnect.NewInterceptor(otelconnect.WithTracerProvider(tp)),
 			connect.UnaryInterceptorFunc(unaryLogInterceptorFunc(ctx)),
 			connect.UnaryInterceptorFunc(unaryValidateInterceptorFunc()),
 		),
