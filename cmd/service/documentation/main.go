@@ -4,17 +4,16 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 )
 
 func main() {
 	log := logging.GetLogger().Named("documentationSvc")
-	_ = logging.IntoContext(context.Background(), log)
+	ctx = logging.IntoContext(context.Background(), log)
 
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
 	log.Info("Running Documentation service...")
-	<-terminate
+	<-ctx.Done()
 }

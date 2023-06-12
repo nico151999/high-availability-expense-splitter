@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/nico151999/high-availability-expense-splitter/internal/processor/group"
@@ -31,6 +30,10 @@ func main() {
 		log.Panic("failed creating group processor", logging.Error(err))
 	}
 
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
+	// TODO: generally switch to context-based processing
 	if cancel, err := rpProcessor.Process(ctx); err != nil {
 		log.Panic("failed processing group-related events", logging.Error(err))
 	} else {
@@ -43,8 +46,6 @@ func main() {
 		}()
 	}
 
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
 	log.Info("Processing group-related events...")
-	<-terminate
+	<-ctx.Done()
 }
