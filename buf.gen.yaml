@@ -40,7 +40,7 @@ plugins:
       - output_format=yaml
       - disable_default_responses=true
       - use_go_templates=true
-  - remote: buf.build/sawadashota/plugins/protoc-gen-doc:v1.5.1
+  - plugin: buf.build/community/pseudomuto-doc:v1.5.1
     out: gen/doc
     opt:
       - html
