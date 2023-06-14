@@ -1,8 +1,6 @@
 package client
 
 import (
-	"context"
-
 	"github.com/nico151999/high-availability-expense-splitter/pkg/closable"
 	"github.com/rotisserie/eris"
 	"google.golang.org/grpc"
@@ -16,7 +14,7 @@ type Client[GRPCCLIENT any] struct {
 	clientConnection *grpc.ClientConn
 }
 
-func (c *Client[GRPCCLIENT]) Close(ctx context.Context) error {
+func (c *Client[GRPCCLIENT]) Close() error {
 	return c.clientConnection.Close()
 }
 

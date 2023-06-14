@@ -3,27 +3,28 @@ package group_test // the dedicated _test package prevents import cycles with th
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 )
 
 func TestGetGroup(t *testing.T) {
+	log := logging.GetLogger().Named("setupGroupTest")
+	ctx := logging.IntoContext(context.Background(), log)
+
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer db.Close()
 
-	client, closeServer, _ := setupGroupTest(t, bun.NewDB(db, pgdialect.New()))
+	client, closeServer, _ := setupGroupTest(t, ctx, bun.NewDB(db, pgdialect.New()))
 	// we want to close the server only which cascadingly closes the client as well
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-		defer cancel()
-		if err := closeServer(ctx); err != nil {
+		if err := closeServer(); err != nil {
 			t.Errorf("failed closing group server: %+v", err)
 		}
 	}()

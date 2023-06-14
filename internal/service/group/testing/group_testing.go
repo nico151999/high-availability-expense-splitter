@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	natsserver "github.com/nats-io/gnatsd/server"
 	natstestserver "github.com/nats-io/nats-server/test"
@@ -17,7 +18,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"golang.org/x/sync/errgroup"
@@ -44,10 +44,12 @@ func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) *client.Client[gro
 	return catClient
 }
 
-func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, func(ctx context.Context) error) {
+// StartGroupTestServer starts a test group server and returns a listener as well as a function allowing it to be closed. The passed context has no effect on the server's lifecycle.
+func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (*bufconn.Listener, func() error) {
+	log := logging.FromContext(ctx).Named("StartGroupTestServer")
+	ctx = logging.IntoContext(ctx, log)
+
 	ln := bufconn.Listen(1024 * 1024)
-	log := logging.GetLogger()
-	ctx := logging.IntoContext(context.Background(), log)
 
 	if err := os.Setenv("K8S_GET_REQUEST_ERROR_REASON", "K8S_GET_REQUEST_ERROR"); err != nil {
 		t.Fatal("failed to set env variable K8S_GET_REQUEST_ERROR_REASON", err)
@@ -59,14 +61,14 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, fu
 	natsPort := 6222
 	s := runNATSServerOnPort(natsPort)
 
-	groupServer, err := group.NewGroupServerWithDBClient(dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
+	groupServer, err := group.NewGroupServerWithDBClient(ctx, dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {
 		t.Fatal("failed to create group server", err)
 	}
 
-	grpcServer, err := server.NewServer[groupv1connect.GroupServiceHandler](
+	connectServer, err := server.NewServer[groupv1connect.GroupServiceHandler](
 		ctx,
-		ln,
+		bufconn.Listen(1024*1024),
 		groupServer,
 		groupv1.RegisterGroupServiceHandler,
 		groupv1connect.NewGroupServiceHandler,
@@ -81,7 +83,7 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, fu
 	}
 
 	go func() {
-		if err := grpcServer.Serve(
+		if err := connectServer.Serve(
 			ctx,
 			ln,
 		); err != nil {
@@ -89,13 +91,15 @@ func StartGroupTestServer(t *testing.T, dbClient bun.IDB) (*bufconn.Listener, fu
 		}
 	}()
 
-	return ln, func(ctx context.Context) error {
+	return ln, func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
 		errGroup, ctx := errgroup.WithContext(ctx)
-		errGroup.Go(groupServer.Close)
 		errGroup.Go(func() error {
-			return grpcServer.Close(ctx)
+			return connectServer.Shutdown(ctx)
 		})
+		errGroup.Go(groupServer.Close)
 		s.Shutdown()
-		return eris.Wrap(errGroup.Wait(), "at least one resource could not be closed")
+		return errGroup.Wait()
 	}
 }

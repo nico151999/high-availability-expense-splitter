@@ -4,7 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"time"
+	"os"
+	"os/signal"
 
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
@@ -38,6 +39,7 @@ func main() {
 	environment.GetTraceCollectorPort(ctx)
 
 	svc, err := group.NewGroupServer(
+		ctx,
 		fmt.Sprintf("%s:%d",
 			environment.GetNatsServerHost(ctx),
 			environment.GetNatsServerPort(ctx)),
@@ -56,7 +58,10 @@ func main() {
 	corsSettings := cors.MustLoadCorsFromParam(ctx, &corsCfgFlag)
 	serverAddress := fmt.Sprintf(":%d", environment.GetGroupServerPort(ctx))
 
-	srv, err := server.ListenAndServe[groupv1connect.GroupServiceHandler](
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
+	err = server.ListenAndServe[groupv1connect.GroupServiceHandler](
 		ctx,
 		serverAddress,
 		svc,
@@ -74,11 +79,4 @@ func main() {
 			"failed running server",
 			logging.Error(err))
 	}
-	defer func() {
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		if err := srv.Close(ctx); err != nil {
-			log.Error("failed closing server on shutdown", logging.Error(err))
-		}
-	}()
 }

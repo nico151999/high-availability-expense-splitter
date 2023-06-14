@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
+	"os"
+	"os/signal"
 
 	"github.com/bufbuild/connect-go"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
@@ -32,7 +33,10 @@ func main() {
 		groupv1connect.GroupServiceName,
 	)
 
-	srv, err := server.ListenAndServe(
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+
+	err := server.ListenAndServe(
 		ctx,
 		serverAddress,
 		svc,
@@ -58,11 +62,4 @@ func main() {
 			"failed running server",
 			logging.Error(err))
 	}
-	defer func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		if err := srv.Close(ctx); err != nil {
-			log.Error("failed closing server on shutdown", logging.Error(err))
-		}
-	}()
 }

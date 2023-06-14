@@ -21,7 +21,7 @@ func CloseClients(ctx context.Context, client ClosableClientsServer) error {
 	for _, c := range client.GetClosableClients() {
 		closeable := c
 		gr.Go(func() error {
-			if err := closeable.Close(ctx); err != nil {
+			if err := closeable.Close(); err != nil {
 				return eris.Wrap(err, "failed closing client")
 			}
 			return nil

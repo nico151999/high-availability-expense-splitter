@@ -2,10 +2,10 @@ package server
 
 import (
 	"context"
-	"errors"
 	"net"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
@@ -25,16 +25,28 @@ import (
 )
 
 type Server struct {
-	http.Server
-
+	server         http.Server
 	tracerProvider *sdktrace.TracerProvider
 }
 
-func (server *Server) Close(ctx context.Context) error {
+func (server *Server) Shutdown(ctx context.Context) error {
+	log := logging.FromContext(ctx).Named("Shutdown")
 	errGr, ctx := errgroup.WithContext(ctx)
-	errGr.Go(server.Server.Close)
 	errGr.Go(func() error {
-		return server.tracerProvider.Shutdown(ctx)
+		if err := server.server.Shutdown(ctx); err != nil {
+			msg := "failed shutting down server"
+			log.Error(msg, logging.Error(err))
+			return eris.Wrap(err, msg)
+		}
+		return nil
+	})
+	errGr.Go(func() error {
+		if err := server.tracerProvider.Shutdown(ctx); err != nil {
+			msg := "failed shutting down tracer provider"
+			log.Error(msg, logging.Error(err))
+			return eris.Wrap(err, msg)
+		}
+		return nil
 	})
 	return errGr.Wait()
 }
@@ -44,30 +56,59 @@ func (server *Server) Serve(
 	ctx context.Context,
 	ln net.Listener,
 ) error {
+	log := logging.FromContext(ctx).Named("Serve")
 	addr := ln.Addr().String()
-	log := logging.FromContext(ctx)
 
 	log.Info("serving Connect and gRPC-Gateway",
 		logging.String("address", addr))
-	if err := server.Server.Serve(ln); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			log.Info("closed server")
-		} else {
-			return eris.Wrap(err, "failed to serve http")
+
+	serverResult := make(chan error)
+	go func() {
+		if err := server.server.Serve(ln); err != nil {
+			if eris.Is(err, http.ErrServerClosed) || eris.Is(err, net.ErrClosed) {
+				log.Info("closed server")
+				serverResult <- nil
+			} else {
+				log.Error("failed to serve http", logging.Error(err))
+				serverResult <- eris.Wrap(err, "failed to serve http")
+			}
 		}
+	}()
+	select {
+	case <-ctx.Done():
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			msg := "failed shutting down server"
+			log.Error(msg, logging.Error(err))
+			return eris.Wrap(err, msg)
+		}
+	case err := <-serverResult:
+		// shutdown other components as well now as the http server is closed
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			msg := "failed shutting down remaining server components"
+			log.Error(msg, logging.Error(err))
+			return eris.Wrap(err, msg)
+		}
+		return err
 	}
 	return nil
 }
 
-func Listen(addr string) (net.Listener, error) {
+// Listen listens on a new socket. Note that this is a non-blocking call and the passed context has no effect on the socket.
+func Listen(ctx context.Context, addr string) (net.Listener, error) {
+	log := logging.FromContext(ctx).Named("Listen")
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
+		log.Error("failed to open a tcp socket", logging.String("address", addr))
 		return nil, eris.Wrapf(err, "failed to open a tcp socket on %s", addr)
 	}
 	return ln, nil
 }
 
-// ListenAndServe combines the actions of listening, creating a new server and serving
+// ListenAndServe combines the actions of listening, creating a new server and serving. It shuts down the server when the context is closed.
 func ListenAndServe[CONNECT_HANDLER any](
 	ctx context.Context,
 	addr string,
@@ -79,14 +120,17 @@ func ListenAndServe[CONNECT_HANDLER any](
 	corsPatterns []string,
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
-) (*Server, error) {
-	ln, err := Listen(addr)
+) error {
+	log := logging.FromContext(ctx).Named("ListenAndServe")
+	ctx = logging.IntoContext(ctx, log)
+
+	ln, err := Listen(ctx, addr)
 	if err != nil {
-		return nil, eris.Wrapf(err, "failed to listen on %s", addr)
+		return eris.Wrapf(err, "failed to listen on %s", addr)
 	}
 	spanExporter, err := createOtlpExporter(ctx, traceCollectorUrl)
 	if err != nil {
-		return nil, eris.Wrap(err, "failed creating OTLP span exporter")
+		return eris.Wrap(err, "failed creating OTLP span exporter")
 	}
 	server, err := NewServer(
 		ctx,
@@ -101,15 +145,15 @@ func ListenAndServe[CONNECT_HANDLER any](
 		allowedCorsMethods,
 	)
 	if err != nil {
-		return nil, eris.Wrap(err, "failed to create server")
+		return eris.Wrap(err, "failed to create server")
 	}
 	if err := server.Serve(
 		ctx,
 		ln,
 	); err != nil {
-		return nil, eris.Wrap(err, "failed serving services")
+		return eris.Wrap(err, "failed serving services")
 	}
-	return server, nil
+	return nil
 }
 
 func NewServer[CONNECT_HANDLER any](
@@ -124,9 +168,10 @@ func NewServer[CONNECT_HANDLER any](
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
 ) (*Server, error) {
-	addr := ln.Addr().String()
-	log := logging.FromContext(ctx).Named("Server")
+	log := logging.FromContext(ctx).Named("NewServer")
 	ctx = logging.IntoContext(ctx, log)
+
+	addr := ln.Addr().String()
 
 	tp, err := initTracer(ctx, serviceName, spanExporter)
 	if err != nil {
@@ -194,7 +239,7 @@ func NewServer[CONNECT_HANDLER any](
 	})
 
 	return &Server{
-		Server: http.Server{
+		server: http.Server{
 			Addr:    addr,
 			Handler: h2c.NewHandler(c.Handler(mux), &http2.Server{}),
 		},
