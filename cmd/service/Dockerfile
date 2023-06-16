@@ -15,13 +15,13 @@ ARG BUILD_TARGET
 ARG MAKE_TARGET_BUILD
 ARG SVC_OUT_DIR_PARAM
 
-RUN apk add --no-cache git make helm
+RUN apk add --no-cache git make helm curl nodejs
 
 WORKDIR ${BUILD_PATH}
 
 COPY Makefile ${BUILD_PATH}/
 # install tools required to compile; this is not necessary to be done here already but it can improve build times due to caching
-RUN make install-buf
+RUN make install-buf install-pnpm
 
 COPY go.mod go.sum ${BUILD_PATH}/
 RUN go mod download

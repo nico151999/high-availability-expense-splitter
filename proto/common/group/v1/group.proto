@@ -8,7 +8,13 @@ import "validate/validate.proto";
 
 message GroupProperties {
   option (google.api.resource) = {type: "common.Group.v1/GroupProperties"};
-  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
   // TODO: add created_at
   // TODO: add updated_at
 }

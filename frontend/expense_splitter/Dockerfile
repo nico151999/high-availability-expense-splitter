@@ -15,12 +15,12 @@ RUN apk --no-cache add curl git make musl-dev go helm &&\
 USER ${USER_ID}
 WORKDIR /usr/src/app
 
-COPY --chown=${USER_ID}:${GROUP_ID} pnpm-lock.yaml pnpm-workspace.yaml /usr/src/app/
+COPY --chown=${USER_ID}:${GROUP_ID} Makefile pnpm-lock.yaml pnpm-workspace.yaml /usr/src/app/
 COPY --chown=${USER_ID}:${GROUP_ID} frontend/expense_splitter/package.json /usr/src/app/frontend/expense_splitter/
-RUN pnpm install
-COPY --chown=${USER_ID}:${GROUP_ID} Makefile buf.gen.yaml buf.work.yaml /usr/src/app/
+RUN make pnpm-install
+COPY --chown=${USER_ID}:${GROUP_ID} buf.gen.yaml buf.work.yaml /usr/src/app/
 COPY --chown=${USER_ID}:${GROUP_ID} proto /usr/src/app/proto
-RUN PATH="$PATH:$(eval echo '~/go/bin')" make prepare-ts-proto &&\
+RUN PATH="$PATH:$(eval echo '~/go/bin')" make generate-proto &&\
     rm -rf gen/doc &&\
     rm -rf gen/lib/go &&\
     rm -rf '~/go'
