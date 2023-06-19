@@ -16,11 +16,12 @@ plugins:
     out: gen/lib/go
     opt:
       - paths=source_relative
-  - plugin: buf.build/grpc/go:v1.3.0
-    out: gen/lib/go
-    opt:
-      - paths=source_relative
-      - require_unimplemented_servers=false
+  # # we do not need gRPC since we serve the protocol via the connect server already
+  # - plugin: buf.build/grpc/go:v1.3.0
+  #   out: gen/lib/go
+  #   opt:
+  #     - paths=source_relative
+  #     - require_unimplemented_servers=false
   - plugin: buf.build/grpc-ecosystem/gateway:v2.15.2
     out: gen/lib/go
     opt:
