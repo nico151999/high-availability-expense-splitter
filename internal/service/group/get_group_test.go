@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/bufbuild/connect-go"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/uptrace/bun"
@@ -21,7 +22,7 @@ func TestGetGroup(t *testing.T) {
 	}
 	defer db.Close()
 
-	client, closeServer, _ := setupGroupTest(t, ctx, bun.NewDB(db, pgdialect.New()))
+	client, _, closeServer := setupGroupTest(t, ctx, bun.NewDB(db, pgdialect.New()))
 	// we want to close the server only which cascadingly closes the client as well
 	defer func() {
 		if err := closeServer(); err != nil {
@@ -32,14 +33,14 @@ func TestGetGroup(t *testing.T) {
 	t.Run("Get Group successfully", func(t *testing.T) {
 		groupName := "test-group"
 		mock.ExpectQuery("SELECT (.+) FROM \"groups\" (.+)").WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
-		resp, err := client.GetGroup(context.Background(), &groupsvcv1.GetGroupRequest{
+		resp, err := client.GetGroup(context.Background(), connect.NewRequest(&groupsvcv1.GetGroupRequest{
 			GroupId: "group-123456789a",
-		})
+		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
 		}
-		if resp.GetGroup().GetName() != groupName {
-			t.Errorf("expected group name to be '%s' but it was '%s'", groupName, resp.GetGroup().GetName())
+		if resp.Msg.GetGroup().GetName() != groupName {
+			t.Errorf("expected group name to be '%s' but it was '%s'", groupName, resp.Msg.GetGroup().GetName())
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %+v", err)
@@ -47,9 +48,9 @@ func TestGetGroup(t *testing.T) {
 	})
 
 	t.Run("Fail getting Group due to empty ID", func(t *testing.T) {
-		resp, err := client.GetGroup(context.Background(), &groupsvcv1.GetGroupRequest{
+		resp, err := client.GetGroup(context.Background(), connect.NewRequest(&groupsvcv1.GetGroupRequest{
 			GroupId: "",
-		})
+		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
 		}

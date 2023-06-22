@@ -6,22 +6,21 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	natsserver "github.com/nats-io/gnatsd/server"
 	natstestserver "github.com/nats-io/nats-server/test"
-	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/uptrace/bun"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -31,16 +30,17 @@ func runNATSServerOnPort(port int) *natsserver.Server {
 	return natstestserver.RunServer(&opts)
 }
 
-func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) *client.Client[groupv1.GroupServiceClient] {
-	catClient, err := client.NewClient(
-		groupv1.NewGroupServiceClient,
-		"bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-			return ln.Dial()
-		}))
-	if err != nil {
-		t.Fatalf("Failed dialing bufnet: %+v", err)
-	}
+func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) groupv1connect.GroupServiceClient {
+	catClient := groupv1connect.NewGroupServiceClient(
+		&http.Client{
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+					return ln.DialContext(ctx)
+				},
+			},
+		},
+		"http://"+ln.Addr().String(),
+	)
 	return catClient
 }
 

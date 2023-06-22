@@ -2,32 +2,32 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/nico151999/high-availability-expense-splitter/gen/lib/go
+    default: {{ (ds "data").goModule }}/{{ (ds "data").relativeGoLibOutDir }}
     except:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
       - buf.build/grpc-ecosystem/grpc-gateway
 plugins:
   - plugin: buf.build/protocolbuffers/go:v1.30.0
-    out: gen/lib/go
+    out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative
   - plugin: buf.build/bufbuild/connect-go:v1.6.0
-    out: gen/lib/go
+    out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative
-  # # we do not need gRPC since we serve the protocol via the connect server already
-  # - plugin: buf.build/grpc/go:v1.3.0
-  #   out: gen/lib/go
-  #   opt:
-  #     - paths=source_relative
-  #     - require_unimplemented_servers=false
+  # we need gRPC for the gateway to work
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: {{ (ds "data").relativeGoLibOutDir }}
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
   - plugin: buf.build/grpc-ecosystem/gateway:v2.15.2
-    out: gen/lib/go
+    out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative
   - plugin: buf.build/bufbuild/validate-go:v0.10.1
-    out: gen/lib/go
+    out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative
   - plugin: buf.build/grpc-ecosystem/openapiv2:v2.15.2
