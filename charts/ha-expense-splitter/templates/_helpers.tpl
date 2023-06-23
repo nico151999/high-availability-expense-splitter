@@ -45,16 +45,6 @@ Function naming convention (though not always possible to apply):
 {{- end}}
 
 {{/* Accepts the short name of the service as parameter */}}
-{{- define "service-name-clusterrole" -}}
-{{ include "service-name" . }}-crole
-{{- end}}
-
-{{/* Accepts the short name of the service as parameter */}}
-{{- define "service-name-clusterrolebinding" -}}
-{{ include "service-name" . }}-crb
-{{- end}}
-
-{{/* Accepts the short name of the service as parameter */}}
 {{- define "service-name-ingress" -}}
 {{ include "service-name" . }}-ing
 {{- end}}
@@ -167,16 +157,6 @@ app.kubernetes.io/instance: {{ .releaseName }}
 {{ include "processor-name" . }}-svcacc
 {{- end}}
 
-{{/* Accepts the short name of the processor as parameter */}}
-{{- define "processor-name-clusterrole" -}}
-{{ include "processor-name" . }}-crole
-{{- end}}
-
-{{/* Accepts the short name of the processor as parameter */}}
-{{- define "processor-name-clusterrolebinding" -}}
-{{ include "processor-name" . }}-crb
-{{- end}}
-
 
 
 
@@ -254,15 +234,6 @@ GLOBAL_DOMAIN
 K8S_GET_REQUEST_ERROR_REASON
 {{- end}}
 
-{{/* Accepts the helm root as parameter */}}
-{{- define "global-natsServerHost" -}}
-{{- .Values.haExpenseSplitter.services.nats.server.host -}}
-{{- end}}
-
-{{- define "global-natsServerPort" -}}
-{{- .Values.haExpenseSplitter.services.nats.server.port -}}
-{{- end}}
-
 {{- define "global-natsServerHostKey" -}}
 NATS_SERVER_HOST
 {{- end}}
@@ -271,8 +242,40 @@ NATS_SERVER_HOST
 NATS_SERVER_PORT
 {{- end}}
 
+{{- define "global-traceCollectorHostKey" -}}
+TRACE_COLLECTOR_HOST
+{{- end}}
+
+{{- define "global-traceCollectorPortKey" -}}
+TRACE_COLLECTOR_PORT
+{{- end}}
+
 {{- define "global-name-configMap" -}}
 global-cfg
+{{- end}}
+
+{{- define "global-service" -}}
+service
+{{- end}}
+
+{{- define "global-service-role" -}}
+service-role
+{{- end}}
+
+{{- define "global-service-rolebinding" -}}
+service-rolebinding
+{{- end}}
+
+{{- define "global-processor" -}}
+processor
+{{- end}}
+
+{{- define "global-processor-role" -}}
+processor-role
+{{- end}}
+
+{{- define "global-processor-rolebinding" -}}
+processor-rolebinding
 {{- end}}
 
 

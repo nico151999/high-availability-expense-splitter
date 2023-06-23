@@ -50,6 +50,32 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-natsServerPortKey" . }}
+        - name: wait-for-trace-collector
+          image: {{ include "busyboxImage" $ }}
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until nc -z "${{ include "global-traceCollectorHostKey" . }}" "${{ include "global-traceCollectorPortKey" . }}"
+              do
+                echo \"waiting for trace collector\"
+                sleep 1
+              done
+          env:
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
       containers:
         # TODO: add init container that waits for dependencies to become available
         - name: "{{ $.Chart.Name }}-{{ $processorName }}"
@@ -82,6 +108,16 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-natsServerPortKey" . }}
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
             {{- range $_, $configurableServiceName := $processorSpec.dependencies }}
             # {{ $configurableServiceName }} service the processor depends on
             - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}

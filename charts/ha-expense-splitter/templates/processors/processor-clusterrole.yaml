@@ -1,9 +1,0 @@
-{{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: "{{ include "processor-name-clusterrole" $processorName }}"
-rules:
-  {{- toYaml $processorSpec.clusterRoleRules | nindent 2 }}
-{{- end }}

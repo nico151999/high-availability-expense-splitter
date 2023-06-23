@@ -15,10 +15,10 @@ Dockerfiles are expected to have the repository root as their context
 - You are expected to have a K8s cluster up and running (for development purposes kind is recommended)
 
 ## Adding a service
-TODO
+TODO: explain
 
 ## Adding a processor
-TODO
+TODO: explain
 
 ## Prerequisites
 You are required to have a Kubernetes cluster with an ingress controller (preferably Nginx) and a gRPC load-balancing solution like Linkerd for the gRPC pods installed. Then, you can use Skaffold to build and deploy the app.
@@ -28,3 +28,4 @@ Some elemental features that are intended to be implemented in the near future i
 - export protoc artefacts as libraries to registries
 - host API documentation
 - generate /cmd/*.Dockerfile.dockerignore files from root .dockerignore or find another way to extend the root .dockerignore (background for the current, weird structure: https://github.com/moby/moby/issues/12886)
+- export OTEL to trace collector deployed with Jaeger

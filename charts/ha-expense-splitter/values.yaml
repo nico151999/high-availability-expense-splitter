@@ -1,5 +1,5 @@
 global:
-  domain: localhost
+  domain: localhost # the organisation's global domain
   busybox:
     image:
       repository: busybox
@@ -49,9 +49,13 @@ haExpenseSplitter:
       port: 443 # this does not actually deploy an ingress controller listening on this port but only tells other services which port they can reach the ingress controller on
       secure: true # same comment as for port
     nats:
-      server: # the nats server if it is not installed via subchart
+      server: # the nats server
         host: my-nats-server.localhost
         port: 6222
+    traceCollector:
+      server:
+        host: my-trace-collector.localhost
+        port: 4317
     reflection:
       imagePullPolicy: *imagePullPolicy
       imagePullSecrets: *imagePullSecrets
@@ -74,6 +78,8 @@ haExpenseSplitter:
         tag: "latest"
     specs:
       group:
+        roles: [] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         ingress:
           endpoints:
             # TODO: create protoc plugin to auto-generate ingress.yaml
@@ -114,15 +120,11 @@ haExpenseSplitter:
           repository: "my-registry/my-group/my-group-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
-        clusterRoleRules:
-          - apiGroups:
-              - management.cattle.io
-            resources:
-              - projects
-            verbs: ["get"]
   processors:
     specs:
       group:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
         linkerdMesh: *linkerdMesh

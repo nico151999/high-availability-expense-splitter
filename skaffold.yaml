@@ -227,6 +227,7 @@ deploy:
         version: 0.19.14
         createNamespace: true
         setValueTemplates:
+          fullnameOverride: &natsName haes-nats
           securityContext: &securityContext
             runAsUser: 1000
             runAsNonRoot: true
@@ -270,6 +271,12 @@ deploy:
               securityContext: *securityContext
               imagePullSecrets: *imagePullSecrets
             services:
+              nats:
+                server:
+                  host: *natsName
+              traceCollector:
+                server:
+                  host: *traceCollectorName
               ingress:
                 host: "{{ .HA_EXPENSE_SPLITTER_SERVICES_HOST }}"
               reflection:
@@ -338,6 +345,9 @@ profiles:
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD=
     patches:
       - op: remove
         path: /deploy/helm/hooks/before/0
@@ -349,6 +359,18 @@ profiles:
     patches:
       - op: remove
         path: /deploy/helm/releases/9/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+  - name: DEDICATED_NATS_INSTANCE
+    requiresAllActivations: true
+    activation:
+      - env: HA_EXPENSE_SPLITTER_NATS_HOST=.
+      - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
+    patches:
+      - op: replace
+        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter/services/nats/server/host
+        value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
+      - op: add
+        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter/services/nats/server/port
+        value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
@@ -395,7 +417,7 @@ profiles:
         path: /deploy/helm/releases/1
   - name: SKIP_METRICS_SERVER_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_METRICS_SERVER_INSTALLATION=true
+      - env: HA_EXPENSE_SPLITTER_SKIP_METRICS_SERVER_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/0

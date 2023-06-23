@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ include "global-processor-rolebinding" . }}"
+subjects:
+{{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
+{{- if has (include "global-processor" .) $processorSpec.roles }}
+- namespace: "{{ $.Release.Namespace }}"
+  kind: ServiceAccount
+  name: "{{ include "processor-name-serviceaccount" $processorName }}"
+{{- end }}
+{{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ include "global-processor-role" . }}"

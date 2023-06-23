@@ -15,7 +15,7 @@ ARG BUILD_TARGET
 ARG MAKE_TARGET_BUILD
 ARG PROCESSOR_OUT_DIR_PARAM
 
-RUN apk add --no-cache git make helm curl nodejs
+RUN apk add --no-cache git make helm curl nodejs coreutils
 
 WORKDIR ${BUILD_PATH}
 
@@ -26,7 +26,7 @@ RUN make install-buf install-pnpm
 COPY go.mod go.sum ${BUILD_PATH}/
 RUN go mod download
 
-COPY buf.gen.yaml buf.work.yaml ${BUILD_PATH}/
+COPY buf.gen.yaml.tpl buf.work.yaml ${BUILD_PATH}/
 COPY proto ${BUILD_PATH}/proto
 
 COPY cmd ${BUILD_PATH}/cmd

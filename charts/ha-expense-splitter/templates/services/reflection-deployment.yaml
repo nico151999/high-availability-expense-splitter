@@ -20,6 +20,33 @@ spec:
     spec:
       {{- include "imagepullsecrets" (dict "primary" .Values.haExpenseSplitter.services.reflection.imagePullSecrets "fallback" .Values.haExpenseSplitter.imagePullSecrets) | nindent 6 }}
       {{- include "securitycontext" (dict "primary" .Values.haExpenseSplitter.services.reflection.securityContext "fallback" .Values.haExpenseSplitter.securityContext) | nindent 6 }}
+      initContainers:
+        - name: wait-for-trace-collector
+          image: {{ include "busyboxImage" $ }}
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until nc -z "${{ include "global-traceCollectorHostKey" . }}" "${{ include "global-traceCollectorPortKey" . }}"
+              do
+                echo \"waiting for trace collector\"
+                sleep 1
+              done
+          env:
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
       containers:
         - name: "{{ .Chart.Name }}-service-reflection"
           image: "{{ .Values.haExpenseSplitter.services.reflection.image.repository }}:{{ .Values.haExpenseSplitter.services.reflection.image.tag }}"
@@ -37,3 +64,13 @@ spec:
           env:
             - name: {{ include "service-serverPortKeyName" (include "reflectionService-shortName" .) }}
               value: "{{ include "service-serverPort" . }}"
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
