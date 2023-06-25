@@ -18,6 +18,7 @@ type Logger interface {
 	Level() Level
 	Log(lvl Level, msg string, fields ...Field)
 	Named(s string) Logger
+	NewNamed(s string) Logger
 	Panic(msg string, fields ...Field)
 	Warn(msg string, fields ...Field)
 	With(fields ...Field) Logger
@@ -55,6 +56,13 @@ func init() {
 func (l *logger) Named(s string) Logger {
 	return &logger{
 		l.Logger.Named(s),
+	}
+}
+
+func (l *logger) NewNamed(s string) Logger {
+	n := *l.Logger
+	return &logger{
+		n.Named(s),
 	}
 }
 

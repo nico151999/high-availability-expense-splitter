@@ -19,7 +19,7 @@ func unaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			log := logging.FromContext(ctx).Named("unaryValidateInterceptorFunc")
+			log := logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")
 			if err := validateMessage(log, req); err != nil {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
@@ -73,11 +73,8 @@ func unaryLogInterceptorFunc(ctx context.Context) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			log = log.Named(
-				strings.ReplaceAll(
-					strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
-					"/", "_",
-				),
+			log = log.NewNamed(
+				strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
 			)
 			ctx = logging.IntoContext(ctx, log)
 			return next(ctx, req)

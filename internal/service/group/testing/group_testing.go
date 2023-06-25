@@ -48,7 +48,7 @@ func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) groupv1connect.Gro
 
 // StartGroupTestServer starts a test group server and returns a listener as well as a function allowing it to be closed. The passed context has no effect on the server's lifecycle.
 func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (*bufconn.Listener, func() error) {
-	log := logging.FromContext(ctx).Named("StartGroupTestServer")
+	log := logging.FromContext(ctx).NewNamed("StartGroupTestServer")
 	ctx = logging.IntoContext(ctx, log)
 
 	ln := bufconn.Listen(1024 * 1024)

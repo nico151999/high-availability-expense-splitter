@@ -15,7 +15,7 @@ import (
 
 // setupGroupTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
 func setupGroupTest(t *testing.T, ctx context.Context, db bun.IDB) (groupv1connect.GroupServiceClient, net.Listener, func() error) {
-	log := logging.FromContext(ctx).Named("setupGroupTest")
+	log := logging.FromContext(ctx).NewNamed("setupGroupTest")
 	ctx = logging.IntoContext(ctx, log)
 
 	ln, shutdownServer := grouptesting.StartGroupTestServer(t, ctx, db)

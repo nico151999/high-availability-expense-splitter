@@ -30,7 +30,7 @@ type Server struct {
 }
 
 func (server *Server) Shutdown(ctx context.Context) error {
-	log := logging.FromContext(ctx).Named("Shutdown")
+	log := logging.FromContext(ctx).NewNamed("Shutdown")
 	errGr, ctx := errgroup.WithContext(ctx)
 	errGr.Go(func() error {
 		if err := server.server.Shutdown(ctx); err != nil {
@@ -56,7 +56,7 @@ func (server *Server) Serve(
 	ctx context.Context,
 	ln net.Listener,
 ) error {
-	log := logging.FromContext(ctx).Named("Serve")
+	log := logging.FromContext(ctx).NewNamed("Serve")
 	addr := ln.Addr().String()
 
 	log.Info("serving Connect and gRPC-Gateway",
@@ -99,7 +99,7 @@ func (server *Server) Serve(
 
 // Listen listens on a new socket. Note that this is a non-blocking call and the passed context has no effect on the socket.
 func Listen(ctx context.Context, addr string) (net.Listener, error) {
-	log := logging.FromContext(ctx).Named("Listen")
+	log := logging.FromContext(ctx).NewNamed("Listen")
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Error("failed to open a tcp socket", logging.String("address", addr))
@@ -121,7 +121,7 @@ func ListenAndServe[CONNECT_HANDLER any](
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
 ) error {
-	log := logging.FromContext(ctx).Named("ListenAndServe")
+	log := logging.FromContext(ctx).NewNamed("ListenAndServe")
 	ctx = logging.IntoContext(ctx, log)
 
 	ln, err := Listen(ctx, addr)
@@ -168,7 +168,7 @@ func NewServer[CONNECT_HANDLER any](
 	allowedCorsHeaders []string,
 	allowedCorsMethods []string,
 ) (*Server, error) {
-	log := logging.FromContext(ctx).Named("NewServer")
+	log := logging.FromContext(ctx).NewNamed("NewServer")
 	ctx = logging.IntoContext(ctx, log)
 
 	addr := ln.Addr().String()
