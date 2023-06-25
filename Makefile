@@ -79,10 +79,8 @@ endif
 
 # install the kubeconform cmdline tool used to check validity of helm charts
 .PHONY: install-kubeconform
-install-kubeconform:
-ifeq (,$(wildcard $(HELM_INSTALL_LOCATION)))
-	@echo "Make sure you install helm before installing plugins..." || exit 1
-else ifeq ($(findstring kubeconform,$(shell $(HELM_INSTALL_LOCATION) plugin list)),)
+install-kubeconform: install-helm
+ifeq ($(findstring kubeconform,$(shell $(HELM_INSTALL_LOCATION) plugin list)),)
 	$(HELM_INSTALL_LOCATION) plugin install https://github.com/jtyr/kubeconform-helm
 endif
 

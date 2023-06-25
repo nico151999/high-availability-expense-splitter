@@ -11,8 +11,9 @@ import (
 	"github.com/uptrace/bun"
 )
 
+var _ groupv1connect.GroupServiceHandler = (*groupServer)(nil)
+
 type groupServer struct {
-	groupv1connect.UnimplementedGroupServiceHandler
 	dbClient   bun.IDB
 	natsClient *nats.Conn
 	// TODO: add clients to servers this server will communicate with

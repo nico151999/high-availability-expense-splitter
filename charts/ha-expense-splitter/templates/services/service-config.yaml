@@ -5,6 +5,11 @@ kind: ConfigMap
 metadata:
   name: {{ include "service-name-configMap" $serviceName }}
 data:
+  {{- if hasKey $serviceSpecs "db" }}
+  {{ include "service-dbHostKey" . }}: "{{ $serviceSpecs.db.host }}"
+  {{ include "service-dbNameKey" . }}: "{{ $serviceSpecs.db.name }}"
+  {{ include "service-dbPortKey" . }}: "{{ $serviceSpecs.db.port }}"
+  {{- end }}
   {{ include "service-serverHostnameKey" . }}: "{{ include "service-name" $serviceName }}"
   {{ include "service-serverPortKey" . }}: "{{ include "service-serverPort" . }}"
   {{ include "service-corsConfigFileName" $serviceName }}: |

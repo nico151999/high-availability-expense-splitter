@@ -29,3 +29,4 @@ Some elemental features that are intended to be implemented in the near future i
 - host API documentation
 - generate /cmd/*.Dockerfile.dockerignore files from root .dockerignore or find another way to extend the root .dockerignore (background for the current, weird structure: https://github.com/moby/moby/issues/12886)
 - export OTEL to trace collector deployed with Jaeger
+- inject Linkerd sidecar in nats

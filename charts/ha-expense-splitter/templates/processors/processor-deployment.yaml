@@ -93,11 +93,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-globalDomainKey" . }}
-            - name: {{ include "global-k8sGetRequestErrorReasonKey" . }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "global-name-configMap" . }}
-                  key: {{ include "global-k8sGetRequestErrorReasonKey" . }}
             - name: {{ include "global-natsServerHostKey" . }}
               valueFrom:
                 configMapKeyRef:

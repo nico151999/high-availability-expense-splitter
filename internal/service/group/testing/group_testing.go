@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	natsserver "github.com/nats-io/gnatsd/server"
 	natstestserver "github.com/nats-io/nats-server/test"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
@@ -40,6 +41,7 @@ func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) groupv1connect.Gro
 			},
 		},
 		"http://"+ln.Addr().String(),
+		connect.WithGRPC(),
 	)
 	return catClient
 }

@@ -10,6 +10,7 @@
 **/README.md
 /LICENSE
 /.env.dist
+/.env
 /skaffold-overrides.yaml
 **/*_test.go
 **/node_modules

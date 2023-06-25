@@ -80,6 +80,12 @@ haExpenseSplitter:
       group:
         roles: [] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db:
+          user: group-db-user
+          password: group-db-password
+          host: group-db-host
+          name: group-db
+          port: 5432
         ingress:
           endpoints:
             # TODO: create protoc plugin to auto-generate ingress.yaml

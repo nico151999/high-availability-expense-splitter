@@ -60,6 +60,11 @@ Function naming convention (though not always possible to apply):
 {{- end}}
 
 {{/* Accepts the short name of the service as parameter */}}
+{{- define "service-name-secret" -}}
+{{ include "service-name" . }}-sec
+{{- end}}
+
+{{/* Accepts the short name of the service as parameter */}}
 {{- define "service-serverHostnameKeyName" -}}
 {{ . | upper }}_{{ include "service-serverHostnameKey" . }}
 {{- end}}
@@ -75,6 +80,26 @@ SERVER_HOSTNAME
 
 {{- define "service-serverPortKey" -}}
 SERVER_PORT
+{{- end}}
+
+{{- define "service-dbUserKey" -}}
+DB_USER
+{{- end}}
+
+{{- define "service-dbPasswordKey" -}}
+DB_PASSWORD
+{{- end}}
+
+{{- define "service-dbHostKey" -}}
+DB_HOST
+{{- end}}
+
+{{- define "service-dbNameKey" -}}
+DB_NAME
+{{- end}}
+
+{{- define "service-dbPortKey" -}}
+DB_PORT
 {{- end}}
 
 {{/* Accepts the short name of the service as parameter */}}
@@ -221,17 +246,26 @@ expense-splitter
 
 
 
-{{/* An UPPER_SNAKE_CASE reason for an error occurred during a GET request against the k8s API */}}
-{{- define "global-k8sGetRequestErrorReason" -}}
-K8S_GET_REQUEST_ERROR
+{{/* An UPPER_SNAKE_CASE reason for an error occurred while trying to publish a task on the MQ */}}
+{{- define "global-taskPublicationErrorReason" -}}
+TASK_PUBLICATION_ERROR
+{{- end}}
+
+{{/* An UPPER_SNAKE_CASE reason for an error occurred while performing a DB select */}}
+{{- define "global-dbSelectErrorReason" -}}
+DB_SELECT_ERROR
 {{- end}}
 
 {{- define "global-globalDomainKey" -}}
 GLOBAL_DOMAIN
 {{- end}}
 
-{{- define "global-k8sGetRequestErrorReasonKey" -}}
-K8S_GET_REQUEST_ERROR_REASON
+{{- define "global-taskPublicationErrorReasonKey" -}}
+TASK_PUBLICATION_ERROR_REASON
+{{- end}}
+
+{{- define "global-dbSelectErrorReasonKey" -}}
+DB_SELECT_ERROR_REASON
 {{- end}}
 
 {{- define "global-natsServerHostKey" -}}

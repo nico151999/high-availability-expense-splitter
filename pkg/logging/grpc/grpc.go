@@ -7,11 +7,11 @@ import (
 	"google.golang.org/grpc/grpclog"
 )
 
-type GrpcLoggerV2 struct {
+type grpcLoggerV2 struct {
 	logging.Logger
 }
 
-var _ grpclog.LoggerV2 = (*GrpcLoggerV2)(nil)
+var _ grpclog.LoggerV2 = (*grpcLoggerV2)(nil)
 
 const (
 	grpcLvlInfo int = iota
@@ -32,64 +32,62 @@ var (
 )
 
 func NewGrpcLoggerV2(logger logging.Logger) grpclog.LoggerV2 {
-	return &GrpcLoggerV2{
-		Logger: logger,
-	}
+	return &grpcLoggerV2{logger}
 }
 
-func (l *GrpcLoggerV2) Info(args ...interface{}) {
+func (l *grpcLoggerV2) Info(args ...interface{}) {
 	msg, fields := argsToFields(args...)
 	l.Logger.Info(msg, fields...)
 }
 
-func (l *GrpcLoggerV2) Infoln(args ...interface{}) {
+func (l *grpcLoggerV2) Infoln(args ...interface{}) {
 	l.Info(sprintln(args))
 }
 
-func (l *GrpcLoggerV2) Infof(format string, args ...interface{}) {
+func (l *grpcLoggerV2) Infof(format string, args ...interface{}) {
 	l.Info(fmt.Sprintf(format, args...))
 }
 
-func (l *GrpcLoggerV2) Warning(args ...interface{}) {
+func (l *grpcLoggerV2) Warning(args ...interface{}) {
 	msg, fields := argsToFields(args...)
 	l.Logger.Warn(msg, fields...)
 }
 
-func (l *GrpcLoggerV2) Warningln(args ...interface{}) {
+func (l *grpcLoggerV2) Warningln(args ...interface{}) {
 	l.Warning(sprintln(args))
 }
 
-func (l *GrpcLoggerV2) Warningf(format string, args ...interface{}) {
+func (l *grpcLoggerV2) Warningf(format string, args ...interface{}) {
 	l.Warning(fmt.Sprintf(format, args...))
 }
 
-func (l *GrpcLoggerV2) Error(args ...interface{}) {
+func (l *grpcLoggerV2) Error(args ...interface{}) {
 	msg, fields := argsToFields(args...)
 	l.Logger.Error(msg, fields...)
 }
 
-func (l *GrpcLoggerV2) Errorln(args ...interface{}) {
+func (l *grpcLoggerV2) Errorln(args ...interface{}) {
 	l.Error(sprintln(args))
 }
 
-func (l *GrpcLoggerV2) Errorf(format string, args ...interface{}) {
+func (l *grpcLoggerV2) Errorf(format string, args ...interface{}) {
 	l.Error(fmt.Sprintf(format, args...))
 }
 
-func (l *GrpcLoggerV2) Fatal(args ...interface{}) {
+func (l *grpcLoggerV2) Fatal(args ...interface{}) {
 	msg, fields := argsToFields(args...)
 	l.Logger.Fatal(msg, fields...)
 }
 
-func (l *GrpcLoggerV2) Fatalln(args ...interface{}) {
+func (l *grpcLoggerV2) Fatalln(args ...interface{}) {
 	l.Fatal(sprintln(args))
 }
 
-func (l *GrpcLoggerV2) Fatalf(format string, args ...interface{}) {
+func (l *grpcLoggerV2) Fatalf(format string, args ...interface{}) {
 	l.Fatal(fmt.Sprintf(format, args...))
 }
 
-func (l *GrpcLoggerV2) V(lvl int) bool {
+func (l *grpcLoggerV2) V(lvl int) bool {
 	return l.Logger.Level().Enabled(grpcToZapLevel[lvl])
 }
 

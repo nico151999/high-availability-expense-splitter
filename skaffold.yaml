@@ -220,14 +220,14 @@ deploy:
               "linkerd\\.io/inject": enabled
             admissionWebhooks:
               enabled: false
-      - name: nats
+      - name: &natsName haes-nats
         repo: https://nats-io.github.io/k8s/helm/charts/
         remoteChart: nats
-        namespace: nats
+        namespace: &haExpenseSplitterNamespace ha-expense-splitter
         version: 0.19.14
         createNamespace: true
         setValueTemplates:
-          fullnameOverride: &natsName haes-nats
+          fullnameOverride: *natsName
           securityContext: &securityContext
             runAsUser: 1000
             runAsNonRoot: true
@@ -252,7 +252,7 @@ deploy:
             enabled: false
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
-        namespace: ha-expense-splitter
+        namespace: *haExpenseSplitterNamespace
         createNamespace: true
         setValueTemplates:
           haExpenseSplitter:
@@ -276,7 +276,8 @@ deploy:
                   host: *natsName
               traceCollector:
                 server:
-                  host: *traceCollectorName
+                  host: collector.linkerd-jaeger # .svc.cluster.local
+                  port: 4317
               ingress:
                 host: "{{ .HA_EXPENSE_SPLITTER_SERVICES_HOST }}"
               reflection:

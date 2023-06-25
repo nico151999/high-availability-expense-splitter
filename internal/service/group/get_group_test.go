@@ -13,7 +13,7 @@ import (
 )
 
 func TestGetGroup(t *testing.T) {
-	log := logging.GetLogger().Named("setupGroupTest")
+	log := logging.GetLogger().Named("testGetGroup")
 	ctx := logging.IntoContext(context.Background(), log)
 
 	db, mock, err := sqlmock.New()
@@ -33,7 +33,7 @@ func TestGetGroup(t *testing.T) {
 	t.Run("Get Group successfully", func(t *testing.T) {
 		groupName := "test-group"
 		mock.ExpectQuery("SELECT (.+) FROM \"groups\" (.+)").WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
-		resp, err := client.GetGroup(context.Background(), connect.NewRequest(&groupsvcv1.GetGroupRequest{
+		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
 			GroupId: "group-123456789a",
 		}))
 		if err != nil {
@@ -48,7 +48,7 @@ func TestGetGroup(t *testing.T) {
 	})
 
 	t.Run("Fail getting Group due to empty ID", func(t *testing.T) {
-		resp, err := client.GetGroup(context.Background(), connect.NewRequest(&groupsvcv1.GetGroupRequest{
+		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
 			GroupId: "",
 		}))
 		if err == nil {

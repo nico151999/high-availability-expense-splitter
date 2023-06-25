@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/config/cors"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
@@ -37,16 +37,18 @@ func main() {
 	environment.GetGlobalDomain(ctx)
 	environment.GetTraceCollectorHost(ctx)
 	environment.GetTraceCollectorPort(ctx)
+	environment.GetTaskPublicationErrorReason(ctx)
+	environment.GetDBSelectErrorReason(ctx)
 
 	svc, err := group.NewGroupServer(
 		ctx,
 		fmt.Sprintf("%s:%d",
 			environment.GetNatsServerHost(ctx),
 			environment.GetNatsServerPort(ctx)),
-		environment.GetGroupDbUser(ctx),
-		environment.GetGroupDbPassword(ctx),
-		fmt.Sprintf("%s:%d", environment.GetGroupDbHost(ctx), environment.GetGroupDbPort(ctx)),
-		environment.GetGroupDbName(ctx))
+		environment.GetDbUser(ctx),
+		environment.GetDbPassword(ctx),
+		fmt.Sprintf("%s:%d", environment.GetDbHost(ctx), environment.GetDbPort(ctx)),
+		environment.GetDbName(ctx))
 	if err != nil {
 		log.Panic(
 			"failed creating new group server",

@@ -80,7 +80,7 @@ spec:
         # TODO: add init container that waits for dependencies to become available
         - name: "{{ $.Chart.Name }}-{{ $serviceName }}"
           args:
-            - "{{ printf "-%sCorsCfg" $serviceName}}"
+            - "{{ printf "-%sSvcCorsCfg" $serviceName}}"
             - "{{ include "service-corsConfigFilePath" $serviceName }}"
           image: "{{ $serviceSpec.image.repository }}:{{ $serviceSpec.image.tag }}"
           imagePullPolicy: "{{default $.Values.haExpenseSplitter.imagePullPolicy $serviceSpec.imagePullPolicy}}"
@@ -100,11 +100,16 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-globalDomainKey" . }}
-            - name: {{ include "global-k8sGetRequestErrorReasonKey" . }}
+            - name: {{ include "global-taskPublicationErrorReasonKey" . }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
-                  key: {{ include "global-k8sGetRequestErrorReasonKey" . }}
+                  key: {{ include "global-taskPublicationErrorReasonKey" . }}
+            - name: {{ include "global-dbSelectErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbSelectErrorReasonKey" . }}
             - name: {{ include "global-natsServerHostKey" . }}
               valueFrom:
                 configMapKeyRef:
@@ -125,6 +130,33 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-traceCollectorPortKey" . }}
+            {{- if hasKey $serviceSpec "db" }}
+            - name: {{ include "service-dbHostKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $serviceName }}
+                  key: {{ include "service-dbHostKey" . }}
+            - name: {{ include "service-dbNameKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $serviceName }}
+                  key: {{ include "service-dbNameKey" . }}
+            - name: {{ include "service-dbPortKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $serviceName }}
+                  key: {{ include "service-dbPortKey" . }}
+            - name: {{ include "service-dbUserKey" $serviceName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "service-name-secret" $serviceName }}
+                  key: {{ include "service-dbUserKey" . }}
+            - name: {{ include "service-dbPasswordKey" $serviceName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "service-name-secret" $serviceName }}
+                  key: {{ include "service-dbPasswordKey" . }}
+            {{- end}}
             {{- range $_, $configurableServiceName := prepend $serviceSpec.dependencies $serviceName }}
             - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}
               valueFrom:

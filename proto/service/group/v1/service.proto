@@ -109,59 +109,6 @@ service GroupService {
       ];
     };
   }
-  // Gets all groups
-  rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse) {
-    option (google.api.http) = {get: "/v1/groups"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      responses: [
-        {
-          key: "200";
-          value: {
-            description: "Returns specs describing the requested groups";
-            schema: {
-              json_schema: {ref: ".service.group.v1.GetGroupsResponse"};
-            };
-          };
-        },
-        {
-          key: "400";
-          value: {
-            description: "Provides details telling the user about why the request was bad";
-            schema: {
-              json_schema: {ref: ".google.rpc.BadRequest"};
-            };
-          };
-        },
-        {
-          key: "401";
-          value: {
-            description: "Provides details telling the user he is unauthenticated";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        },
-        {
-          key: "403";
-          value: {
-            description: "Provides details telling the user he is unauthorized to perform the requested operation";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        },
-        {
-          key: "404";
-          value: {
-            description: "Tells that the resource could not be found";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        }
-      ];
-    };
-  }
   // Gets all group IDs
   rpc GetGroupIds(GetGroupIdsRequest) returns (GetGroupIdsResponse) {
     option (google.api.http) = {get: "/v1/groups:id"};
@@ -249,15 +196,6 @@ message GetGroupResponse {
   common.group.v1.GroupProperties group = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).message.required = true
-  ];
-}
-
-message GetGroupsRequest {}
-
-message GetGroupsResponse {
-  repeated common.group.v1.GroupProperties groups = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (validate.rules).repeated.items.message.required = true
   ];
 }
 

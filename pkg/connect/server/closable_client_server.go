@@ -8,6 +8,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var _ closable.Closer = (ClosableClientsServer)(nil)
+
 type ClosableClientsServer interface {
 	// closes the server
 	Close() error

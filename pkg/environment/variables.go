@@ -7,24 +7,24 @@ func GetGroupServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "GROUP_SERVER_PORT")
 }
 
-func GetGroupDbUser(ctx context.Context) string {
-	return MustLookupString(ctx, "GROUP_DB_USER")
+func GetDbUser(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_USER")
 }
 
-func GetGroupDbPassword(ctx context.Context) string {
-	return MustLookupString(ctx, "GROUP_DB_PASSWORD")
+func GetDbPassword(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_PASSWORD")
 }
 
-func GetGroupDbHost(ctx context.Context) string {
-	return MustLookupString(ctx, "GROUP_DB_HOST")
+func GetDbHost(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_HOST")
 }
 
-func GetGroupDbPort(ctx context.Context) uint16 {
-	return MustLookupUint16(ctx, "GROUP_DB_PORT")
+func GetDbPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "DB_PORT")
 }
 
-func GetGroupDbName(ctx context.Context) string {
-	return MustLookupString(ctx, "GROUP_DB_NAME")
+func GetDbName(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_NAME")
 }
 
 // GetServerPort returns the port the service will run on
@@ -37,9 +37,14 @@ func GetGlobalDomain(ctx context.Context) string {
 	return MustLookupString(ctx, "GLOBAL_DOMAIN")
 }
 
-// GetDBSelectErrorReason returns the error reason that a GET request to the K8s API failed in UPPER_SNAKE_CASE
+// GetDBSelectErrorReason returns the error reason that a DB select to the database failed in UPPER_SNAKE_CASE
 func GetDBSelectErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_SELECT_ERROR_REASON")
+}
+
+// GetTaskPublicationErrorReason returns the error reason that a task could not be published in UPPER_SNAKE_CASE
+func GetTaskPublicationErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "TASK_PUBLICATION_ERROR_REASON")
 }
 
 // GetNatsServerHost returns the host address of the NATS server
@@ -57,7 +62,7 @@ func GetTraceCollectorHost(ctx context.Context) string {
 }
 
 func GetTraceCollectorPort(ctx context.Context) uint16 {
-	return MustLookupUint16(ctx, "TRACE_COLLETOR_PORT")
+	return MustLookupUint16(ctx, "TRACE_COLLECTOR_PORT")
 }
 
 // TODO: as env variable
