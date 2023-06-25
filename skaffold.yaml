@@ -200,7 +200,7 @@ deploy:
         createNamespace: true
         version: 6.49.0
         wait: true
-      - name: linkerd-viz
+      - name: linkerd-viz # TODO: deploy linkerd-viz before jaeger
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-viz
         namespace: linkerd-viz

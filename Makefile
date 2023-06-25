@@ -1,11 +1,16 @@
 GO_MODULE:=github.com/nico151999/high-availability-expense-splitter
 STEP_ARCH:=amd64
 HELM_ARCH:=amd64
+KUBECTL_ARCH:=amd64
+SKAFFOLD_ARCH:=amd64
+PNPM_ARCH:=x64
 KIND_CLUSTER_NAME=ha-expense-splitter-dev
 KIND_VERSION:=0.19.0
 HELM_VERSION:=3.12.0
 PNPM_VERSION:=8.6.2
 STEP_VERSION:=0.24.4
+KUBECTL_VERSION:=1.27.3
+SKAFFOLD_VERSION:=2.5.1
 BUF_VERSION:=1.17.0
 GOMPLATE_VERSION:=3.11.5
 GOLANGCI_VERSION:=1.49.0
@@ -25,6 +30,8 @@ GOMPLATE_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/gomplate
 BUF_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/buf
 KIND_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/kind
 GOLANGCI_LINT_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/golangci-lint
+KUBECTL_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/kubectl
+SKAFFOLD_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/skaffold
 CERT_OUT_DIR:=$(OUT_DIR)/cert
 DOC_OUT_DIR:=$(OUT_DIR)/doc
 LIB_OUT_DIR:=$(OUT_DIR)/lib
@@ -34,6 +41,9 @@ DOCUMENTATION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative
 REFLECTION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(REFLECTION_SVC_DIR))
 GROUP_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_SVC_DIR))
 GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_PROCESSOR_DIR))
+
+# prioritise executables in the repo's bin dir
+export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
 
 # source the .env file if it exists
 ifneq (,$(wildcard ./.env))
@@ -104,20 +114,30 @@ install-step:
 # TODO: also check if correct version is installed
 ifeq (,$(wildcard $(STEP_INSTALL_LOCATION)))
 	mkdir -p $(OUT_DIR)/tmp
-	wget https://github.com/smallstep/cli/releases/download/v$(STEP_VERSION)/step_linux_$(STEP_VERSION)_$(STEP_ARCH).tar.gz -O $(OUT_DIR)/tmp/step.tar.gz
+	curl https://github.com/smallstep/cli/releases/download/v$(STEP_VERSION)/step_linux_$(STEP_VERSION)_$(STEP_ARCH).tar.gz -o $(OUT_DIR)/tmp/step.tar.gz
 	tar -xzf $(OUT_DIR)/tmp/step.tar.gz -C $(OUT_DIR)/tmp
 	mkdir -p $(BIN_INSTALL_DIR)
 	mv $(OUT_DIR)/tmp/step_$(STEP_VERSION)/bin/step $(STEP_INSTALL_LOCATION)
 	rm -r $(OUT_DIR)/tmp
 endif
 
+# install kubectl
+.PHONY: install-kubectl
+install-kubectl:
+# TODO: also check if correct version is installed
+ifeq (,$(wildcard $(KUBECTL_INSTALL_LOCATION)))
+	mkdir -p $(BIN_INSTALL_DIR)
+	curl -L "https://dl.k8s.io/release/v$(KUBECTL_VERSION)/bin/linux/$(KUBECTL_ARCH)/kubectl" -o $(KUBECTL_INSTALL_LOCATION)
+	chmod +x $(KUBECTL_INSTALL_LOCATION)
+endif
+
 # install helm
 .PHONY: install-helm
-install-helm:
+install-helm: install-kubectl
 # TODO: also check if correct version is installed
 ifeq (,$(wildcard $(HELM_INSTALL_LOCATION)))
 	mkdir -p $(OUT_DIR)/tmp
-	wget https://get.helm.sh/helm-v$(HELM_VERSION)-linux-$(HELM_ARCH).tar.gz -O $(OUT_DIR)/tmp/helm.tar.gz
+	curl https://get.helm.sh/helm-v$(HELM_VERSION)-linux-$(HELM_ARCH).tar.gz -o $(OUT_DIR)/tmp/helm.tar.gz
 	tar -xzf $(OUT_DIR)/tmp/helm.tar.gz -C $(OUT_DIR)/tmp
 	mkdir -p $(BIN_INSTALL_DIR)
 	mv $(OUT_DIR)/tmp/linux-$(HELM_ARCH)/helm $(HELM_INSTALL_LOCATION)
@@ -129,8 +149,17 @@ install-pnpm:
 # TODO: also check if correct version is installed
 ifeq (,$(wildcard $(PNPM_INSTALL_LOCATION)))
 	mkdir -p $(BIN_INSTALL_DIR)
-	curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linuxstatic-x64" -o $(PNPM_INSTALL_LOCATION)
+	curl -fsSL "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linuxstatic-$(PNPM_ARCH)" -o $(PNPM_INSTALL_LOCATION)
 	chmod +x $(PNPM_INSTALL_LOCATION)
+endif
+
+.PHONY: install-skaffold
+install-skaffold: install-helm install-kubectl
+# TODO: also check if correct version is installed
+ifeq (,$(wildcard $(SKAFFOLD_INSTALL_LOCATION)))
+	mkdir -p $(BIN_INSTALL_DIR)
+	curl -L https://storage.googleapis.com/skaffold/releases/v$(SKAFFOLD_VERSION)/skaffold-linux-$(SKAFFOLD_ARCH) -o $(SKAFFOLD_INSTALL_LOCATION)
+	chmod +x $(SKAFFOLD_INSTALL_LOCATION)
 endif
 
 .PHONY: pnpm-install
@@ -151,7 +180,8 @@ format: install-buf generate-buf
 # generates config files required to run buf correctly
 .PHONY: generate-buf
 generate-buf: install-gomplate
-	echo '{"goModule": "$(GO_MODULE)", "relativeGoLibOutDir": "$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GO_LIB_OUT_DIR))"}' | $(GOMPLATE_INSTALL_LOCATION) -d 'data=stdin:?type=application/json' -f buf.gen.yaml.tpl -o buf.gen.yaml
+	echo '{"goModule": "$(GO_MODULE)", "relativeGoLibOutDir": "$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GO_LIB_OUT_DIR))"}' | \
+	$(GOMPLATE_INSTALL_LOCATION) -d 'data=stdin:?type=application/json' -f buf.gen.yaml.tpl -o buf.gen.yaml
 
 # generate files from proto definitions using buf
 .PHONY: generate-proto
@@ -249,23 +279,32 @@ build-group-processor: generate-proto
 
 # starts the dev mode of skaffold
 .PHONY: skaffold-dev
-skaffold-dev: generate-dockerfile-links
-	skaffold dev
+skaffold-dev: install-skaffold generate-dockerfile-links
+	$(SKAFFOLD_INSTALL_LOCATION) dev
 
 # builds and deploys the entire app
 .PHONY: skaffold-run
-skaffold-run: lint test generate-dockerfile-links
-	skaffold run
+skaffold-run: install-skaffold lint test generate-dockerfile-links
+	$(SKAFFOLD_INSTALL_LOCATION) run
 
 .PHONY: skaffold-delete
-skaffold-delete: generate-dockerfile-links
-	skaffold delete
+skaffold-delete: install-skaffold generate-dockerfile-links
+	$(SKAFFOLD_INSTALL_LOCATION) delete
 
 # creates a local cluster for dev purposes
 .PHONY: kind-create
-kind-create: install-kind
+kind-create: install-kind install-helm install-kubectl
 	$(KIND_INSTALL_LOCATION) create cluster --config ./kind-config.yaml --name $(KIND_CLUSTER_NAME)
-# TODO: install Metallb
+	$(KUBECTL_INSTALL_LOCATION) wait --for=condition=Ready nodes --all --timeout=120s
+	$(KUBECTL_INSTALL_LOCATION) create namespace metallb-system
+	$(KUBECTL_INSTALL_LOCATION) label namespaces metallb-system pod-security.kubernetes.io/enforce=privileged pod-security.kubernetes.io/audit=privileged pod-security.kubernetes.io/warn=privileged
+	$(HELM_INSTALL_LOCATION) repo add metallb https://metallb.github.io/metallb
+	$(HELM_INSTALL_LOCATION) install metallb metallb/metallb -n metallb-system
+	$(KUBECTL_INSTALL_LOCATION) wait --namespace metallb-system --for=condition=ready pod --selector=app.kubernetes.io/name=metallb --timeout=600s
+	IP_PREFIX=$$(docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' kind | cut -f1 -d"/" | cut -f1-2 -d"."); \
+	echo "{\"startIP\": \"$$IP_PREFIX.255.200\", \"endIP\": \"$$IP_PREFIX.255.255\"}" | \
+	$(GOMPLATE_INSTALL_LOCATION) -d 'data=stdin:?type=application/json' -f metallb-config.yaml.tpl | \
+	$(KUBECTL_INSTALL_LOCATION) apply -n metallb-system -f -
 
 .PHONY: kind-delete
 kind-delete: install-kind
