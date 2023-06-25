@@ -10,7 +10,7 @@ metadata:
     nginx.ingress.kubernetes.io/server-snippet: "grpc_read_timeout 86400s; grpc_send_timeout 86400s;"
     nginx.ingress.kubernetes.io/use-regex: "true"
     {{- range $_, $serviceSpec := $.Values.haExpenseSplitter.services.specs }}
-    {{- if $serviceSpec.linkerdMesh }}
+      {{- if default $.Values.haExpenseSplitter.linkerdMesh $serviceSpec.linkerdMesh }}
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- break}}
     {{- end }}

@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         {{- include "processor-selectorlabels-pod" $selectorParam | nindent 8 }}
-      {{- if $processorSpec.linkerdMesh }}
+      {{- if default $.Values.haExpenseSplitter.linkerdMesh $processorSpec.linkerdMesh }}
       annotations:
         linkerd.io/inject: enabled
       {{- end }}

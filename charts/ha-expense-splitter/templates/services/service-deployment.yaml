@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         {{- include "service-selectorlabels-pod" $selectorParam | nindent 8 }}
-      {{- if $serviceSpec.linkerdMesh }}
+      {{- if default $.Values.haExpenseSplitter.linkerdMesh $serviceSpec.linkerdMesh }}
       annotations:
         linkerd.io/inject: enabled
       {{- end }}

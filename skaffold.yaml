@@ -228,6 +228,9 @@ deploy:
         createNamespace: true
         setValueTemplates:
           fullnameOverride: *natsName
+          podAnnotations:
+            "linkerd\\.io/inject": enabled
+            "config\\.linkerd\\.io/opaque-ports": "6222\\,4222\\,8222\\,7777\\,7422\\,7522"
           securityContext: &securityContext
             runAsUser: 1000
             runAsNonRoot: true

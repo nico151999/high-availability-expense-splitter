@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: "{{ include "frontend-name-ingress" (include "expenseSplitterFrontend-shortName" .) }}"
   annotations:
-    {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.services.reflection.linkerdMesh) }}
+    {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.frontends.expenseSplitter.linkerdMesh) }}
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end}}
 spec:
