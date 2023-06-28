@@ -10,6 +10,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server/interceptor"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	logginggrpc "github.com/nico151999/high-availability-expense-splitter/pkg/logging/grpc"
 	"github.com/rotisserie/eris"
@@ -195,7 +196,7 @@ func NewServer[CONNECT_HANDLER any](
 	}
 
 	restMux := runtime.NewServeMux(
-		runtime.WithForwardResponseOption(httpResponseCodeModifier),
+		runtime.WithForwardResponseOption(interceptor.HttpResponseCodeModifier),
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.HTTPBodyMarshaler{
 			Marshaler: &runtime.JSONPb{
 				MarshalOptions: protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true},
@@ -211,8 +212,8 @@ func NewServer[CONNECT_HANDLER any](
 		svc,
 		connect.WithInterceptors(
 			otelconnect.NewInterceptor(otelconnect.WithTracerProvider(tp)),
-			connect.UnaryInterceptorFunc(unaryLogInterceptorFunc(ctx)),
-			connect.UnaryInterceptorFunc(unaryValidateInterceptorFunc()),
+			connect.UnaryInterceptorFunc(interceptor.UnaryLogInterceptorFunc(ctx)),
+			connect.UnaryInterceptorFunc(interceptor.UnaryValidateInterceptorFunc()),
 		),
 	))
 

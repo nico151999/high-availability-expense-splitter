@@ -1,4 +1,4 @@
-package server
+package interceptor
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 // httpResponseCodeModifier checks if the gRPC response contains an http status code header and sets the http status code accordingly
-func httpResponseCodeModifier(ctx context.Context, w http.ResponseWriter, p proto.Message) error {
+func HttpResponseCodeModifier(ctx context.Context, w http.ResponseWriter, p proto.Message) error {
 	md, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
 		return nil
