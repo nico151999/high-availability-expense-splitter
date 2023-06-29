@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -33,9 +34,6 @@ type multiValidatableMessage interface {
 	ValidateAll() error
 }
 
-var ErrInvalidRequestMessage = eris.New("the passed request message is invalid")
-var ErrInvalidResponseMessage = eris.New("the server produced an invalid response message")
-
 func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(
@@ -43,39 +41,13 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			log := logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")
-			errDetails, err := validateMessageWithErrorDetails(log, req)
-			if err != nil {
-				return nil, connect.NewError(
-					connect.CodeInternal,
-					eris.New("failed creating validating request"),
-				)
-				// TODO: error details
-			}
-			if errDetails != nil {
-				conErr := connect.NewError(
-					connect.CodeInvalidArgument,
-					ErrInvalidRequestMessage,
-				)
-				conErr.AddDetail(errDetails)
-				return nil, conErr
+			if err := validateMessageWithConnectError(log, req, connect.CodeInvalidArgument, "user request"); err != nil {
+				return nil, err
 			}
 			res, err := next(ctx, req)
 			if err == nil {
-				errDetails, err := validateMessageWithErrorDetails(log, res)
-				if err != nil {
-					return nil, connect.NewError(
-						connect.CodeInternal,
-						eris.New("failed creating proper response"),
-					)
-					// TODO: error details
-				}
-				if errDetails != nil {
-					conErr := connect.NewError(
-						connect.CodeInternal,
-						ErrInvalidResponseMessage,
-					)
-					conErr.AddDetail(errDetails)
-					return nil, conErr
+				if err := validateMessageWithConnectError(log, req, connect.CodeInternal, "server response"); err != nil {
+					return nil, err
 				}
 			}
 			return res, err
@@ -83,23 +55,27 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 	}
 }
 
-func validateMessageWithErrorDetails(log logging.Logger, msg interface{}) (*connect.ErrorDetail, error) {
+func validateMessageWithConnectError(log logging.Logger, msg interface{}, errorCode connect.Code, msgKind string) *connect.Error {
 	violations, err := validateMessage(log, msg)
 	if err != nil {
-		return nil, err
+		return connect.NewError(connect.CodeInternal, eris.Errorf("failed validating %s message", msgKind))
 	}
 	if len(violations) == 0 {
-		return nil, nil
+		return nil
 	}
 	detail, err := connect.NewErrorDetail(&errdetails.BadRequest{
 		FieldViolations: violations,
 	})
 	if err != nil {
-		msg := "failed to create field violation error details"
-		log.Error(msg, logging.Error(err))
-		return nil, eris.Wrap(err, msg)
+		log.Error("failed to create field violation error details", logging.Error(err))
+		return connect.NewError(connect.CodeInternal, eris.Errorf("failed providing error details about invalid %s message", msgKind))
 	}
-	return detail, nil
+	conErr := connect.NewError(
+		errorCode,
+		eris.Errorf("the %s message is invalid", msgKind),
+	)
+	conErr.AddDetail(detail)
+	return conErr
 }
 
 // validateMessage expects a struct to be parsed and recursively validates all fields that are vaildatable
@@ -107,9 +83,9 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 	switch v := msg.(type) {
 	case multiValidatableMessage:
 		if err := v.ValidateAll(); err != nil {
-			if err, ok := err.(multiValidationError); ok {
+			if multiErr, ok := err.(multiValidationError); ok {
 				fieldViolations := []*errdetails.BadRequest_FieldViolation{}
-				for _, err := range err.AllErrors() {
+				for _, err := range multiErr.AllErrors() {
 					if valErr, ok := err.(validationError); ok {
 						fieldViolations = append(fieldViolations, &errdetails.BadRequest_FieldViolation{
 							Field:       valErr.Field(),
@@ -146,14 +122,18 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 	}
 
 	fieldViolations := []*errdetails.BadRequest_FieldViolation{}
-	for i := 0; i < reflect.TypeOf(msg).Elem().NumField(); i++ {
+	msgType := reflect.TypeOf(msg)
+	for i := 0; i < msgType.Elem().NumField(); i++ {
 		field := reflect.ValueOf(msg).Elem().Field(i)
 		if field.Kind() == reflect.Pointer {
 			details, err := validateMessage(log, field.Interface())
 			if err != nil {
 				return nil, err
 			}
-			fieldViolations = append(fieldViolations, details...)
+			for _, detail := range details {
+				detail.Field = fmt.Sprintf("%s.%s", msgType.Field(i).Name, detail.Field)
+				fieldViolations = append(fieldViolations, detail)
+			}
 		}
 	}
 	return fieldViolations, nil
