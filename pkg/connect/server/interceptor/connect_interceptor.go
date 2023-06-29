@@ -41,12 +41,12 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			log := logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")
-			if err := validateMessageWithConnectError(log, req, connect.CodeInvalidArgument, "user request"); err != nil {
+			if err := validateMessageWithConnectError(log, req.Any(), connect.CodeInvalidArgument, "user request"); err != nil {
 				return nil, err
 			}
 			res, err := next(ctx, req)
 			if err == nil {
-				if err := validateMessageWithConnectError(log, req, connect.CodeInternal, "server response"); err != nil {
+				if err := validateMessageWithConnectError(log, res.Any(), connect.CodeInternal, "server response"); err != nil {
 					return nil, err
 				}
 			}
