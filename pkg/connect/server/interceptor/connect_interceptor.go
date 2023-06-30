@@ -9,6 +9,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/rotisserie/eris"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 )
 
@@ -144,7 +145,8 @@ func UnaryLogInterceptorFunc(ctx context.Context) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			log = log.NewNamed(
+			traceId := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
+			log = log.With(logging.Trace(traceId)).Named(
 				strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
 			)
 			log.Info("received request")
