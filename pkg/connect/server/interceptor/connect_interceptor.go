@@ -86,7 +86,7 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 		if err := v.ValidateAll(); err != nil {
 			if multiErr, ok := err.(multiValidationError); ok {
 				for _, err := range multiErr.AllErrors() {
-					fieldViolations, err = addFieldViolation(fieldViolations, err)
+					fieldViolations, err = addFieldViolation(log, fieldViolations, err)
 					if err != nil {
 						return nil, err
 					}
@@ -99,7 +99,7 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 		}
 	case validatableMessage:
 		if err := v.Validate(); err != nil {
-			fieldViolations, err = addFieldViolation(fieldViolations, err)
+			fieldViolations, err = addFieldViolation(log, fieldViolations, err)
 			if err != nil {
 				return nil, err
 			}
