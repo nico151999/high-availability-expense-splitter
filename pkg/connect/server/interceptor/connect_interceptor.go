@@ -147,8 +147,13 @@ func UnaryLogInterceptorFunc(ctx context.Context) connect.UnaryInterceptorFunc {
 			log = log.NewNamed(
 				strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
 			)
+			log.Info("received request")
 			ctx = logging.IntoContext(ctx, log)
-			return next(ctx, req)
+			res, err := next(ctx, req)
+			if err != nil {
+				log.Info("request is answered with an error")
+			}
+			return res, err
 		})
 	}
 }
