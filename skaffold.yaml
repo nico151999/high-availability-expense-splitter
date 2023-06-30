@@ -196,7 +196,7 @@ deploy:
       - name: grafana
         repo: "https://grafana.github.io/helm-charts"
         remoteChart: grafana
-        namespace: "linkerd-grafana"
+        namespace: "grafana"
         createNamespace: true
         version: 6.49.0
         wait: true

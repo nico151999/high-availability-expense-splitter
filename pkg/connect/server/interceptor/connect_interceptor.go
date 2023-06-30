@@ -42,41 +42,45 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			log := logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")
-			if err := validateMessageWithConnectError(log, req.Any(), connect.CodeInvalidArgument, "user request"); err != nil {
-				return nil, err
+			violations, err := validateMessage(log, req.Any())
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, eris.New("failed validating request message"))
+			}
+			if len(violations) != 0 {
+				detail, err := connect.NewErrorDetail(&errdetails.BadRequest{
+					FieldViolations: violations,
+				})
+				if err != nil {
+					log.Error("failed to create field violation error details", logging.Error(err))
+					return nil, connect.NewError(connect.CodeInternal, eris.New("failed providing error details about invalid request message"))
+				}
+				conErr := connect.NewError(
+					connect.CodeInvalidArgument,
+					eris.New("the request message is invalid"),
+				)
+				conErr.AddDetail(detail)
+				return nil, conErr
 			}
 			res, err := next(ctx, req)
 			if err == nil {
-				if err := validateMessageWithConnectError(log, res.Any(), connect.CodeInternal, "server response"); err != nil {
-					return nil, err
+				violations, err := validateMessage(log, res.Any())
+				if err != nil {
+					return nil, connect.NewError(connect.CodeInternal, eris.New("failed checking server response message"))
+				}
+				if len(violations) != 0 {
+					for _, violation := range violations {
+						log.Error(
+							"invalid field in response message",
+							logging.String("field", violation.GetField()),
+							logging.String("description", violation.GetDescription()),
+						)
+					}
+					return nil, connect.NewError(connect.CodeInternal, eris.New("failed creating server response message"))
 				}
 			}
 			return res, err
 		})
 	}
-}
-
-func validateMessageWithConnectError(log logging.Logger, msg interface{}, errorCode connect.Code, msgKind string) *connect.Error {
-	violations, err := validateMessage(log, msg)
-	if err != nil {
-		return connect.NewError(connect.CodeInternal, eris.Errorf("failed validating %s message", msgKind))
-	}
-	if len(violations) == 0 {
-		return nil
-	}
-	detail, err := connect.NewErrorDetail(&errdetails.BadRequest{
-		FieldViolations: violations,
-	})
-	if err != nil {
-		log.Error("failed to create field violation error details", logging.Error(err))
-		return connect.NewError(connect.CodeInternal, eris.Errorf("failed providing error details about invalid %s message", msgKind))
-	}
-	conErr := connect.NewError(
-		errorCode,
-		eris.Errorf("the %s message is invalid", msgKind),
-	)
-	conErr.AddDetail(detail)
-	return conErr
 }
 
 // validateMessage expects a struct to be passed and recursively validates all fields that are vaildatable
@@ -116,7 +120,7 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 				return nil, err
 			}
 			for _, violation := range violations {
-				violation.Field = fmt.Sprintf("%s.%s", msgType.Field(i).Name, violation.Field)
+				violation.Field = fmt.Sprintf("%s.%s", msgType.Field(i).Name, violation.GetField())
 				fieldViolations = append(fieldViolations, violation)
 			}
 		}
