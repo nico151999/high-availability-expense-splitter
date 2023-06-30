@@ -80,11 +80,11 @@ func validateMessageWithConnectError(log logging.Logger, msg interface{}, errorC
 
 // validateMessage expects a struct to be parsed and recursively validates all fields that are vaildatable
 func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequest_FieldViolation, error) {
+	fieldViolations := []*errdetails.BadRequest_FieldViolation{}
 	switch v := msg.(type) {
 	case multiValidatableMessage:
 		if err := v.ValidateAll(); err != nil {
 			if multiErr, ok := err.(multiValidationError); ok {
-				fieldViolations := []*errdetails.BadRequest_FieldViolation{}
 				for _, err := range multiErr.AllErrors() {
 					if valErr, ok := err.(validationError); ok {
 						fieldViolations = append(fieldViolations, &errdetails.BadRequest_FieldViolation{
@@ -107,12 +107,10 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 	case validatableMessage:
 		if err := v.Validate(); err != nil {
 			if valErr, ok := err.(validationError); ok {
-				return []*errdetails.BadRequest_FieldViolation{
-					{
-						Field:       valErr.Field(),
-						Description: valErr.Reason(),
-					},
-				}, nil
+				fieldViolations = append(fieldViolations, &errdetails.BadRequest_FieldViolation{
+					Field:       valErr.Field(),
+					Description: valErr.Reason(),
+				})
 			} else {
 				msg := "unexpectedly got non-validationError type"
 				log.Error(msg, logging.Error(err))
@@ -121,7 +119,6 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 		}
 	}
 
-	fieldViolations := []*errdetails.BadRequest_FieldViolation{}
 	msgType := reflect.TypeOf(msg)
 	for i := 0; i < msgType.Elem().NumField(); i++ {
 		field := reflect.ValueOf(msg).Elem().Field(i)
