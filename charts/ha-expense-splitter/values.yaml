@@ -101,7 +101,7 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
-            - pathRegex: /service\.group\.v1\.GroupService/GetGroupIds$
+            - pathRegex: /service\.group\.v1\.GroupService/ListGroupIds$
               methods:
                 - POST
                 - OPTIONS

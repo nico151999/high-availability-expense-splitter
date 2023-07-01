@@ -110,7 +110,7 @@ service GroupService {
     };
   }
   // Gets all group IDs
-  rpc GetGroupIds(GetGroupIdsRequest) returns (GetGroupIdsResponse) {
+  rpc ListGroupIds(ListGroupIdsRequest) returns (ListGroupIdsResponse) {
     option (google.api.http) = {get: "/v1/groups:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
@@ -119,7 +119,7 @@ service GroupService {
           value: {
             description: "Returns the requested group IDs";
             schema: {
-              json_schema: {ref: ".service.group.v1.GetGroupIdsResponse"};
+              json_schema: {ref: ".service.group.v1.ListGroupIdsResponse"};
             };
           };
         },
@@ -199,9 +199,9 @@ message GetGroupResponse {
   ];
 }
 
-message GetGroupIdsRequest {}
+message ListGroupIdsRequest {}
 
-message GetGroupIdsResponse {
+message ListGroupIdsResponse {
   repeated string group_ids = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{10}$"}

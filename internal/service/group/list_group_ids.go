@@ -17,11 +17,11 @@ import (
 
 var errSelectGroupIds = eris.New("failed selecting group IDs")
 
-func (s *groupServer) GetGroupIds(ctx context.Context, req *connect.Request[groupsvcv1.GetGroupIdsRequest]) (*connect.Response[groupsvcv1.GetGroupIdsResponse], error) {
+func (s *groupServer) ListGroupIds(ctx context.Context, req *connect.Request[groupsvcv1.ListGroupIdsRequest]) (*connect.Response[groupsvcv1.ListGroupIdsResponse], error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	groupIds, err := getGroupIds(ctx, s.dbClient)
+	groupIds, err := listGroupIds(ctx, s.dbClient)
 	if err != nil {
 		var conError *connect.Error
 		if eris.Is(err, errSelectGroupIds) {
@@ -36,12 +36,12 @@ func (s *groupServer) GetGroupIds(ctx context.Context, req *connect.Request[grou
 		return nil, conError
 	}
 
-	return connect.NewResponse(&groupsvcv1.GetGroupIdsResponse{
+	return connect.NewResponse(&groupsvcv1.ListGroupIdsResponse{
 		GroupIds: groupIds,
 	}), nil
 }
 
-func getGroupIds(ctx context.Context, dbClient bun.IDB) ([]string, error) {
+func listGroupIds(ctx context.Context, dbClient bun.IDB) ([]string, error) {
 	log := otel.NewOtelLogger(ctx, logging.FromContext(ctx))
 	var groupIds []string
 	if err := dbClient.NewSelect().Model((*groupv1.GroupProperties)(nil)).Column("groupId").Scan(ctx, &groupIds); err != nil {

@@ -15,19 +15,20 @@ ARG BUILD_TARGET
 ARG MAKE_TARGET_BUILD
 ARG PROCESSOR_OUT_DIR_PARAM
 
-RUN apk add --no-cache git make helm curl nodejs coreutils
+RUN apk add --no-cache git make curl coreutils
 
 WORKDIR ${BUILD_PATH}
 
 COPY Makefile ${BUILD_PATH}/
 # install tools required to compile; this is not necessary to be done here already but it can improve build times due to caching
-RUN make install-buf install-pnpm install-gomplate
+RUN make install-buf install-gomplate
 
 COPY go.mod go.sum ${BUILD_PATH}/
 RUN go mod download
 
 COPY buf.gen.yaml.tpl buf.work.yaml ${BUILD_PATH}/
 COPY proto ${BUILD_PATH}/proto
+RUN make generate-proto SKIP_TS_PROTO_INITIALIZATION=true
 
 COPY cmd ${BUILD_PATH}/cmd
 COPY internal ${BUILD_PATH}/internal
