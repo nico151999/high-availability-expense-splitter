@@ -34,7 +34,7 @@ COPY cmd ${BUILD_PATH}/cmd
 COPY internal ${BUILD_PATH}/internal
 COPY pkg ${BUILD_PATH}/pkg
 RUN --mount=type=cache,target=~/.cache/go-build \
-    make ${MAKE_TARGET_BUILD} ${SVC_OUT_DIR_PARAM}=${BUILD_TARGET}
+    make ${MAKE_TARGET_BUILD} ${SVC_OUT_DIR_PARAM}=${BUILD_TARGET} SKIP_TS_PROTO_INITIALIZATION=true
 
 
 # Use distroless as minimal base image to package the manager binary
