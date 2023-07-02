@@ -192,7 +192,7 @@ deploy:
         createNamespace: true
         version: 30.8.3
         wait: true
-      # TODO: setup persistence for grafana
+      # TODO: setup persistence for grafana and install https://prometheus-community.github.io/helm-charts with grafana.enabled=true instead and install before linkerd and create dedicated env variable telling if Prometheus will be installed
       - name: grafana
         repo: "https://grafana.github.io/helm-charts"
         remoteChart: grafana
@@ -200,6 +200,128 @@ deploy:
         createNamespace: true
         version: 6.49.0
         wait: true
+        setValues:
+          podAnnotations:
+            linkerd.io/inject: enabled
+          grafana.ini:
+            server:
+              root_url: '%(protocol)s://%(domain)s:/grafana/'
+            auth:
+              disable_login_form: true
+            auth.anonymous:
+              enabled: true
+              org_role: Editor
+            auth.basic:
+              enabled: false
+            analytics:
+              check_for_updates: false
+            panels:
+              disable_sanitize_html: true
+            log:
+              mode: console
+            log.console:
+              format: text
+              level: info
+          datasources:
+            datasources.yaml:
+              apiVersion: 1
+              datasources:
+              - name: prometheus
+                type: prometheus
+                access: proxy
+                orgId: 1
+                url: http://prometheus.linkerd-viz.svc.cluster.local:9090 # TODO: change to new prometheus stack once available
+                isDefault: true
+                jsonData:
+                  timeInterval: "5s"
+                editable: true
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+              - name: 'default'
+                orgId: 1
+                folder: ''
+                type: file
+                disableDeletion: false
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/default
+          dashboards:
+            default:
+              # all these charts are hosted at https://grafana.com/grafana/dashboards/{id}
+              top-line:
+                gnetId: 15474
+                revision: 4
+                datasource: prometheus
+              health:
+                gnetId: 15486
+                revision: 3
+                datasource: prometheus
+              kubernetes:
+                gnetId: 15479
+                revision: 2
+                datasource: prometheus
+              namespace:
+                gnetId: 15478
+                revision: 3
+                datasource: prometheus
+              deployment:
+                gnetId: 15475
+                revision: 6
+                datasource: prometheus
+              pod:
+                gnetId: 15477
+                revision: 3
+                datasource: prometheus
+              service:
+                gnetId: 15480
+                revision: 3
+                datasource: prometheus
+              route:
+                gnetId: 15481
+                revision: 3
+                datasource: prometheus
+              authority:
+                gnetId: 15482
+                revision: 3
+                datasource: prometheus
+              cronjob:
+                gnetId: 15483
+                revision: 3
+                datasource: prometheus
+              job:
+                gnetId: 15487
+                revision: 3
+                datasource: prometheus
+              daemonset:
+                gnetId: 15484
+                revision: 3
+                datasource: prometheus
+              replicaset:
+                gnetId: 15491
+                revision: 3
+                datasource: prometheus
+              statefulset:
+                gnetId: 15493
+                revision: 3
+                datasource: prometheus
+              replicationcontroller:
+                gnetId: 15492
+                revision: 4
+                datasource: prometheus
+              prometheus:
+                gnetId: 15489
+                revision: 2
+                datasource: prometheus
+              prometheus-benchmark:
+                gnetId: 15490
+                revision: 2
+                datasource: prometheus
+              multicluster:
+                gnetId: 15488
+                revision: 3
+                datasource: prometheus
       - name: linkerd-viz # TODO: deploy linkerd-viz before jaeger
         repo: "https://helm.linkerd.io/stable"
         remoteChart: linkerd-viz
@@ -207,6 +329,12 @@ deploy:
         createNamespace: true
         version: 30.8.3
         wait: true
+        setValues:
+          # prometheus:
+          #   enabled: false
+          # prometheusUrl: # TODO: use the prometheus stack that will be installed instead of the current grafana-only stack
+          grafana:
+            url: grafana.grafana.svc.cluster.local:80 # TODO: change to new prometheus stack once available
       - name: ingress-nginx
         repo: "https://kubernetes.github.io/ingress-nginx"
         remoteChart: "ingress-nginx"
@@ -253,6 +381,27 @@ deploy:
             enabled: true
           natsbox:
             enabled: false
+      - name: stackgres-operator
+        repo: "https://stackgres.io/downloads/stackgres-k8s/stackgres/helm/"
+        remoteChart: stackgres-operator
+        namespace: "stackgres-operator"
+        createNamespace: true
+        version: 1.5.0-rc2
+        wait: true
+        setValues:
+          grafana: # TODO: update according to new prometheus stack
+            autoEmbed: true
+            webHost: grafana.grafana.svc.cluster.local
+            secretNamespace: grafana
+            secretName: grafana
+            secretUserKey: admin-user
+            secretPasswordKey: admin-password
+      # TODO: setup Minio
+      - name: stackgres-cluster
+        chartPath: charts/stackgres-cluster
+        namespace: stackgres-cluster
+        createNamespace: true
+        wait: true
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
         namespace: *haExpenseSplitterNamespace
@@ -339,13 +488,13 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -356,7 +505,7 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: SKIP_DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
@@ -370,15 +519,23 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
     patches:
       - op: replace
-        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter/services/nats/server/host
+        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter/services/nats/server/host
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
       - op: add
-        path: /deploy/helm/releases/10/setValueTemplates/haExpenseSplitter/services/nats/server/port
+        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter/services/nats/server/port
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
     patches:
+      - op: remove
+        path: /deploy/helm/releases/12
+  - name: SKIP_STACKGRES_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_STACKGRES_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/11
       - op: remove
         path: /deploy/helm/releases/10
   - name: SKIP_NATS_INSTALLATION

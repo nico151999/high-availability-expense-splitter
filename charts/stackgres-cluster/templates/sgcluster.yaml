@@ -1,0 +1,105 @@
+{{ if and (eq .Values.kind "SGCluster") .Values.cluster.create }}
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: {{ .Release.Name }}
+  {{- if .Values.cluster.version }}
+  annotations:
+    stackgres.io/operatorVersion: "{{ .Values.cluster.version }}"
+  {{- end }}
+spec:
+  instances: {{ .Values.cluster.instances }}
+  postgres:
+    {{- toYaml .Values.cluster.postgres | nindent 4 }}
+  {{- with .Values.cluster.replication }}
+  replication:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.cluster.replicateFrom }}
+  replicateFrom:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  configurations: 
+    sgPostgresConfig: {{ quote .Values.cluster.configurations.sgPostgresConfig }}
+    sgPoolingConfig: {{ quote .Values.cluster.configurations.sgPoolingConfig }}
+    {{- with .Values.cluster.configurations.backups }}
+    {{- if .sgObjectStorage }}
+    backups:
+    - {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
+  sgInstanceProfile: {{ quote .Values.cluster.sgInstanceProfile }}
+  {{- with .Values.cluster.initialData }}
+  initialData:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.cluster.managedSql }}
+  managedSql:
+  {{- with .continueOnSGScriptError }}
+    continueOnSGScriptError: {{ . }}
+  {{- end }}
+  {{- if .scripts }}
+    scripts:
+    - sgScript: {{ $.Release.Name }}-scripts
+  {{- end }}
+  {{- end }}
+  {{- with .Values.cluster.postgresServices }}
+  postgresServices:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.cluster.metadata }}
+  metadata:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  pods:
+    persistentVolume:
+      size: {{ quote .Values.cluster.pods.persistentVolume.size }}
+      {{- with .Values.cluster.pods.persistentVolume.storageClass }}
+      {{- if eq "-" . }}
+      storageClass: ""
+      {{- else }}
+      storageClass: {{ . }}
+      {{- end }}
+      {{- end }}
+    {{- with .Values.cluster.pods.disableConnectionPooling }}
+    disableConnectionPooling: {{ . }}
+    {{- end }}
+    {{- with .Values.cluster.pods.disablePostgresUtil }}
+    disablePostgresUtil: {{ . }}
+    {{- end }}
+    {{- with .Values.cluster.pods.disableMetricsExporter }}
+    disableMetricsExporter: {{ . }}
+    {{- end }}
+    {{- with .Values.cluster.pods.scheduling }}
+    scheduling:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.cluster.pods.managementPolicy }}
+    managementPolicy: {{ . }}
+    {{- end }}
+    {{- with .Values.cluster.pods.customVolumes }}
+    customVolumes:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.cluster.pods.customContainers }}
+    customContainers:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.cluster.pods.customInitContainers }}
+    customInitContainers:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+  {{- if .Values.distributedLogs.enabled }}
+  {{- with .Values.cluster.distributedLogs }}
+  distributedLogs:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- with .Values.cluster.prometheusAutobind }}
+  prometheusAutobind: {{ . }}
+  {{- end }}
+  {{- with .Values.nonProductionOptions }}
+  nonProductionOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
