@@ -28,7 +28,7 @@ func NewGroupProcessor(natsUrl string) (*groupProcessor, error) {
 func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx context.Context) error, error) {
 	var gcrSub *nats.Subscription
 	{
-		eventSubject := environment.GroupCreationRequested
+		eventSubject := environment.GetGroupCreationRequestedSubject()
 		var err error
 		gcrSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupCreationRequested)
 		if err != nil {

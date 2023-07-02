@@ -66,7 +66,7 @@ func createGroup(ctx context.Context, nc *nats.Conn, req *groupsvcv1.CreateGroup
 		return "", errMarshalGroupCreationRequested
 	}
 	// Simple Publisher
-	if err := nc.Publish(environment.GroupCreationRequested, marshalled); err != nil {
+	if err := nc.Publish(environment.GetGroupCreationRequestedSubject(), marshalled); err != nil {
 		log.Error("failed publishing group creation requested event", logging.Error(err))
 		return "", errPublishGroupCreationRequested
 	}

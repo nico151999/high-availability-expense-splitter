@@ -1,6 +1,9 @@
 package environment
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // GetServerPort returns the port the service will run on
 func GetGroupServerPort(ctx context.Context) uint16 {
@@ -66,8 +69,16 @@ func GetTraceCollectorPort(ctx context.Context) uint16 {
 }
 
 // TODO: as env variable
-// GroupCreationRequested is the name of the subject group-creation-requested events are published on
-var GroupCreationRequested string = "group.GroupCreationRequested"
+// GetGroupCreationRequestedSubject returns the name of the subject events are published on when a group creation was requested
+func GetGroupCreationRequestedSubject() string {
+	return "group.groupCreationRequested"
+}
+
+// TODO: as env variable with %s parameter
+// GetGroupCreatedSubject returns the name of the subject events are published on when a group was created
+func GetGroupCreatedSubject(groupId string) string {
+	return fmt.Sprintf("group.%s.groupCreated", groupId)
+}
 
 // TODO: as env variable
 // HttpStatusCodeKey is the header key used internally to modify the http status code as suggested here: https://grpc-ecosystem.github.io/grpc-gateway/docs/mapping/customizing_your_gateway/
