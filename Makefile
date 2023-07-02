@@ -26,6 +26,7 @@ GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
 GROUP_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/group
 OUT_DIR:=$(REPO_ROOT_PATH)/gen
 BIN_INSTALL_DIR:=$(OUT_DIR)/bin
+HELM_PLUGIN_INSTALL_DIR:=$(BIN_INSTALL_DIR)/plugins/helm
 STEP_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/step
 HELM_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/helm
 PNPM_INSTALL_LOCATION:=$(BIN_INSTALL_DIR)/pnpm
@@ -47,6 +48,9 @@ GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-t
 
 # prioritise executables in the repo's bin dir
 export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
+
+# define where helm will put its plugins
+export HELM_PLUGINS=$(HELM_PLUGIN_INSTALL_DIR)
 
 # source the .env file if it exists
 ifneq (,$(wildcard ./.env))
@@ -90,14 +94,13 @@ ifneq ($(BIN_INSTALL_DIR)/gomplate,$(GOMPLATE_INSTALL_LOCATION))
 endif
 endif
 
-# install the kubeconform cmdline tool used to check validity of helm charts
+# install the kubeconform helm plugin used to check validity of helm charts
 .PHONY: install-kubeconform
 install-kubeconform: install-helm
-ifeq (,$(wildcard $(HELM_INSTALL_LOCATION)))
-	echo 'Cannot install Kubeconform without Helm installed'
-else ifeq ($(findstring kubeconform,$(shell $(HELM_INSTALL_LOCATION) plugin list)),)
-	$(HELM_INSTALL_LOCATION) plugin install https://github.com/jtyr/kubeconform-helm
-endif
+	mkdir -p $(HELM_PLUGIN_INSTALL_DIR)
+	if ! $(HELM_INSTALL_LOCATION) plugin list | grep -q 'kubeconform'; then \
+		$(HELM_INSTALL_LOCATION) plugin install 'https://github.com/jtyr/kubeconform-helm'; \
+	fi
 
 # install golang-ci llinter
 .PHONY: install-golangci-lint
