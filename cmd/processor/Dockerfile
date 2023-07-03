@@ -28,13 +28,13 @@ RUN go mod download
 
 COPY buf.gen.yaml.tpl buf.work.yaml ${BUILD_PATH}/
 COPY proto ${BUILD_PATH}/proto
-RUN make generate-proto SKIP_TS_PROTO_INITIALIZATION=true
+RUN make generate-proto
 
 COPY cmd ${BUILD_PATH}/cmd
 COPY internal ${BUILD_PATH}/internal
 COPY pkg ${BUILD_PATH}/pkg
 RUN --mount=type=cache,target=~/.cache/go-build \
-    make ${MAKE_TARGET_BUILD} ${PROCESSOR_OUT_DIR_PARAM}=${BUILD_TARGET} SKIP_TS_PROTO_INITIALIZATION=true
+    make ${MAKE_TARGET_BUILD} ${PROCESSOR_OUT_DIR_PARAM}=${BUILD_TARGET}
 
 
 # Use distroless as minimal base image to package the manager binary
