@@ -5,7 +5,7 @@ FROM node:lts-alpine AS builder
 ARG USER_ID
 ARG GROUP_ID
 
-RUN apk --no-cache add curl git make musl-dev go helm coreutils &&\
+RUN apk --no-cache add curl git make musl-dev go coreutils &&\
     curl -fsSL "https://github.com/pnpm/pnpm/releases/latest/download/pnpm-linuxstatic-x64" -o /bin/pnpm &&\
     chmod +x /bin/pnpm &&\
     (addgroup -S ${GROUP_ID} || echo "Group ${GROUP_ID} already exists.") &&\

@@ -82,26 +82,6 @@ SERVER_HOSTNAME
 SERVER_PORT
 {{- end}}
 
-{{- define "service-dbUserKey" -}}
-DB_USER
-{{- end}}
-
-{{- define "service-dbPasswordKey" -}}
-DB_PASSWORD
-{{- end}}
-
-{{- define "service-dbHostKey" -}}
-DB_HOST
-{{- end}}
-
-{{- define "service-dbNameKey" -}}
-DB_NAME
-{{- end}}
-
-{{- define "service-dbPortKey" -}}
-DB_PORT
-{{- end}}
-
 {{/* Accepts the short name of the service as parameter */}}
 {{- define "service-corsConfigFileName" -}}
 {{ . }}CorsConfig.yaml
@@ -180,6 +160,16 @@ app.kubernetes.io/instance: {{ .releaseName }}
 {{/* Accepts the short name of the processor as parameter */}}
 {{- define "processor-name-serviceaccount" -}}
 {{ include "processor-name" . }}-svcacc
+{{- end}}
+
+{{/* Accepts the short name of the processor as parameter */}}
+{{- define "processor-name-configMap" -}}
+{{ include "processor-name" . }}-cfg
+{{- end}}
+
+{{/* Accepts the short name of the processor as parameter */}}
+{{- define "processor-name-secret" -}}
+{{ include "processor-name" . }}-sec
 {{- end}}
 
 
@@ -342,4 +332,24 @@ securityContext:
 {{- if not (empty .Values.global.busybox.image.tag) -}}
 :{{ .Values.global.busybox.image.tag }}
 {{- end }}
+{{- end}}
+
+{{- define "dbNameKey" -}}
+DB_NAME
+{{- end}}
+
+{{- define "dbUserKey" -}}
+DB_USER
+{{- end}}
+
+{{- define "dbPasswordKey" -}}
+DB_PASSWORD
+{{- end}}
+
+{{- define "dbHostKey" -}}
+DB_HOST
+{{- end}}
+
+{{- define "dbPortKey" -}}
+DB_PORT
 {{- end}}

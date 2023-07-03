@@ -113,6 +113,33 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-traceCollectorPortKey" . }}
+            {{- if hasKey $processorSpec "db" }}
+            - name: {{ include "dbNameKey" $processorName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "processor-name-configMap" $processorName }}
+                  key: {{ include "dbNameKey" . }}
+            - name: {{ include "dbUserKey" $processorName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "processor-name-secret" $processorName }}
+                  key: {{ include "dbUserKey" . }}
+            - name: {{ include "dbPasswordKey" $processorName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "processor-name-secret" $processorName }}
+                  key: {{ include "dbPasswordKey" . }}
+            - name: {{ include "dbHostKey" $processorName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "processor-name-configMap" $processorName }}
+                  key: {{ include "dbHostKey" . }}
+            - name: {{ include "dbPortKey" $processorName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "processor-name-configMap" $processorName }}
+                  key: {{ include "dbPortKey" . }}
+            {{- end}}
             {{- range $_, $configurableServiceName := $processorSpec.dependencies }}
             # {{ $configurableServiceName }} service the processor depends on
             - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}

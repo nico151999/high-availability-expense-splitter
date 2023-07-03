@@ -202,7 +202,7 @@ deploy:
         wait: true
         setValues:
           podAnnotations:
-            linkerd.io/inject: enabled
+            "linkerd\\.io/inject": enabled
           grafana.ini:
             server:
               root_url: '%(protocol)s://%(domain)s:/grafana/'
@@ -386,9 +386,12 @@ deploy:
         remoteChart: stackgres-operator
         namespace: "stackgres-operator"
         createNamespace: true
-        version: 1.5.0-rc2
-        wait: true
+        version: "1.5.0-rc2"
+        wait: false # waiting causes the cert install job not to be executed; therefore we must not pass the wait flag
         setValues:
+          cert:
+            certManager:
+              autoConfigure: true
           grafana: # TODO: update according to new prometheus stack
             autoEmbed: true
             webHost: grafana.grafana.svc.cluster.local
@@ -396,12 +399,13 @@ deploy:
             secretName: grafana
             secretUserKey: admin-user
             secretPasswordKey: admin-password
-      # TODO: setup Minio
+      # TODO: setup Minio. Deploy both database for ha expense splitter and ory stack depending on profiles with env variables. This can most easily be achieved by deploying the same helm chart twice with different configs.
       - name: stackgres-cluster
         chartPath: charts/stackgres-cluster
         namespace: stackgres-cluster
         createNamespace: true
         wait: true
+      # TODO: introduce schema hero
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
         namespace: *haExpenseSplitterNamespace
@@ -428,7 +432,7 @@ deploy:
                   host: *natsName
               traceCollector:
                 server:
-                  host: collector.linkerd-jaeger # .svc.cluster.local
+                  host: collector.linkerd-jaeger.svc.cluster.local
                   port: 4317
               ingress:
                 host: "{{ .HA_EXPENSE_SPLITTER_SERVICES_HOST }}"
@@ -440,6 +444,13 @@ deploy:
                   tag: *reflectionSvcImage
               specs:
                 group:
+                  db:
+                    # move db name, host and port to global config
+                    name: group_db
+                    user: "{{ .HA_EXPENSE_GROUP_SVC_DB_USER }}" # TODO: instead create a hook that creates a secret and only reference it here
+                    password: "{{ .HA_EXPENSE_GROUP_SVC_DB_PASSWORD }}" # TODO: instead create a hook that creates a secret and only reference it here
+                    host: stackgres-cluster.stackgres-cluster.svc.cluster.local
+                    port: 5432
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
                   image:
@@ -448,6 +459,12 @@ deploy:
             processors:
               specs:
                 group:
+                  db:
+                    name: group_db
+                    user: "{{ .HA_EXPENSE_GROUP_PROC_DB_USER }}" # TODO: instead create a hook that creates a secret and only reference it here
+                    password: "{{ .HA_EXPENSE_GROUP_PROC_DB_PASSWORD }}" # TODO: instead create a hook that creates a secret and only reference it here
+                    host: stackgres-cluster.stackgres-cluster.svc.cluster.local
+                    port: 5432
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
                   image:

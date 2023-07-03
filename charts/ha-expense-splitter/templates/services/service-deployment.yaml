@@ -131,31 +131,31 @@ spec:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-traceCollectorPortKey" . }}
             {{- if hasKey $serviceSpec "db" }}
-            - name: {{ include "service-dbHostKey" $serviceName }}
+            - name: {{ include "dbNameKey" $serviceName }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "service-dbHostKey" . }}
-            - name: {{ include "service-dbNameKey" $serviceName }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "service-dbNameKey" . }}
-            - name: {{ include "service-dbPortKey" $serviceName }}
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "service-dbPortKey" . }}
-            - name: {{ include "service-dbUserKey" $serviceName }}
+                  key: {{ include "dbNameKey" . }}
+            - name: {{ include "dbUserKey" $serviceName }}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "service-name-secret" $serviceName }}
-                  key: {{ include "service-dbUserKey" . }}
-            - name: {{ include "service-dbPasswordKey" $serviceName }}
+                  key: {{ include "dbUserKey" . }}
+            - name: {{ include "dbPasswordKey" $serviceName }}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "service-name-secret" $serviceName }}
-                  key: {{ include "service-dbPasswordKey" . }}
+                  key: {{ include "dbPasswordKey" . }}
+            - name: {{ include "dbHostKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $serviceName }}
+                  key: {{ include "dbHostKey" . }}
+            - name: {{ include "dbPortKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $serviceName }}
+                  key: {{ include "dbPortKey" . }}
             {{- end}}
             {{- range $_, $configurableServiceName := prepend $serviceSpec.dependencies $serviceName }}
             - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}

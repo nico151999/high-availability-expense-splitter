@@ -81,10 +81,15 @@ haExpenseSplitter:
         roles: [] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         db:
-          user: group-db-user
-          password: group-db-password
-          host: group-db-host
-          name: group-db
+          name: group-svc-db
+          user: group-svc-db-user
+          # TODO: turn user and password into the following
+          # user:
+          #   namespace: my-namespace
+          #   secret: my-secret
+          #   key: my-user-key
+          password: group-svc-db-password
+          host: group-svc-db-host
           port: 5432
         ingress:
           endpoints:
@@ -131,6 +136,12 @@ haExpenseSplitter:
       group:
         roles: [] # roles this processor should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db:
+          name: group-proc-db
+          user: group-proc-db-user
+          password: group-proc-db-password
+          host: group-proc-db-host
+          port: 5432
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
         linkerdMesh: *linkerdMesh
