@@ -22,6 +22,8 @@ func createOtlpExporter(ctx context.Context, collectorUrl string) (sdktrace.Span
 		ctx,
 		otlptracegrpc.NewClient(
 			otlptracegrpc.WithEndpoint(collectorUrl),
+			// we assume service meshes to apply mTLS for us
+			otlptracegrpc.WithInsecure(),
 		),
 	)
 	if err != nil {

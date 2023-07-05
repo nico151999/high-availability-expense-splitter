@@ -131,7 +131,3 @@ var Uint16 = zap.Uint16
 var Uint16Type = zapcore.Uint16Type
 var Uint8 = zap.Uint8
 var Uint8Type = zapcore.Uint8Type
-
-func Trace(traceId string) Field {
-	return String("traceId", traceId)
-}

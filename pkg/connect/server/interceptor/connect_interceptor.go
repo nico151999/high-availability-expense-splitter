@@ -8,8 +8,8 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 )
 
@@ -41,7 +41,7 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			log := logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")
+			log := otel.NewOtelLogger(ctx, logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc"))
 			violations, err := validateMessage(log, req.Any())
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, eris.New("failed validating request message"))
@@ -84,7 +84,7 @@ func UnaryValidateInterceptorFunc() connect.UnaryInterceptorFunc {
 }
 
 // validateMessage expects a struct to be passed and recursively validates all fields that are vaildatable
-func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequest_FieldViolation, error) {
+func validateMessage(log otel.OtelLogger, msg interface{}) ([]*errdetails.BadRequest_FieldViolation, error) {
 	fieldViolations := []*errdetails.BadRequest_FieldViolation{}
 	switch v := msg.(type) {
 	case multiValidatableMessage:
@@ -128,7 +128,7 @@ func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequ
 	return fieldViolations, nil
 }
 
-func addFieldViolation(log logging.Logger, fieldViolations []*errdetails.BadRequest_FieldViolation, err error) ([]*errdetails.BadRequest_FieldViolation, error) {
+func addFieldViolation(log otel.OtelLogger, fieldViolations []*errdetails.BadRequest_FieldViolation, err error) ([]*errdetails.BadRequest_FieldViolation, error) {
 	if valErr, ok := err.(validationError); ok {
 		return append(fieldViolations, &errdetails.BadRequest_FieldViolation{
 			Field:       valErr.Field(),
@@ -149,15 +149,15 @@ func UnaryLogInterceptorFunc(ctx context.Context) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			traceId := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
-			log = log.With(logging.Trace(traceId)).Named(
+			log = log.NewNamed(
 				strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
 			)
-			log.Info("received request")
 			ctx = logging.IntoContext(ctx, log)
+			otelLog := otel.NewOtelLogger(ctx, log)
+			otelLog.Info("received request")
 			res, err := next(ctx, req)
 			if err != nil {
-				log.Info("request is answered with an error")
+				otelLog.Info("request is answered with an error")
 			}
 			return res, err
 		})

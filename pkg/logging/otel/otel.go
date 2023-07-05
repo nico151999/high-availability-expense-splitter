@@ -10,15 +10,25 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type OtelLogger interface {
+	Debug(msg string, fields ...logging.Field)
+	Error(msg string, fields ...logging.Field)
+	Fatal(msg string, fields ...logging.Field)
+	Info(msg string, fields ...logging.Field)
+	Panic(msg string, fields ...logging.Field)
+	Warn(msg string, fields ...logging.Field)
+}
+
 type otelLogger struct {
 	logger logging.Logger
 	span   trace.Span
 }
 
 // NewOtelLogger creates a new instance of an otel logger out of a normal logger
-func NewOtelLogger(ctx context.Context, logger logging.Logger) *otelLogger {
+func NewOtelLogger(ctx context.Context, logger logging.Logger) OtelLogger {
+	traceId := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
 	return &otelLogger{
-		logger,
+		logger.With(logging.String("traceId", traceId)),
 		trace.SpanFromContext(ctx),
 	}
 }
@@ -37,23 +47,23 @@ func (l *otelLogger) Error(msg string, fields ...logging.Field) {
 func (l *otelLogger) Fatal(msg string, fields ...logging.Field) {
 	l.span.SetStatus(codes.Error, msg)
 	registerSpanEvent(l.span, "fatal", msg, fields...)
-	l.logger.Error(msg, fields...)
+	l.logger.Fatal(msg, fields...)
 }
 
 func (l *otelLogger) Info(msg string, fields ...logging.Field) {
 	registerSpanEvent(l.span, "info", msg, fields...)
-	l.logger.Error(msg, fields...)
+	l.logger.Info(msg, fields...)
 }
 
 func (l *otelLogger) Panic(msg string, fields ...logging.Field) {
 	l.span.SetStatus(codes.Error, msg)
 	registerSpanEvent(l.span, "panic", msg, fields...)
-	l.logger.Error(msg, fields...)
+	l.logger.Panic(msg, fields...)
 }
 
 func (l *otelLogger) Warn(msg string, fields ...logging.Field) {
 	registerSpanEvent(l.span, "warn", msg, fields...)
-	l.logger.Error(msg, fields...)
+	l.logger.Warn(msg, fields...)
 }
 
 func registerSpanEvent(span trace.Span, level string, msg string, fields ...logging.Field) {
