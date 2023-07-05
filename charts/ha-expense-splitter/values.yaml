@@ -12,6 +12,10 @@ haExpenseSplitter:
   imagePullSecrets: &imagePullSecrets []
   ingressClassName: nginx
   readOnlyRootFilesystem: true
+  db:
+    name: expense-splitter
+    host: expense-splitter-db-host
+    port: 5432
   securityContext: &securityContext
     runAsUser: 1000
     runAsNonRoot: true
@@ -80,17 +84,9 @@ haExpenseSplitter:
       group:
         roles: [] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
-        db:
-          name: group-svc-db
+        db: # TODO: instead, create helm hooks that initially create a new DB user for the service and save the credentials as a new secret; only pass the namespace, name and key of the admin account secret as helm parameters so that the hook is allowed to create the user
           user: group-svc-db-user
-          # TODO: turn user and password into the following
-          # user:
-          #   namespace: my-namespace
-          #   secret: my-secret
-          #   key: my-user-key
           password: group-svc-db-password
-          host: group-svc-db-host
-          port: 5432
         ingress:
           endpoints:
             # TODO: create protoc plugin to auto-generate ingress.yaml
@@ -136,12 +132,9 @@ haExpenseSplitter:
       group:
         roles: [] # roles this processor should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
-        db:
-          name: group-proc-db
+        db: # TODO: instead, create helm hooks that initially create a new DB user for the service and save the credentials as a new secret; only pass the namespace, name and key of the admin account secret as helm parameters so that the hook is allowed to create the user
           user: group-proc-db-user
           password: group-proc-db-password
-          host: group-proc-db-host
-          port: 5432
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
         linkerdMesh: *linkerdMesh

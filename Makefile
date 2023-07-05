@@ -10,7 +10,7 @@ HELM_VERSION:=3.12.0
 PNPM_VERSION:=8.6.2
 STEP_VERSION:=0.24.4
 KUBECTL_VERSION:=1.27.3
-SKAFFOLD_VERSION:=2.5.1
+SKAFFOLD_VERSION:=2.6.1
 BUF_VERSION:=1.17.0
 GOMPLATE_VERSION:=3.11.5
 GOLANGCI_VERSION:=1.49.0
@@ -50,11 +50,12 @@ export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
 # define where helm will put its plugins
 export HELM_PLUGINS=$(HELM_PLUGIN_INSTALL_DIR)
 
-# source the .env file if it exists
+# load default values and override them with custom ones if they exist
+include .env.default
 ifneq (,$(wildcard ./.env))
     include .env
-    export
 endif
+export
 
 # install the buf commandline tool required to run buf commands
 .PHONY: install-buf

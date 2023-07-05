@@ -131,11 +131,11 @@ spec:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-traceCollectorPortKey" . }}
             {{- if hasKey $serviceSpec "db" }}
-            - name: {{ include "dbNameKey" $serviceName }}
+            - name: {{ include "global-dbNameKey" $serviceName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "dbNameKey" . }}
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbNameKey" . }}
             - name: {{ include "dbUserKey" $serviceName }}
               valueFrom:
                 secretKeyRef:
@@ -146,16 +146,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "service-name-secret" $serviceName }}
                   key: {{ include "dbPasswordKey" . }}
-            - name: {{ include "dbHostKey" $serviceName }}
+            - name: {{ include "global-dbHostKey" $serviceName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "dbHostKey" . }}
-            - name: {{ include "dbPortKey" $serviceName }}
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbHostKey" . }}
+            - name: {{ include "global-dbPortKey" $serviceName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "service-name-configMap" $serviceName }}
-                  key: {{ include "dbPortKey" . }}
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbPortKey" . }}
             {{- end}}
             {{- range $_, $configurableServiceName := prepend $serviceSpec.dependencies $serviceName }}
             - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}

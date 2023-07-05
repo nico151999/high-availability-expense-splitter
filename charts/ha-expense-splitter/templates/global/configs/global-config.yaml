@@ -10,3 +10,6 @@ data:
   {{ include "global-natsServerPortKey" . }}: "{{ .Values.haExpenseSplitter.services.nats.server.port }}"
   {{ include "global-traceCollectorHostKey" . }}: "{{ .Values.haExpenseSplitter.services.traceCollector.server.host }}"
   {{ include "global-traceCollectorPortKey" . }}: "{{ .Values.haExpenseSplitter.services.traceCollector.server.port }}"
+  {{ include "global-dbNameKey" . }}: "{{ .Values.haExpenseSplitter.db.name }}"
+  {{ include "global-dbHostKey" . }}: "{{ .Values.haExpenseSplitter.db.host }}"
+  {{ include "global-dbPortKey" . }}: "{{ .Values.haExpenseSplitter.db.port }}"

@@ -114,11 +114,11 @@ spec:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-traceCollectorPortKey" . }}
             {{- if hasKey $processorSpec "db" }}
-            - name: {{ include "dbNameKey" $processorName }}
+            - name: {{ include "global-dbNameKey" $processorName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "processor-name-configMap" $processorName }}
-                  key: {{ include "dbNameKey" . }}
+                  name: {{ include "global-name-configMap" $processorName }}
+                  key: {{ include "global-dbNameKey" . }}
             - name: {{ include "dbUserKey" $processorName }}
               valueFrom:
                 secretKeyRef:
@@ -129,16 +129,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "processor-name-secret" $processorName }}
                   key: {{ include "dbPasswordKey" . }}
-            - name: {{ include "dbHostKey" $processorName }}
+            - name: {{ include "global-dbHostKey" $processorName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "processor-name-configMap" $processorName }}
-                  key: {{ include "dbHostKey" . }}
-            - name: {{ include "dbPortKey" $processorName }}
+                  name: {{ include "global-name-configMap" $processorName }}
+                  key: {{ include "global-dbHostKey" . }}
+            - name: {{ include "global-dbPortKey" $processorName }}
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "processor-name-configMap" $processorName }}
-                  key: {{ include "dbPortKey" . }}
+                  name: {{ include "global-name-configMap" $processorName }}
+                  key: {{ include "global-dbPortKey" . }}
             {{- end}}
             {{- range $_, $configurableServiceName := $processorSpec.dependencies }}
             # {{ $configurableServiceName }} service the processor depends on

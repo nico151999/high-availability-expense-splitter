@@ -163,11 +163,6 @@ app.kubernetes.io/instance: {{ .releaseName }}
 {{- end}}
 
 {{/* Accepts the short name of the processor as parameter */}}
-{{- define "processor-name-configMap" -}}
-{{ include "processor-name" . }}-cfg
-{{- end}}
-
-{{/* Accepts the short name of the processor as parameter */}}
 {{- define "processor-name-secret" -}}
 {{ include "processor-name" . }}-sec
 {{- end}}
@@ -334,7 +329,7 @@ securityContext:
 {{- end }}
 {{- end}}
 
-{{- define "dbNameKey" -}}
+{{- define "global-dbNameKey" -}}
 DB_NAME
 {{- end}}
 
@@ -346,10 +341,10 @@ DB_USER
 DB_PASSWORD
 {{- end}}
 
-{{- define "dbHostKey" -}}
+{{- define "global-dbHostKey" -}}
 DB_HOST
 {{- end}}
 
-{{- define "dbPortKey" -}}
+{{- define "global-dbPortKey" -}}
 DB_PORT
 {{- end}}

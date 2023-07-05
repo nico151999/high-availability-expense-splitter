@@ -1,7 +1,7 @@
 # this file will not automatically be used. You need to pass it to kind as a parameter using --config.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-# One control plane node and two "workers".
+# One control plane node and four "workers".
 #
 # While these will not add more real compute capacity and
 # have limited isolation, this can be useful for testing
@@ -12,58 +12,15 @@ apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
 - role: worker
-  kubeadmConfigPatches:
+  kubeadmConfigPatches: &workerConfigPatches
   - |
     kind: JoinConfiguration
     nodeRegistration:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 8080
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 8443
-    protocol: TCP
 - role: worker
-  kubeadmConfigPatches:
-  - |
-    kind: JoinConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 8081
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 8444
-    protocol: TCP
+  kubeadmConfigPatches: *workerConfigPatches
 - role: worker
-  kubeadmConfigPatches:
-  - |
-    kind: JoinConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 8082
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 8445
-    protocol: TCP
+  kubeadmConfigPatches: *workerConfigPatches
 - role: worker
-  kubeadmConfigPatches:
-  - |
-    kind: JoinConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 8083
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 8446
-    protocol: TCP
+  kubeadmConfigPatches: *workerConfigPatches
