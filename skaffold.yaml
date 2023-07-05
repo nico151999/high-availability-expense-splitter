@@ -335,6 +335,7 @@ deploy:
           prometheus:
             enabled: false
           prometheusUrl: "http://prometheus-operated.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:9090"
+          jaegerUrl: "jaeger.{{ .HA_EXPENSE_SPLITTER_LINKERD_JAEGER_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:16686"
           grafana:
             url: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:80" # TODO: change to new prometheus stack once available
       - name: ingress-nginx

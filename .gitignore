@@ -3,7 +3,7 @@
 /.idea
 /charts/**/charts/*.tgz
 /skaffold-overrides.yaml
-/.env
+/skaffold.env
 
 # vscode
 .vscode/*

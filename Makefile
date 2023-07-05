@@ -50,13 +50,6 @@ export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
 # define where helm will put its plugins
 export HELM_PLUGINS=$(HELM_PLUGIN_INSTALL_DIR)
 
-# load default values and override them with custom ones if they exist
-include .env.default
-ifneq (,$(wildcard ./.env))
-    include .env
-endif
-export
-
 # install the buf commandline tool required to run buf commands
 .PHONY: install-buf
 install-buf:

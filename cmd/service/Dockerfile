@@ -19,7 +19,7 @@ RUN apk add --no-cache git make curl coreutils
 
 WORKDIR ${BUILD_PATH}
 
-COPY Makefile .env.default ${BUILD_PATH}/
+COPY Makefile ${BUILD_PATH}/
 # install tools required to compile; this is not necessary to be done here already but it can improve build times due to caching
 RUN make install-buf install-gomplate
 
