@@ -26,9 +26,12 @@ type otelLogger struct {
 
 // NewOtelLogger creates a new instance of an otel logger out of a normal logger
 func NewOtelLogger(ctx context.Context, logger logging.Logger) OtelLogger {
-	traceId := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
+	span := trace.SpanFromContext(ctx).SpanContext()
+
 	return &otelLogger{
-		logger.With(logging.String("traceId", traceId)),
+		logger.With(
+			logging.String("traceId", span.TraceID().String()),
+			logging.String("spanId", span.SpanID().String())),
 		trace.SpanFromContext(ctx),
 	}
 }

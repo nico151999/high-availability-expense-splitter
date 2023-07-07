@@ -7,10 +7,11 @@ replace k8s.io/client-go => k8s.io/client-go v0.26.3
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/bufbuild/connect-go v1.7.0
+	github.com/bufbuild/connect-go v1.9.0
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
 	github.com/bufbuild/connect-opentelemetry-go v0.3.0
 	github.com/envoyproxy/protoc-gen-validate v0.10.1
+	github.com/google/go-cmp v0.5.9
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/nats-io/gnatsd v1.4.1
 	github.com/nats-io/nats-server v1.4.1
@@ -25,15 +26,15 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.16.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
+	go.opentelemetry.io/otel/trace v1.16.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.10.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683
 	google.golang.org/grpc v1.55.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/client-go v12.0.0+incompatible
-	go.opentelemetry.io/otel/trace v1.16.0
 )
 
 require (

@@ -8,12 +8,14 @@ import (
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var errSelectGroup = eris.New("failed selecting group")
@@ -30,17 +32,20 @@ func (s *groupServer) GetGroup(ctx context.Context, req *connect.Request[groupsv
 
 	group, err := getGroup(ctx, s.dbClient, req.Msg.GetGroupId())
 	if err != nil {
-		var conError *connect.Error
 		if eris.Is(err, errSelectGroup) {
-			conError = server.CreateErrorWithDetails(
+			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
-				"requesting group from database failed",
-				environment.GetDBSelectErrorReason(ctx))
+				"failed interacting with database",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "requesting group from database failed",
+						Domain: environment.GetDBSelectErrorReason(ctx),
+					},
+				})
 		} else {
-			conError = connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
+			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
-		return nil, conError
 	}
 
 	return connect.NewResponse(&groupsvcv1.GetGroupResponse{

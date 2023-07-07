@@ -8,12 +8,14 @@ import (
 	"github.com/nats-io/nats.go"
 	groupprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var errMarshalGroupCreationRequested = eris.New("failed marshalling group creation requested event")
@@ -31,17 +33,20 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 
 	groupId, err := createGroup(ctx, s.natsClient, req.Msg)
 	if err != nil {
-		var conError *connect.Error
 		if eris.Is(err, errMarshalGroupCreationRequested) || eris.Is(err, errPublishGroupCreationRequested) {
-			conError = server.CreateErrorWithDetails(
+			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
 				"failed requesting group creation",
-				environment.GetTaskPublicationErrorReason(ctx))
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "failed publishing group creation task",
+						Domain: environment.GetTaskPublicationErrorReason(ctx),
+					},
+				})
 		} else {
-			conError = connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
+			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
-		return nil, conError
 	}
 
 	return connect.NewResponse(&groupsvcv1.CreateGroupResponse{
