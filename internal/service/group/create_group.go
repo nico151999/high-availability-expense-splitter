@@ -55,7 +55,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 }
 
 func createGroup(ctx context.Context, nc *nats.Conn, req *groupsvcv1.CreateGroupRequest) (string, error) {
-	log := otel.NewOtelLogger(ctx, logging.FromContext(ctx))
+	log := otel.NewOtelLoggerFromContext(ctx)
 	// TODO: generate group ID, check if it is not already taken, add "group creation requested" event to NATS and finally return the generated group ID if adding to queue was successful
 
 	groupId := "my-group-id"    // TODO: generate group ID function

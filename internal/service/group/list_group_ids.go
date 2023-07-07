@@ -47,7 +47,7 @@ func (s *groupServer) ListGroupIds(ctx context.Context, req *connect.Request[gro
 }
 
 func listGroupIds(ctx context.Context, dbClient bun.IDB) ([]string, error) {
-	log := otel.NewOtelLogger(ctx, logging.FromContext(ctx))
+	log := otel.NewOtelLoggerFromContext(ctx)
 	var groupIds []string
 	if err := dbClient.NewSelect().Model((*groupv1.GroupProperties)(nil)).Column("groupId").Scan(ctx, &groupIds); err != nil {
 		log.Error("failed getting group IDs", logging.Error(err))

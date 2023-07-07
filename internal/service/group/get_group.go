@@ -54,7 +54,7 @@ func (s *groupServer) GetGroup(ctx context.Context, req *connect.Request[groupsv
 }
 
 func getGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupv1.GroupProperties, error) {
-	log := otel.NewOtelLogger(ctx, logging.FromContext(ctx))
+	log := otel.NewOtelLoggerFromContext(ctx)
 	var group model.Group
 	if err := dbClient.NewSelect().Model(&group).Where("group_id = ?", groupId).Limit(1).Scan(ctx); err != nil {
 		log.Error("failed getting group", logging.Error(err))
