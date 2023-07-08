@@ -17,9 +17,75 @@ spec:
       - name: "create-db-users"
         image: "{{ .Values.haExpenseSplitter.db.image.psql.repository }}:{{ .Values.haExpenseSplitter.db.image.psql.tag }}"
         imagePullPolicy: "IfNotPresent"
+        env:
+        - name: PGDATABASE
+          value: {{ .Values.haExpenseSplitter.db.name }}
+        - name: PGHOST
+          value: {{ .Values.haExpenseSplitter.db.host }}
+        - name: PGPORT
+          value: {{ .Values.haExpenseSplitter.db.port }}
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
+              key: {{ .Values.haExpenseSplitter.db.adminUser.secret.userKey }}
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
+              key: {{ .Values.haExpenseSplitter.db.adminUser.secret.passwordKey }}
+        {{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
+        {{- if $processorSpec.db }}
+        - name: {{ printf "%s_PROCESSOR_USER" (upper $processorName) }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "processor-name-secret" $processorName }}
+              key: {{ include "dbUserKey" . }}
+        - name: {{ printf "%s_PROCESSOR_PASSWORD" (upper $processorName) }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "processor-name-secret" $processorName }}
+              key: {{ include "dbPasswordKey" . }}
+        {{- end }}
+        {{- end }}
+        {{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.processors.specs }}
+        {{- if $serviceSpec.db }}
+        - name: {{ printf "%s_SERVICE_USER" (upper $serviceName) }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "service-name-secret" $serviceName }}
+              key: {{ include "dbUserKey" . }}
+        - name: {{ printf "%s_SERVICE_PASSWORD" (upper $serviceName) }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "service-name-secret" $serviceName }}
+              key: {{ include "dbPasswordKey" . }}
+        {{- end }}
+        {{- end }}
         args:
-          - my
-          - args
-          - to
-          - psql
-          # TODO: create psql users (or overrides existing ones) with the help of the secrets created for services and processors
+        - c
+        - |
+          {{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
+          {{- if $processorSpec.db }}
+          \set user `echo "${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}"`
+          \set password `echo "${{ printf "%s_PROCESSOR_PASSWORD" (upper $processorName) }}"`
+          DROP ROLE IF EXISTS :"user";
+          CREATE ROLE :"user" LOGIN PASSWORD :'password';
+          {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
+          GRANT CONNECT ON DATABASE {{ .Values.haExpenseSplitter.db.name }} TO :"user";
+          GRANT pg_read_all_data TO :"user";
+          GRANT pg_write_all_data TO :"user";
+          {{- end }}
+          {{- end }}
+          {{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+          {{- if $serviceSpec.db }}
+          \set user `echo "${{ printf "%s_SERVICE_USER" (upper $serviceName) }}"`
+          \set password `echo "${{ printf "%s_SERVICE_PASSWORD" (upper $serviceName) }}"`
+          DROP ROLE IF EXISTS :"user";
+          CREATE ROLE :"user" LOGIN PASSWORD :'password';
+          {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
+          GRANT CONNECT ON DATABASE {{ .Values.haExpenseSplitter.db.name }} TO :"user";
+          GRANT pg_read_all_data TO :"user";
+          GRANT pg_write_all_data TO :"user";
+          {{- end }}
+          {{- end }}
