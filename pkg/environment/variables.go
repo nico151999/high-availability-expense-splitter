@@ -68,12 +68,6 @@ func GetTraceCollectorPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "TRACE_COLLECTOR_PORT")
 }
 
-// TODO: as env variable
-// GetGroupCreationRequestedSubject returns the name of the subject events are published on when a group creation was requested
-func GetGroupCreationRequestedSubject() string {
-	return "group.groupCreationRequested"
-}
-
 // TODO: as env variable with %s parameter
 // GetGroupCreatedSubject returns the name of the subject events are published on when a group was created
 func GetGroupCreatedSubject(groupId string) string {

@@ -26,15 +26,15 @@ func NewGroupProcessor(natsUrl string) (*groupProcessor, error) {
 
 // Process starts the processing of subscriptions and returns a cancel function allowing for cancelation
 func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx context.Context) error, error) {
-	var gcrSub *nats.Subscription
+	var gcSub *nats.Subscription
 	{
-		eventSubject := environment.GetGroupCreationRequestedSubject()
+		eventSubject := environment.GetGroupCreatedSubject("*")
 		var err error
-		gcrSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupCreationRequested)
+		gcSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupCreated)
 		if err != nil {
 			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	// TODO: process the other events as well...
-	return processor.GetUnsubscribeSubscriptionsFunc(gcrSub), nil
+	return processor.GetUnsubscribeSubscriptionsFunc(gcSub), nil
 }

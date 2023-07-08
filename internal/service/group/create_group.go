@@ -18,8 +18,8 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-var errMarshalGroupCreationRequested = eris.New("failed marshalling group creation requested event")
-var errPublishGroupCreationRequested = eris.New("failed publishing group creation requested event")
+var errMarshalGroupCreated = eris.New("failed marshalling group created event")
+var errPublishGroupCreated = eris.New("failed publishing group created event")
 
 func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[groupsvcv1.CreateGroupRequest]) (*connect.Response[groupsvcv1.CreateGroupResponse], error) {
 	ctx = logging.IntoContext(
@@ -33,7 +33,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 
 	groupId, err := createGroup(ctx, s.natsClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalGroupCreationRequested) || eris.Is(err, errPublishGroupCreationRequested) {
+		if eris.Is(err, errMarshalGroupCreated) || eris.Is(err, errPublishGroupCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -56,24 +56,24 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 
 func createGroup(ctx context.Context, nc *nats.Conn, req *groupsvcv1.CreateGroupRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	// TODO: generate group ID, check if it is not already taken, add "group creation requested" event to NATS and finally return the generated group ID if adding to queue was successful
+	// TODO: generate group ID, check if it is not already taken, add "group created" event to NATS and finally return the generated group ID if everything went fine
 
 	groupId := "my-group-id"    // TODO: generate group ID function
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
-	marshalled, err := proto.Marshal(&groupprocv1.GroupCreationRequested{
+	marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
 		GroupId:        groupId,
 		Name:           req.GetName(),
 		RequestorEmail: requestorEmail,
 	})
 	if err != nil {
-		log.Error("failed marshalling group creation requested event", logging.Error(err))
-		return "", errMarshalGroupCreationRequested
+		log.Error("failed marshalling group created event", logging.Error(err))
+		return "", errMarshalGroupCreated
 	}
 	// Simple Publisher
-	if err := nc.Publish(environment.GetGroupCreationRequestedSubject(), marshalled); err != nil {
-		log.Error("failed publishing group creation requested event", logging.Error(err))
-		return "", errPublishGroupCreationRequested
+	if err := nc.Publish(environment.GetGroupCreatedSubject(groupId), marshalled); err != nil {
+		log.Error("failed publishing group created event", logging.Error(err))
+		return "", errPublishGroupCreated
 	}
 	return groupId, nil
 }

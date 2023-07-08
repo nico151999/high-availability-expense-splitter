@@ -6,8 +6,8 @@ import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "validate/validate.proto";
 
-// An event with metadata containing information about a project that is requested to be created
-message GroupCreationRequested {
+// An event with metadata containing information about a project that was created
+message GroupCreated {
   string group_id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},

@@ -2,9 +2,9 @@
 This project is an app allowing to split expenses inside a group.
 Basically, it provides a frontend for ordering and managing project as well as services that perform the actions requested by the user. There are services for each resource type the API exposes and some additional services for the purpose of UX (e.g. gRPC reflection). The services only handle the requests by the users, i.e.
 - reading requests collect the data the user requests and return the results
-- writing requests only create a task on the message queue
-- writing requests do not wait for tasks on the message queue to be finished but respond to the user immediately telling that a task to write was created with a related identifier
-- tasks on the message queue are processed by dedicated MQ processing containers
+- writing requests only perform an initial write action and add an event to the the message queue allowing for further write operations
+- tasks on the message queue (all but those causing only read operations) are processed by dedicated MQ processing containers for each resource type that requires this kind of event processing
+- the message queue tells reading RPCs of the respective services that a resource has changed or was added so that streaming endpoints can send event-driven updates to the clients
 
 # Prerequisites
 - You are expected to have the go commandline tool installed

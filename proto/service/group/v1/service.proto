@@ -18,9 +18,9 @@ service GroupService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
-          key: "200";
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
           value: {
-            description: "Returns specs describing the requested group";
+            description: "Returns specs describing the created group";
             schema: {
               json_schema: {ref: ".service.group.v1.CreateGroupResponse"};
             };
