@@ -11,7 +11,6 @@
 /LICENSE
 /skaffold.env
 /skaffold.env.dist
-/
 /skaffold-overrides.yaml
 **/*_test.go
 **/node_modules

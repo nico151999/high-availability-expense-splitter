@@ -301,6 +301,23 @@ processor-rolebinding
 
 
 
+{{- define "db-name" -}}
+{{ .Release.Name }}-db
+{{- end}}
+
+
+
+
+
+{{/* Accepts the name of the table as parameter */}}
+{{- define "table-name" -}}
+{{ . }}-table
+{{- end}}
+
+
+
+
+
 {{/* Accepts the primary and the fallback image pull secrets as parameters "primary" and "fallback" respectively */}}
 {{- define "imagepullsecrets" -}}
 {{- $secrets := default .fallback .primary -}}

@@ -375,15 +375,22 @@ deploy:
         namespace: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}"
         createNamespace: true
         wait: true
-      # TODO: introduce schema hero
-      - name: &natsName haes-nats
+      - name: "schemahero"
+        chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
+        namespace: "schemahero"
+        createNamespace: true
+        version: "1.2.0"
+        wait: true
+        upgradeOnChange: false
+        skipBuildDependencies: true # since it's actually a remote chart but hosted under oci we need to let skaffold treat it like a local chart. However, this requires us to skip building dependencies.
+      - name: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}"
         repo: https://nats-io.github.io/k8s/helm/charts/
         remoteChart: nats
-        namespace: &expenseSplitterNamespace expense-splitter
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NATS_NAMESPACE }}"
         version: 0.19.14
         createNamespace: true
         setValueTemplates:
-          fullnameOverride: *natsName
+          fullnameOverride: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}"
           podAnnotations:
             "linkerd\\.io/inject": enabled
             "config\\.linkerd\\.io/opaque-ports": "6222\\,4222\\,8222\\,7777\\,7422\\,7522"
@@ -411,7 +418,7 @@ deploy:
             enabled: false
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
-        namespace: *expenseSplitterNamespace
+        namespace: expense-splitter
         createNamespace: true
         setValueTemplates:
           haExpenseSplitter:
@@ -427,16 +434,22 @@ deploy:
                   repository: *expenseSplitterFrontendImage
                   tag: *expenseSplitterFrontendImage
             db:
-              name: expense-splitter
+              name: postgres
               host: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}.{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
-              port: 5432
+              port: "5432"
+              adminUser:
+                sourceSecret:
+                  namespace: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}"
+                  name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
+                  userKey: superuser-username
+                  passwordKey: superuser-password
             documentation:
               securityContext: *securityContext
               imagePullSecrets: *imagePullSecrets
             services:
               nats:
                 server:
-                  host: *natsName
+                  host: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}.{{ .HA_EXPENSE_SPLITTER_NATS_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
               traceCollector:
                 server:
                   host: "collector.{{ .HA_EXPENSE_SPLITTER_LINKERD_JAEGER_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
@@ -451,9 +464,6 @@ deploy:
                   tag: *reflectionSvcImage
               specs:
                 group:
-                  db: # TODO: instead, create helm hooks that initially create a new DB user for the service and save the credentials as a new secret; only pass the namespace, name and key of the admin account secret as helm parameters so that the hook is allowed to create the user
-                    user: "{{ .HA_EXPENSE_GROUP_SVC_DB_USER }}"
-                    password: "{{ .HA_EXPENSE_GROUP_SVC_DB_PASSWORD }}"
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
                   image:
@@ -462,9 +472,6 @@ deploy:
             processors:
               specs:
                 group:
-                  db: # TODO: instead, create helm hooks that initially create a new DB user for the service and save the credentials as a new secret; only pass the namespace, name and key of the admin account secret as helm parameters so that the hook is allowed to create the user
-                    user: "{{ .HA_EXPENSE_GROUP_PROC_DB_USER }}"
-                    password: "{{ .HA_EXPENSE_GROUP_PROC_DB_PASSWORD }}"
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
                   image:
@@ -505,13 +512,13 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -522,13 +529,13 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/11/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+        path: /deploy/helm/releases/12/setValueTemplates/nats.jetstream.fileStorage.storageClassName
   - name: DEDICATED_NATS_INSTANCE
     requiresAllActivations: true
     activation:
@@ -536,20 +543,26 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
     patches:
       - op: replace
-        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.services.nats.server.host
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.host
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
       - op: add
-        path: /deploy/helm/releases/12/setValueTemplates/haExpenseSplitter.services.nats.server.port
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.port
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/12
+        path: /deploy/helm/releases/13
   - name: SKIP_NATS_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/12
+  - name: SKIP_SCHEMAHERO_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_SCHEMAHERO_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/11

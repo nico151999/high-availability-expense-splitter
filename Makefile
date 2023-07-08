@@ -294,7 +294,7 @@ skaffold-dev: install-skaffold generate-dockerfile-links
 
 # builds and deploys the entire app
 .PHONY: skaffold-run
-skaffold-run: install-skaffold lint test generate-dockerfile-links
+skaffold-run: install-skaffold $(if $(findstring $(HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION),false),lint test generate-dockerfile-links)
 	$(SKAFFOLD_INSTALL_LOCATION) run
 
 .PHONY: skaffold-delete

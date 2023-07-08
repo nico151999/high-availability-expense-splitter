@@ -1,0 +1,24 @@
+apiVersion: databases.schemahero.io/v1alpha4
+kind: Database
+metadata:
+  name: {{ include "db-name" . }}
+spec:
+  immediateDeploy: true
+  connection:
+    postgres:
+      dbname:
+        value: {{ .Values.haExpenseSplitter.db.name }}
+      host:
+        value: {{ .Values.haExpenseSplitter.db.host }}
+      port:
+        value: "{{ .Values.haExpenseSplitter.db.port }}"
+      user:
+        valueFrom:
+          secretKeyRef:
+            name: {{ .Values.haExpenseSplitter.db.adminUser.targetSecret.name }}
+            key: {{ include "dbUserKey" . }}
+      password:
+        valueFrom:
+          secretKeyRef:
+            name: {{ .Values.haExpenseSplitter.db.adminUser.targetSecret.name }}
+            key: {{ include "dbPasswordKey" . }}
