@@ -15,10 +15,10 @@ spec:
       user:
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.haExpenseSplitter.db.adminUser.targetSecret.name }}
-            key: {{ include "dbUserKey" . }}
+            name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
+            key: {{ .Values.haExpenseSplitter.db.adminUser.secret.userKey }}
       password:
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.haExpenseSplitter.db.adminUser.targetSecret.name }}
-            key: {{ include "dbPasswordKey" . }}
+            name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
+            key: {{ .Values.haExpenseSplitter.db.adminUser.secret.passwordKey }}

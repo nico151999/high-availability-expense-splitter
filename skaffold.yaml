@@ -369,10 +369,12 @@ deploy:
             secretName: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana"
             secretUserKey: admin-user
             secretPasswordKey: admin-password
-      # TODO: setup Minio. Deploy both database for expense splitter and ory stack depending on profiles with env variables. This can most easily be achieved by deploying the same helm chart twice with different configs.
+      # TODO: deploy database for ory stack and deploy ory stack itself
+      # TODO: setup Minio
+      # TODO: deploy expense splitter DB as part of the expense splitter chart
       - name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
         chartPath: charts/stackgres-cluster
-        namespace: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}"
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
         createNamespace: true
         wait: true
       - name: "schemahero"
@@ -435,11 +437,10 @@ deploy:
                   tag: *expenseSplitterFrontendImage
             db:
               name: postgres
-              host: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}.{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
+              host: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
               port: "5432"
               adminUser:
-                sourceSecret:
-                  namespace: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAMESPACE }}"
+                secret:
                   name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
                   userKey: superuser-username
                   passwordKey: superuser-password

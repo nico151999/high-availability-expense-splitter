@@ -1,51 +1,8 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ .Release.Name }}-integrate-db-creds-sa
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-weight": "0"
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: {{ .Release.Name }}-integrate-db-creds-cr
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-weight": "0"
-rules:
-- apiGroups: [""]
-  resources:
-  - secrets
-  verbs:
-  - get
-  - create
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: {{ .Release.Name }}-integrate-db-creds-cr-bind
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-    "helm.sh/hook-weight": "0"
-subjects:
-- kind: ServiceAccount
-  name: {{ .Release.Name }}-integrate-db-creds-sa
-  namespace: {{ .Release.Namespace }}
-roleRef:
-  kind: ClusterRole
-  name: '{{ .Release.Name }}-integrate-db-creds-cr'
-  apiGroup: rbac.authorization.k8s.io
----
-# creates a secret for schema hero to have credentials as well as for each service and processor
+# creates DB users for services and processors
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .Release.Name }}-integrate-db-creds"
+  name: "{{ .Release.Name }}-create-db-users"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -53,28 +10,16 @@ metadata:
 spec:
   template:
     spec:
-      serviceAccount: {{ .Release.Name }}-integrate-db-creds-sa
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
       {{- include "securitycontext" (dict "primary" .Values.haExpenseSplitter.securityContext) | nindent 6 }}
       containers:
-      - name: "integrate-db-creds"
-        image: "bitnami/kubectl:{{ .Capabilities.KubeVersion.Major }}.{{ .Capabilities.KubeVersion.Minor }}"
+      - name: "create-db-users"
+        image: "{{ .Values.haExpenseSplitter.db.image.psql.repository }}:{{ .Values.haExpenseSplitter.db.image.psql.tag }}"
         imagePullPolicy: "IfNotPresent"
-        command:
-          - "/bin/bash"
-          - "-ecx"
-          - |
-            CREDS=($(kubectl get secret -n '{{ .Values.haExpenseSplitter.db.adminUser.sourceSecret.namespace }}' '{{ .Values.haExpenseSplitter.db.adminUser.sourceSecret.name }}' \
-              --template '{{ `{{` }} printf `%s %s` (index .data `{{ .Values.haExpenseSplitter.db.adminUser.sourceSecret.userKey }}` | base64decode) (index .data `{{ .Values.haExpenseSplitter.db.adminUser.sourceSecret.passwordKey }}` | base64decode) {{ `}}` }}' \
-              ))
-            ADMIN_USER=${CREDS[0]}
-            ADMIN_PASSWORD=${CREDS[1]}
-            kubectl create secret generic {{ .Values.haExpenseSplitter.db.adminUser.targetSecret.name }} \
-              -n {{ .Release.Namespace }} \
-              --save-config \
-              --dry-run=client \
-              --from-literal={{ include "dbUserKey" . }}=$ADMIN_USER --from-literal={{ include "dbPasswordKey" . }}=$ADMIN_PASSWORD \
-              -o yaml | \
-              kubectl apply -f -
-          # TODO: create psql users with the help of the secrets created for services and processors
+        args:
+          - my
+          - args
+          - to
+          - psql
+          # TODO: create psql users (or overrides existing ones) with the help of the secrets created for services and processors

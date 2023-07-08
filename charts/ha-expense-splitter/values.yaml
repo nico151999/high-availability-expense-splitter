@@ -17,13 +17,14 @@ haExpenseSplitter:
     host: expense-splitter-db-host
     port: "5432"
     adminUser:
-      sourceSecret:
-        namespace: expense-splitter-db-ns
+      secret:
         name: expense-splitter-db-sec
         userKey: user
         passwordKey: password
-      targetSecret:
-        name: expense-splitter-db-sec
+    image:
+      psql:
+        repository: governmentpaas/psql
+        tag: latest
   securityContext: &securityContext
     runAsUser: 1000
     runAsNonRoot: true
