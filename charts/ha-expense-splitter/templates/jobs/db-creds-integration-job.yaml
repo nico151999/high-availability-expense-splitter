@@ -13,17 +13,36 @@ spec:
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
       {{- include "securitycontext" (dict "primary" .Values.haExpenseSplitter.securityContext) | nindent 6 }}
+      initContainers:
+      - name: wait-for-database
+        image: {{ include "busyboxImage" $ }}
+        {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+        securityContext:
+          readOnlyRootFilesystem: true
+        {{- end }}
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            until nc -z "{{ .Values.haExpenseSplitter.db.host }}" "{{ .Values.haExpenseSplitter.db.port }}"
+            do
+              echo \"waiting for database\"
+              sleep 1
+            done
       containers:
       - name: "create-db-users"
         image: "{{ .Values.haExpenseSplitter.db.image.psql.repository }}:{{ .Values.haExpenseSplitter.db.image.psql.tag }}"
-        imagePullPolicy: "IfNotPresent"
+        {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+        securityContext:
+          readOnlyRootFilesystem: true
+        {{- end }}
         env:
         - name: PGDATABASE
-          value: {{ .Values.haExpenseSplitter.db.name }}
+          value: "{{ .Values.haExpenseSplitter.db.name }}"
         - name: PGHOST
-          value: {{ .Values.haExpenseSplitter.db.host }}
+          value: "{{ .Values.haExpenseSplitter.db.host }}"
         - name: PGPORT
-          value: {{ .Values.haExpenseSplitter.db.port }}
+          value: "{{ .Values.haExpenseSplitter.db.port }}"
         - name: PGUSER
           valueFrom:
             secretKeyRef:
@@ -48,7 +67,7 @@ spec:
               key: {{ include "dbPasswordKey" . }}
         {{- end }}
         {{- end }}
-        {{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.processors.specs }}
+        {{- range $serviceName, $serviceSpec := merge (merge (dict "documentation" .Values.haExpenseSplitter.documentation) .Values.haExpenseSplitter.services.specs) (dict "reflection" .Values.haExpenseSplitter.services.reflection) }}
         {{- if $serviceSpec.db }}
         - name: {{ printf "%s_SERVICE_USER" (upper $serviceName) }}
           valueFrom:
@@ -62,30 +81,29 @@ spec:
               key: {{ include "dbPasswordKey" . }}
         {{- end }}
         {{- end }}
-        args:
-        - c
+        command:
+        - sh
+        - -c
         - |
+          echo "
           {{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
           {{- if $processorSpec.db }}
-          \set user `echo "${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}"`
-          \set password `echo "${{ printf "%s_PROCESSOR_PASSWORD" (upper $processorName) }}"`
-          DROP ROLE IF EXISTS :"user";
-          CREATE ROLE :"user" LOGIN PASSWORD :'password';
+          DROP ROLE IF EXISTS \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
+          CREATE ROLE \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\" LOGIN PASSWORD '${{ printf "%s_PROCESSOR_PASSWORD" (upper $processorName) }}';
           {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
-          GRANT CONNECT ON DATABASE {{ .Values.haExpenseSplitter.db.name }} TO :"user";
-          GRANT pg_read_all_data TO :"user";
-          GRANT pg_write_all_data TO :"user";
+          GRANT CONNECT ON DATABASE {{ $.Values.haExpenseSplitter.db.name }} TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
+          GRANT pg_read_all_data TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
+          GRANT pg_write_all_data TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
           {{- end }}
           {{- end }}
-          {{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+          {{- range $serviceName, $serviceSpec := merge (merge (dict "documentation" .Values.haExpenseSplitter.documentation) .Values.haExpenseSplitter.services.specs) (dict "reflection" .Values.haExpenseSplitter.services.reflection) }}
           {{- if $serviceSpec.db }}
-          \set user `echo "${{ printf "%s_SERVICE_USER" (upper $serviceName) }}"`
-          \set password `echo "${{ printf "%s_SERVICE_PASSWORD" (upper $serviceName) }}"`
-          DROP ROLE IF EXISTS :"user";
-          CREATE ROLE :"user" LOGIN PASSWORD :'password';
+          DROP ROLE IF EXISTS \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
+          CREATE ROLE \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\" LOGIN PASSWORD '${{ printf "%s_SERVICE_PASSWORD" (upper $serviceName) }}';
           {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
-          GRANT CONNECT ON DATABASE {{ .Values.haExpenseSplitter.db.name }} TO :"user";
-          GRANT pg_read_all_data TO :"user";
-          GRANT pg_write_all_data TO :"user";
+          GRANT CONNECT ON DATABASE {{ $.Values.haExpenseSplitter.db.name }} TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
+          GRANT pg_read_all_data TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
+          GRANT pg_write_all_data TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
           {{- end }}
           {{- end }}
+          " | psql

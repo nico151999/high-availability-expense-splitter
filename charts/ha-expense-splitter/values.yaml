@@ -41,6 +41,7 @@ haExpenseSplitter:
         repository: "my-registry/my-group/my-expense-splitter-frontend-repo"
         tag: "latest"
   documentation:
+    db: false # tells if it uses the database
     ingress:
       host: "documentation.ha-expense-splitter.localhost"
       certSecret: "doc-ingress-cert"
@@ -70,6 +71,7 @@ haExpenseSplitter:
         host: my-trace-collector.localhost
         port: 4317
     reflection:
+      db: false # tells if it uses the database
       imagePullPolicy: *imagePullPolicy
       imagePullSecrets: *imagePullSecrets
       linkerdMesh: *linkerdMesh

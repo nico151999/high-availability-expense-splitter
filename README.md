@@ -1,6 +1,7 @@
 # Expense Splitter
-This project is an app allowing to split expenses inside a group.
-Basically, it provides a frontend for ordering and managing project as well as services that perform the actions requested by the user. There are services for each resource type the API exposes and some additional services for the purpose of UX (e.g. gRPC reflection). The services only handle the requests by the users, i.e.
+Let's act like an expense splitter was among the use cases with one of the heaviest loads one can imagine. To handle such heavy loads it needs to be scalable. Kubernetes is a framework for running such applications.
+This project is an app allowing to split expenses inside a group, i.e. an expense splitter. This simple use case acts as a demo for building a whole solution with several different tools allowing for a convenient operation of distributed computing.
+Basically, it provides a frontend for aplitting expenses in groups as well as services that perform the actions requested by the user. There are services for each resource type the API exposes and some additional services for the purpose of UX (e.g. gRPC reflection). The services only handle the requests by the users, i.e.
 - reading requests collect the data the user requests and return the results
 - writing requests only perform an initial write action and add an event to the the message queue allowing for further write operations
 - tasks on the message queue (all but those causing only read operations) are processed by dedicated MQ processing containers for each resource type that requires this kind of event processing
