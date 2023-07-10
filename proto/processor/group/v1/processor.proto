@@ -10,7 +10,7 @@ import "validate/validate.proto";
 message GroupCreated {
   string group_id = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
   ];
   string name = 2 [

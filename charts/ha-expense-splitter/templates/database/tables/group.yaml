@@ -4,7 +4,7 @@ metadata:
   name: {{ include "table-name" "group" }}
 spec:
   database: {{ include "db-name" . }}
-  name: group
+  name: groups
   schema:
     postgres:
       primaryKey:
@@ -14,11 +14,7 @@ spec:
         type: text
         constraints:
           notNull: true
-      - name: user_id
+      - name: name
         type: text
-        constraints:
-          notNull: true
-      - name: expire_at
-        type: timestamp without time zone
         constraints:
           notNull: true

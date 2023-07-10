@@ -178,7 +178,7 @@ message CreateGroupResponse {
   // the ID of the group
   string group_id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
-    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
   ];
 }
@@ -187,13 +187,13 @@ message GetGroupRequest {
   // the ID of the group
   string group_id = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.group.v1/GroupProperties"},
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
   ];
 }
 
 message GetGroupResponse {
-  common.group.v1.GroupProperties group = 1 [
+  common.group.v1.Group group = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).message.required = true
   ];

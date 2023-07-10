@@ -88,20 +88,32 @@ spec:
           echo "
           {{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
           {{- if $processorSpec.db }}
+          DO
+          \$\$BEGIN
+          IF EXISTS (SELECT FROM pg_roles WHERE rolname = '${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}') THEN
+            EXECUTE 'REVOKE CONNECT ON DATABASE "{{ $.Values.haExpenseSplitter.db.name }}" FROM \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\"';
+          END IF;
+          END\$\$;
           DROP ROLE IF EXISTS \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
           CREATE ROLE \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\" LOGIN PASSWORD '${{ printf "%s_PROCESSOR_PASSWORD" (upper $processorName) }}';
           {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
-          GRANT CONNECT ON DATABASE {{ $.Values.haExpenseSplitter.db.name }} TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
+          GRANT CONNECT ON DATABASE \"{{ $.Values.haExpenseSplitter.db.name }}\" TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
           GRANT pg_read_all_data TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
           GRANT pg_write_all_data TO \"${{ printf "%s_PROCESSOR_USER" (upper $processorName) }}\";
           {{- end }}
           {{- end }}
           {{- range $serviceName, $serviceSpec := merge (merge (dict "documentation" .Values.haExpenseSplitter.documentation) .Values.haExpenseSplitter.services.specs) (dict "reflection" .Values.haExpenseSplitter.services.reflection) }}
           {{- if $serviceSpec.db }}
+          DO
+          \$\$BEGIN
+          IF EXISTS (SELECT FROM pg_roles WHERE rolname = '${{ printf "%s_SERVICE_USER" (upper $serviceName) }}') THEN
+            EXECUTE 'REVOKE CONNECT ON DATABASE "{{ $.Values.haExpenseSplitter.db.name }}" FROM \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\"';
+          END IF;
+          END\$\$;
           DROP ROLE IF EXISTS \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
           CREATE ROLE \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\" LOGIN PASSWORD '${{ printf "%s_SERVICE_PASSWORD" (upper $serviceName) }}';
           {{/* TODO: only grant specific permissions defined in values.yaml to user */}}
-          GRANT CONNECT ON DATABASE {{ $.Values.haExpenseSplitter.db.name }} TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
+          GRANT CONNECT ON DATABASE \"{{ $.Values.haExpenseSplitter.db.name }}\" TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
           GRANT pg_read_all_data TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
           GRANT pg_write_all_data TO \"${{ printf "%s_SERVICE_USER" (upper $serviceName) }}\";
           {{- end }}

@@ -16,7 +16,9 @@ func NewPostgresDBClient(user, password, addr, db string) *bun.DB {
 				pgdriver.WithUser(user),
 				pgdriver.WithPassword(password),
 				pgdriver.WithAddr(addr),
-				pgdriver.WithDatabase(db))),
+				pgdriver.WithDatabase(db),
+				// we intentionally use an insecure connection assuming that the service mesh performs the encryption
+				pgdriver.WithInsecure(true))),
 		pgdialect.New())
 	bunDb.AddQueryHook(bunotel.NewQueryHook(bunotel.WithDBName(db)))
 	return bunDb

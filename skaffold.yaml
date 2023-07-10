@@ -377,6 +377,11 @@ deploy:
         namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
         createNamespace: true
         wait: true
+        setValues:
+          cluster:
+            metadata:
+              annotations:
+                "linkerd\\.io/inject": enabled
       - name: "schemahero"
         chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
         namespace: "schemahero"
