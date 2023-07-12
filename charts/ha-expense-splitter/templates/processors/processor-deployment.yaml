@@ -15,6 +15,8 @@ spec:
     metadata:
       labels:
         {{- include "processor-selectorlabels-pod" $selectorParam | nindent 8 }}
+        app.kubernetes.io/version: "{{ $.Chart.Version }}"
+        helm.sh/revision: "{{ $.Release.Revision }}"
       {{- if default $.Values.haExpenseSplitter.linkerdMesh $processorSpec.linkerdMesh }}
       annotations:
         linkerd.io/inject: enabled

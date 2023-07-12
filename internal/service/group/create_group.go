@@ -58,8 +58,8 @@ func createGroup(ctx context.Context, nc *nats.Conn, req *groupsvcv1.CreateGroup
 	log := otel.NewOtelLoggerFromContext(ctx)
 	// TODO: generate group ID, check if it is not already taken, add "group created" event to NATS and finally return the generated group ID if everything went fine
 
-	groupId := "my-group-id"    // TODO: generate group ID function
-	requestorEmail := "ab@c.de" // TODO: take user email from context
+	groupId := "group-1234567890" // TODO: generate group ID function
+	requestorEmail := "ab@c.de"   // TODO: take user email from context
 
 	marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
 		GroupId:        groupId,
