@@ -2,8 +2,6 @@ package group
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -12,6 +10,7 @@ import (
 	groupprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
@@ -72,9 +71,8 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 
 func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1.CreateGroupRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	// generate a group ID using the last 10 characters of the deciaml representation of the current unix timestamp
-	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
-	groupId := fmt.Sprintf("group-%s", timestamp[len(timestamp)-10:])
+
+	groupId := util.GenerateIdWithPrefix("group")
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if _, err := db.NewInsert().Model(&groupv1.Group{

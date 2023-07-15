@@ -179,7 +179,7 @@ message CreateGroupResponse {
   string group_id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
-    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
 }
 
@@ -188,7 +188,7 @@ message GetGroupRequest {
   string group_id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
-    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
 }
 
@@ -204,6 +204,6 @@ message ListGroupIdsRequest {}
 message ListGroupIdsResponse {
   repeated string group_ids = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
-    (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{10}$"}
+    (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
 }

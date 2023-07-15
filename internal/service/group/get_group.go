@@ -62,10 +62,10 @@ func getGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupv1.G
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var group groupv1.Group
 	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
+		log.Error("failed getting group", logging.Error(err))
 		if eris.Is(err, sql.ErrNoRows) {
 			return nil, errNoGroupWithId
 		}
-		log.Error("failed getting group", logging.Error(err))
 		return nil, errSelectGroup
 	}
 
