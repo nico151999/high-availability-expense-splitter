@@ -6,6 +6,7 @@ data:
   {{ include "global-globalDomainKey" . }}: "{{ $.Values.global.domain }}"
   {{ include "global-taskPublicationErrorReasonKey" . }}: "{{ include "global-taskPublicationErrorReason" . }}"
   {{ include "global-dbSelectErrorReasonKey" . }}: "{{ include "global-dbSelectErrorReason" . }}"
+  {{ include "global-dbInsertErrorReasonKey" . }}: "{{ include "global-dbInsertErrorReason" . }}"
   {{ include "global-natsServerHostKey" . }}: "{{ .Values.haExpenseSplitter.services.nats.server.host }}"
   {{ include "global-natsServerPortKey" . }}: "{{ .Values.haExpenseSplitter.services.nats.server.port }}"
   {{ include "global-traceCollectorHostKey" . }}: "{{ .Values.haExpenseSplitter.services.traceCollector.server.host }}"

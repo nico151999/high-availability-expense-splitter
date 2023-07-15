@@ -241,6 +241,11 @@ TASK_PUBLICATION_ERROR
 DB_SELECT_ERROR
 {{- end}}
 
+{{/* An UPPER_SNAKE_CASE reason for an error occurred while performing a DB insert */}}
+{{- define "global-dbInsertErrorReason" -}}
+DB_INSERT_ERROR
+{{- end}}
+
 {{- define "global-globalDomainKey" -}}
 GLOBAL_DOMAIN
 {{- end}}
@@ -251,6 +256,10 @@ TASK_PUBLICATION_ERROR_REASON
 
 {{- define "global-dbSelectErrorReasonKey" -}}
 DB_SELECT_ERROR_REASON
+{{- end}}
+
+{{- define "global-dbInsertErrorReasonKey" -}}
+DB_INSERT_ERROR_REASON
 {{- end}}
 
 {{- define "global-natsServerHostKey" -}}

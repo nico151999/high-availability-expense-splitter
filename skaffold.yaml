@@ -381,7 +381,8 @@ deploy:
           cluster:
             metadata:
               annotations:
-                "linkerd\\.io/inject": enabled
+                clusterPods:
+                  "linkerd\\.io/inject": enabled
       - name: "schemahero"
         chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
         namespace: "schemahero"

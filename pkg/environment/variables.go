@@ -45,6 +45,11 @@ func GetDBSelectErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_SELECT_ERROR_REASON")
 }
 
+// GetDBInsertErrorReason returns the error reason that a DB insert to the database failed in UPPER_SNAKE_CASE
+func GetDBInsertErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_INSERT_ERROR_REASON")
+}
+
 // GetTaskPublicationErrorReason returns the error reason that a task could not be published in UPPER_SNAKE_CASE
 func GetTaskPublicationErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "TASK_PUBLICATION_ERROR_REASON")

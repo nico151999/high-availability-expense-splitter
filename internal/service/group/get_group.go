@@ -66,7 +66,6 @@ func getGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupv1.G
 			return nil, errNoGroupWithId
 		}
 		log.Error("failed getting group", logging.Error(err))
-		// TODO: determine reason why group ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectGroup
 	}
 

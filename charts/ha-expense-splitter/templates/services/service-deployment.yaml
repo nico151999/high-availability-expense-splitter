@@ -112,6 +112,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-dbSelectErrorReasonKey" . }}
+            - name: {{ include "global-dbInsertErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbInsertErrorReasonKey" . }}
             - name: {{ include "global-natsServerHostKey" . }}
               valueFrom:
                 configMapKeyRef:
