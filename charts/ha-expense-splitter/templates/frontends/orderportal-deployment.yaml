@@ -34,6 +34,7 @@ spec:
           # securityContext:
           #   readOnlyRootFilesystem: true
           # {{- end }}
+          # TODO: only pass port in DEV mode here
           args:
             - "--port" # this is for vite dev
             - "{{ include "frontend-port" . }}"
@@ -41,3 +42,13 @@ spec:
             - name: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
               containerPort: {{ include "frontend-port" . }}
               protocol: TCP
+          env:
+            # TODO: only pass PORT env in PROD mode here
+            - name: "PORT" # the env variable is for production
+              value: "{{ include "frontend-port" . }}"
+            - name: "API_SECURE"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.secure }}"
+            - name: "API_HOSTNAME"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.host }}"
+            - name: "API_PORT"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.port }}"

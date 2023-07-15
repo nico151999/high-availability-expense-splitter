@@ -4,6 +4,7 @@ importers:
 
   frontend/expense_splitter:
     specifiers:
+      '@bufbuild/connect-web': ^0.11.0
       '@playwright/test': ^1.36.1
       '@sveltejs/adapter-auto': ^2.1.0
       '@sveltejs/adapter-node': ^1.3.1
@@ -21,6 +22,8 @@ importers:
       typescript: ^5.1.6
       vite: ^4.4.4
       vitest: ^0.25.8
+    dependencies:
+      '@bufbuild/connect-web': 0.11.0
     devDependencies:
       '@playwright/test': 1.36.1
       '@sveltejs/adapter-auto': 2.1.0_@sveltejs+kit@1.22.3
@@ -46,6 +49,20 @@ packages:
     resolution: {integrity: sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /@bufbuild/connect-web/0.11.0:
+    resolution: {integrity: sha512-H0tSsn7dMJY5EQNHoQyE/TXmmRtJ6GauRl9RWk4GncQCXulo5ab5yn8cEtu7UKnPCvF7nYbK1ESE0vHi5Y2xaw==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^1.2.1
+    dependencies:
+      '@bufbuild/connect': 0.11.0
+    dev: false
+
+  /@bufbuild/connect/0.11.0:
+    resolution: {integrity: sha512-a6hrNtBzDzj4hpqylPqpJfMpIP4+O/SnszGgOuRzcuifpTvkwjSmVHLtcvkUYh0wpvjYB0CFmTYzrvAMOftbHw==}
+    peerDependencies:
+      '@bufbuild/protobuf': ^1.2.1
+    dev: false
 
   /@esbuild/android-arm/0.18.13:
     resolution: {integrity: sha512-KwqFhxRFMKZINHzCqf8eKxE0XqWlAVPRxwy6rc7CbVFxzUWB2sA/s3hbMZeemPdhN3fKBkqOaFhTbS8xJXYIWQ==}
