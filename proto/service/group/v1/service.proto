@@ -6,6 +6,7 @@ import "common/group/v1/group.proto";
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
 // buf:lint:ignore IMPORT_USED
 import "google/rpc/error_details.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -109,7 +110,7 @@ service GroupService {
       ];
     };
   }
-  // Gets all group IDs
+  // Lists all group IDs
   rpc ListGroupIds(ListGroupIdsRequest) returns (ListGroupIdsResponse) {
     option (google.api.http) = {get: "/v1/groups:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -162,6 +163,10 @@ service GroupService {
       ];
     };
   }
+  // StreamGroupIds streams the list of all group IDs
+  rpc StreamGroupIds(StreamGroupIdsRequest) returns (stream StreamGroupIdsResponse) {}
+  // StreamGroup streams the requested group
+  rpc StreamGroup(StreamGroupRequest) returns (stream StreamGroupResponse) {}
 }
 
 message CreateGroupRequest {
@@ -203,7 +208,49 @@ message ListGroupIdsRequest {}
 
 message ListGroupIdsResponse {
   repeated string group_ids = 1 [
+    (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
+}
+
+message StreamGroupIdsRequest {}
+
+message StreamGroupIdsResponse {
+  // the current list of group IDs
+  message GroupIds {
+    repeated string group_ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    GroupIds group_ids = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+  }
+}
+
+message StreamGroupRequest {
+  // the ID of the group
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamGroupResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed group
+    common.group.v1.Group group = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
 }

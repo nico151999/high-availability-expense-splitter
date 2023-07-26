@@ -21,10 +21,6 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-var errInsertGroup = eris.New("failed inserting group")
-var errMarshalGroupCreated = eris.New("failed marshalling group created event")
-var errPublishGroupCreated = eris.New("failed publishing group created event")
-
 func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[groupsvcv1.CreateGroupRequest]) (*connect.Response[groupsvcv1.CreateGroupResponse], error) {
 	ctx = logging.IntoContext(
 		ctx,

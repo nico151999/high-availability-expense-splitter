@@ -13,6 +13,14 @@ import (
 
 var _ groupv1connect.GroupServiceHandler = (*groupServer)(nil)
 
+var errSelectGroup = eris.New("failed selecting group")
+var errNoGroupWithId = eris.New("there is no group with that ID")
+var errInsertGroup = eris.New("failed inserting group")
+var errMarshalGroupCreated = eris.New("failed marshalling group created event")
+var errPublishGroupCreated = eris.New("failed publishing group created event")
+var errSelectGroupIds = eris.New("failed selecting group IDs")
+var errSendStreamMessage = eris.New("failed sending stream message to client")
+
 type groupServer struct {
 	dbClient   bun.IDB
 	natsClient *nats.Conn

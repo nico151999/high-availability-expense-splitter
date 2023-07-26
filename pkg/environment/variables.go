@@ -76,7 +76,13 @@ func GetTraceCollectorPort(ctx context.Context) uint16 {
 // TODO: as env variable with %s parameter
 // GetGroupCreatedSubject returns the name of the subject events are published on when a group was created
 func GetGroupCreatedSubject(groupId string) string {
-	return fmt.Sprintf("group.%s.groupCreated", groupId)
+	return fmt.Sprintf("%s.%s.groupCreated", GetGroupSubject(), groupId)
+}
+
+// TODO: as env variable
+// GetGroupCreatedSubject returns the name of the subject group events are published on
+func GetGroupSubject() string {
+	return "group"
 }
 
 // TODO: as env variable
