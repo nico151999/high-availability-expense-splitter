@@ -50,6 +50,16 @@ func GetDBInsertErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_INSERT_ERROR_REASON")
 }
 
+// GetDBDeleteErrorReason returns the error reason that a DB delete to the database failed in UPPER_SNAKE_CASE
+func GetDBDeleteErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_DELETE_ERROR_REASON")
+}
+
+// GetDBUpdateErrorReason returns the error reason that a DB update to the database failed in UPPER_SNAKE_CASE
+func GetDBUpdateErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "DB_UPDATE_ERROR_REASON")
+}
+
 // GetTaskPublicationErrorReason returns the error reason that a task could not be published in UPPER_SNAKE_CASE
 func GetTaskPublicationErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "TASK_PUBLICATION_ERROR_REASON")

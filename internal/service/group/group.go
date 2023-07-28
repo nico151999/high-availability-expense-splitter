@@ -20,6 +20,8 @@ var errMarshalGroupCreated = eris.New("failed marshalling group created event")
 var errPublishGroupCreated = eris.New("failed publishing group created event")
 var errSelectGroupIds = eris.New("failed selecting group IDs")
 var errSendStreamMessage = eris.New("failed sending stream message to client")
+var errDeleteGroup = eris.New("failed deleting group")
+var errUpdateGroup = eris.New("failed updating group")
 
 type groupServer struct {
 	dbClient   bun.IDB
