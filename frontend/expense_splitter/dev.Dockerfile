@@ -18,7 +18,7 @@ WORKDIR /usr/src/app
 COPY --chown=${USER_ID}:${GROUP_ID} Makefile pnpm-lock.yaml pnpm-workspace.yaml /usr/src/app/
 COPY --chown=${USER_ID}:${GROUP_ID} frontend/expense_splitter/package.json /usr/src/app/frontend/expense_splitter/
 RUN make pnpm-install
-COPY --chown=${USER_ID}:${GROUP_ID} buf.gen.yaml.tpl buf.work.yaml /usr/src/app/
+COPY --chown=${USER_ID}:${GROUP_ID} buf.gen.yaml.tpl buf.gen.tag.yaml.tpl buf.work.yaml /usr/src/app/
 COPY --chown=${USER_ID}:${GROUP_ID} proto /usr/src/app/proto
 RUN PATH="$PATH:$(eval echo '~/go/bin')" make generate-proto-with-node &&\
     rm -rf gen/doc &&\

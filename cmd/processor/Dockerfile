@@ -26,7 +26,7 @@ RUN make install-buf install-gomplate
 COPY go.mod go.sum ${BUILD_PATH}/
 RUN go mod download
 
-COPY buf.gen.yaml.tpl buf.work.yaml ${BUILD_PATH}/
+COPY buf.gen.yaml.tpl buf.gen.tag.yaml.tpl buf.work.yaml ${BUILD_PATH}/
 COPY proto ${BUILD_PATH}/proto
 RUN make generate-proto
 

@@ -29,6 +29,7 @@ Dockerfile.cross
 
 # temp buf files
 /buf.gen.yaml
+/buf.gen.tag.yaml
 
 # Frontend
 **/node_modules

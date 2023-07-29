@@ -115,6 +115,22 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/UpdateGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/DeleteGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/StreamGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.group\.v1\.GroupService/StreamGroupIds$
+              methods:
+                - POST
+                - OPTIONS
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
