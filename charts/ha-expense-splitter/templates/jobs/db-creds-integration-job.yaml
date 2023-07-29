@@ -86,6 +86,7 @@ spec:
         - -c
         - |
           echo "
+          \set VERBOSITY verbose
           {{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
           {{- if $processorSpec.db }}
           DO

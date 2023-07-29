@@ -149,7 +149,7 @@ func UnaryLogInterceptorFunc(ctx context.Context) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			log = log.NewNamed(
+			log := log.NewNamed(
 				strings.ReplaceAll(req.Spec().Procedure, ".", "-"),
 			)
 			ctx = logging.IntoContext(ctx, log)
