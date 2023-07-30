@@ -23,7 +23,8 @@ func StreamResource[T any](
 	stillAliveMsg *T) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
-	ticker := time.NewTicker(time.Minute)
+	const tickerPeriod = time.Minute
+	ticker := time.NewTicker(tickerPeriod)
 	defer ticker.Stop()
 
 	resChan := make(chan *nats.Msg)
@@ -48,14 +49,15 @@ func StreamResource[T any](
 			if err := sendCurrentResource(ctx, srv); err != nil {
 				return err
 			}
+			ticker.Reset(tickerPeriod)
 		case <-ticker.C:
 			if err := sendAliveMessage(ctx, srv, stillAliveMsg); err != nil {
 				return err
 			}
+		case <-ctx.Done():
+			log.Info("the stream context is done")
 		}
 	}
-
-	// TODO: what if there is no error?
 }
 
 func sendAliveMessage[T any](ctx context.Context, srv *connect.ServerStream[T], stillAliveMsg *T) error {
