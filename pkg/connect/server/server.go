@@ -212,8 +212,8 @@ func NewServer[CONNECT_HANDLER any](
 		svc,
 		connect.WithInterceptors(
 			otelconnect.NewInterceptor(otelconnect.WithTracerProvider(tp)),
-			connect.UnaryInterceptorFunc(interceptor.UnaryLogInterceptorFunc(ctx)),
-			connect.UnaryInterceptorFunc(interceptor.UnaryValidateInterceptorFunc()),
+			interceptor.NewLogInterceptor(ctx),
+			interceptor.NewValidationInterceptor(ctx),
 		),
 	))
 

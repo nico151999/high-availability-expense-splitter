@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// httpResponseCodeModifier checks if the gRPC response contains an http status code header and sets the http status code accordingly
+// HttpResponseCodeModifier is a REST interceptor that checks if the gRPC response contains an http status code header and sets the http status code accordingly
 func HttpResponseCodeModifier(ctx context.Context, w http.ResponseWriter, p proto.Message) error {
 	md, ok := runtime.ServerMetadataFromContext(ctx)
 	if !ok {
