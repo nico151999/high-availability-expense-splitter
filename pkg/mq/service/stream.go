@@ -11,19 +11,23 @@ import (
 	"github.com/rotisserie/eris"
 )
 
+type retrieveCurrentResourceFunc[T any] func(context.Context) (*T, error)
+
+const tickerPeriod = time.Minute
+
 var ErrSubscribeResource = eris.New("failed subscribing resource")
 var ErrSendStreamAliveMessage = eris.New("failed sending stream alive message")
+var ErrSendCurrentResourceMessage = eris.New("failed sending current resource message to client")
 
 func StreamResource[T any](
 	ctx context.Context,
 	natsClient *nats.Conn,
 	subj string,
-	sendCurrentResource func(ctx context.Context, srv *connect.ServerStream[T]) error,
+	retrieveCurrentResource retrieveCurrentResourceFunc[T],
 	srv *connect.ServerStream[T],
 	stillAliveMsg *T) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
-	const tickerPeriod = time.Minute
 	ticker := time.NewTicker(tickerPeriod)
 	defer ticker.Stop()
 
@@ -39,7 +43,7 @@ func StreamResource[T any](
 		}
 	}()
 
-	if err := sendCurrentResource(ctx, srv); err != nil {
+	if err := sendCurrentResource(ctx, srv, retrieveCurrentResource); err != nil {
 		return err
 	}
 
@@ -47,13 +51,14 @@ loop:
 	for {
 		select {
 		case <-resChan:
-			if err := sendCurrentResource(ctx, srv); err != nil {
+			if err := sendCurrentResource(ctx, srv, retrieveCurrentResource); err != nil {
 				return err
 			}
 			ticker.Reset(tickerPeriod)
 		case <-ticker.C:
-			if err := sendAliveMessage(ctx, srv, stillAliveMsg); err != nil {
-				return err
+			if err := srv.Send(stillAliveMsg); err != nil {
+				log.Error("failed sending still alive message to client", logging.Error(err))
+				return ErrSendStreamAliveMessage
 			}
 		case <-ctx.Done():
 			log.Info("the context is done")
@@ -64,12 +69,21 @@ loop:
 	return nil
 }
 
-func sendAliveMessage[T any](ctx context.Context, srv *connect.ServerStream[T], stillAliveMsg *T) error {
+func sendCurrentResource[T any](
+	ctx context.Context,
+	srv *connect.ServerStream[T],
+	retrieveCurrentResource retrieveCurrentResourceFunc[T]) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
-	if err := srv.Send(stillAliveMsg); err != nil {
-		log.Error("failed sending stream alive message to client", logging.Error(err))
-		return ErrSendStreamAliveMessage
+	res, err := retrieveCurrentResource(ctx)
+	if err != nil {
+		return eris.Wrap(err, "failed to retrieve current resource")
 	}
+
+	if err := srv.Send(res); err != nil {
+		log.Error("failed sending still alive message to client", logging.Error(err))
+		return ErrSendCurrentResourceMessage
+	}
+
 	return nil
 }

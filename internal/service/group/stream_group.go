@@ -19,6 +19,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+var streamGroupAlive = groupsvcv1.StreamGroupResponse{
+	Update: &groupsvcv1.StreamGroupResponse_StillAlive{},
+}
+
 func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[groupsvcv1.StreamGroupRequest], srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
 	ctx, cancel := context.WithTimeout(
 		logging.IntoContext(
@@ -30,11 +34,9 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 		time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context, srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
-		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId(), srv)
-	}, srv, &groupsvcv1.StreamGroupResponse{
-		Update: &groupsvcv1.StreamGroupResponse_StillAlive{},
-	}); err != nil {
+	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
+		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
+	}, srv, &streamGroupAlive); err != nil {
 		// TODO: catch more error cases
 		if eris.Is(err, errSelectGroup) {
 			return errors.NewErrorWithDetails(
@@ -59,24 +61,20 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 	return nil
 }
 
-func sendCurrentGroup(ctx context.Context, dbClient bun.IDB, groupId string, srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
+func sendCurrentGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupsvcv1.StreamGroupResponse, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var group groupv1.Group
 	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
 		log.Error("failed getting group", logging.Error(err))
 		if eris.Is(err, sql.ErrNoRows) {
-			return errNoGroupWithId
+			return nil, errNoGroupWithId
 		}
-		return errSelectGroup
+		return nil, errSelectGroup
 	}
-	if err := srv.Send(&groupsvcv1.StreamGroupResponse{
+	return &groupsvcv1.StreamGroupResponse{
 		Update: &groupsvcv1.StreamGroupResponse_Group{
 			Group: &group,
 		},
-	}); err != nil {
-		log.Error("failed sending current group to client", logging.Error(err))
-		return errSendStreamMessage
-	}
-	return nil
+	}, nil
 }

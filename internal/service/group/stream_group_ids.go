@@ -18,15 +18,17 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+var streamGroupIdsAlive = groupsvcv1.StreamGroupIdsResponse{
+	Update: &groupsvcv1.StreamGroupIdsResponse_StillAlive{},
+}
+
 func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[groupsvcv1.StreamGroupIdsRequest], srv *connect.ServerStream[groupsvcv1.StreamGroupIdsResponse]) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context, srv *connect.ServerStream[groupsvcv1.StreamGroupIdsResponse]) error {
-		return sendCurrentGroupIds(ctx, s.dbClient, srv)
-	}, srv, &groupsvcv1.StreamGroupIdsResponse{
-		Update: &groupsvcv1.StreamGroupIdsResponse_StillAlive{},
-	}); err != nil {
+	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context) (*groupsvcv1.StreamGroupIdsResponse, error) {
+		return sendCurrentGroupIds(ctx, s.dbClient)
+	}, srv, &streamGroupIdsAlive); err != nil {
 		// TODO: catch more error cases
 		if eris.Is(err, errSelectGroupIds) {
 			return errors.NewErrorWithDetails(
@@ -47,24 +49,20 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 	return nil
 }
 
-func sendCurrentGroupIds(ctx context.Context, dbClient bun.IDB, srv *connect.ServerStream[groupsvcv1.StreamGroupIdsResponse]) error {
+func sendCurrentGroupIds(ctx context.Context, dbClient bun.IDB) (*groupsvcv1.StreamGroupIdsResponse, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var groupIds []string
 	if err := dbClient.NewSelect().Model((*groupv1.Group)(nil)).Column("id").Scan(ctx, &groupIds); err != nil {
 		log.Error("failed getting group IDs", logging.Error(err))
-		// TODO: determine reason why group ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
-		return errSelectGroupIds
+		// TODO: determine reason why group IDs couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
+		return nil, errSelectGroupIds
 	}
-	if err := srv.Send(&groupsvcv1.StreamGroupIdsResponse{
+	return &groupsvcv1.StreamGroupIdsResponse{
 		Update: &groupsvcv1.StreamGroupIdsResponse_GroupIds_{
 			GroupIds: &groupsvcv1.StreamGroupIdsResponse_GroupIds{
 				GroupIds: groupIds,
 			},
 		},
-	}); err != nil {
-		log.Error("failed sending current group IDs to client", logging.Error(err))
-		return errSendStreamMessage
-	}
-	return nil
+	}, nil
 }
