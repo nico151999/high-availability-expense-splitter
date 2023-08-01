@@ -3,6 +3,7 @@ package group
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/bufbuild/connect-go"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
@@ -19,12 +20,15 @@ import (
 )
 
 func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[groupsvcv1.StreamGroupRequest], srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
-	ctx = logging.IntoContext(
-		ctx,
-		logging.FromContext(ctx).With(
-			logging.String(
-				"groupId",
-				req.Msg.GetGroupId())))
+	ctx, cancel := context.WithTimeout(
+		logging.IntoContext(
+			ctx,
+			logging.FromContext(ctx).With(
+				logging.String(
+					"groupId",
+					req.Msg.GetGroupId()))),
+		time.Hour)
+	defer cancel()
 
 	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context, srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
 		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId(), srv)

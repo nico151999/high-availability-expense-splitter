@@ -43,6 +43,7 @@ func StreamResource[T any](
 		return err
 	}
 
+loop:
 	for {
 		select {
 		case <-resChan:
@@ -55,9 +56,12 @@ func StreamResource[T any](
 				return err
 			}
 		case <-ctx.Done():
-			log.Info("the stream context is done")
+			log.Info("the context is done")
+			break loop
 		}
 	}
+	log.Info("the stream ends now")
+	return nil
 }
 
 func sendAliveMessage[T any](ctx context.Context, srv *connect.ServerStream[T], stillAliveMsg *T) error {

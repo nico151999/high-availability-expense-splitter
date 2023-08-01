@@ -19,7 +19,7 @@ import (
 )
 
 func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[groupsvcv1.StreamGroupIdsRequest], srv *connect.ServerStream[groupsvcv1.StreamGroupIdsResponse]) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
 	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context, srv *connect.ServerStream[groupsvcv1.StreamGroupIdsResponse]) error {
