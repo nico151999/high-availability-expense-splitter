@@ -68,12 +68,13 @@ func (server *Server) Serve(
 		if err := server.server.Serve(ln); err != nil {
 			if eris.Is(err, http.ErrServerClosed) || eris.Is(err, net.ErrClosed) {
 				log.Info("closed server")
-				serverResult <- nil
 			} else {
 				log.Error("failed to serve http", logging.Error(err))
 				serverResult <- eris.Wrap(err, "failed to serve http")
+				return
 			}
 		}
+		serverResult <- nil
 	}()
 	select {
 	case <-ctx.Done():
