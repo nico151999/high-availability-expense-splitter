@@ -41,7 +41,7 @@ func main() {
 	environment.GetGlobalDomain(ctx)
 	environment.GetTraceCollectorHost(ctx)
 	environment.GetTraceCollectorPort(ctx)
-	environment.GetTaskPublicationErrorReason(ctx)
+	environment.GetMessagePublicationErrorReason(ctx)
 	environment.GetDBSelectErrorReason(ctx)
 
 	svc, err := group.NewGroupServer(

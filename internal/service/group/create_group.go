@@ -41,7 +41,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
 						Reason: "failed publishing group created task",
-						Domain: environment.GetTaskPublicationErrorReason(ctx),
+						Domain: environment.GetMessagePublicationErrorReason(ctx),
 					},
 				})
 		} else if eris.Is(err, errInsertGroup) {

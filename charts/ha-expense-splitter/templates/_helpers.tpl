@@ -232,7 +232,7 @@ expense-splitter
 
 
 {{/* An UPPER_SNAKE_CASE reason for an error occurred while trying to publish a task on the MQ */}}
-{{- define "global-taskPublicationErrorReason" -}}
+{{- define "global-messagePublicationErrorReason" -}}
 TASK_PUBLICATION_ERROR
 {{- end}}
 
@@ -250,8 +250,8 @@ DB_INSERT_ERROR
 GLOBAL_DOMAIN
 {{- end}}
 
-{{- define "global-taskPublicationErrorReasonKey" -}}
-TASK_PUBLICATION_ERROR_REASON
+{{- define "global-messagePublicationErrorReasonKey" -}}
+MESSAGE_PUBLICATION_ERROR_REASON
 {{- end}}
 
 {{- define "global-dbSelectErrorReasonKey" -}}

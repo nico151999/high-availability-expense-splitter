@@ -102,11 +102,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-globalDomainKey" . }}
-            - name: {{ include "global-taskPublicationErrorReasonKey" . }}
+            - name: {{ include "global-messagePublicationErrorReasonKey" . }}
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
-                  key: {{ include "global-taskPublicationErrorReasonKey" . }}
+                  key: {{ include "global-messagePublicationErrorReasonKey" . }}
             - name: {{ include "global-dbSelectErrorReasonKey" . }}
               valueFrom:
                 configMapKeyRef:

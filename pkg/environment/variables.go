@@ -60,9 +60,24 @@ func GetDBUpdateErrorReason(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_UPDATE_ERROR_REASON")
 }
 
-// GetTaskPublicationErrorReason returns the error reason that a task could not be published in UPPER_SNAKE_CASE
-func GetTaskPublicationErrorReason(ctx context.Context) string {
-	return MustLookupString(ctx, "TASK_PUBLICATION_ERROR_REASON")
+// GetMessagePublicationErrorReason returns the error reason that a message could not be published in UPPER_SNAKE_CASE
+func GetMessagePublicationErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "MESSAGE_PUBLICATION_ERROR_REASON")
+}
+
+// GetMessageSubscriptionErrorReason returns the error reason that a subscription to messages failed in UPPER_SNAKE_CASE
+func GetMessageSubscriptionErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "MESSAGE_SUBSCRIPTION_ERROR_REASON")
+}
+
+// GetSendCurrentResourceErrorReason returns the error reason that the current resource could not be sent in UPPER_SNAKE_CASE
+func GetSendCurrentResourceErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "SEND_CURRENT_RESOURCE_ERROR_REASON")
+}
+
+// GetSendStreamAliveErrorReason returns the error reason that an alive message could not be sent in UPPER_SNAKE_CASE
+func GetSendStreamAliveErrorReason(ctx context.Context) string {
+	return MustLookupString(ctx, "SEND_STREAM_ALIVE_ERROR_REASON")
 }
 
 // GetNatsServerHost returns the host address of the NATS server

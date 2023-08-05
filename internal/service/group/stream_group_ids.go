@@ -41,6 +41,39 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 						Domain: environment.GetDBSelectErrorReason(ctx),
 					},
 				})
+		} else if eris.Is(err, service.ErrSubscribeResource) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeInternal,
+				"failed subscribing to updates",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "subscribing to group ID updates failed",
+						Domain: environment.GetMessageSubscriptionErrorReason(ctx),
+					},
+				})
+		} else if eris.Is(err, service.ErrSendCurrentResourceMessage) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeCanceled,
+				"failed returning current resource",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "returning current group IDs failed",
+						Domain: environment.GetSendCurrentResourceErrorReason(ctx),
+					},
+				})
+		} else if eris.Is(err, service.ErrSendStreamAliveMessage) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeCanceled,
+				"failed sending alive message to client",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "the periodic alive check failed",
+						Domain: environment.GetSendStreamAliveErrorReason(ctx),
+					},
+				})
 		} else {
 			return connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}

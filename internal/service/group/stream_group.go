@@ -37,7 +37,6 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
 		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamGroupAlive); err != nil {
-		// TODO: catch more error cases
 		if eris.Is(err, errSelectGroup) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -53,6 +52,39 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 			return connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the group ID does not exist"))
+		} else if eris.Is(err, service.ErrSubscribeResource) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeInternal,
+				"failed subscribing to updates",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "subscribing to group updates failed",
+						Domain: environment.GetMessageSubscriptionErrorReason(ctx),
+					},
+				})
+		} else if eris.Is(err, service.ErrSendCurrentResourceMessage) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeDataLoss,
+				"failed returning current resource",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "returning current group failed",
+						Domain: environment.GetSendCurrentResourceErrorReason(ctx),
+					},
+				})
+		} else if eris.Is(err, service.ErrSendStreamAliveMessage) {
+			return errors.NewErrorWithDetails(
+				ctx,
+				connect.CodeCanceled,
+				"failed sending alive message to client",
+				[]protoreflect.ProtoMessage{
+					&errdetails.ErrorInfo{
+						Reason: "the periodic alive check failed",
+						Domain: environment.GetSendStreamAliveErrorReason(ctx),
+					},
+				})
 		} else {
 			return connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
