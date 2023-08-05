@@ -29,7 +29,6 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context) (*groupsvcv1.StreamGroupIdsResponse, error) {
 		return sendCurrentGroupIds(ctx, s.dbClient)
 	}, srv, &streamGroupIdsAlive); err != nil {
-		// TODO: catch more error cases
 		if eris.Is(err, errSelectGroupIds) {
 			return errors.NewErrorWithDetails(
 				ctx,
