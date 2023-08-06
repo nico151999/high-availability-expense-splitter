@@ -107,6 +107,21 @@ spec:
                 configMapKeyRef:
                   name: {{ include "global-name-configMap" . }}
                   key: {{ include "global-messagePublicationErrorReasonKey" . }}
+            - name: {{ include "global-messageSubscriptionErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-messageSubscriptionErrorReasonKey" . }}
+            - name: {{ include "global-sendCurrentResourceErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-sendCurrentResourceErrorReasonKey" . }}
+            - name: {{ include "global-sendStreamAliveErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-sendStreamAliveErrorReasonKey" . }}
             - name: {{ include "global-dbSelectErrorReasonKey" . }}
               valueFrom:
                 configMapKeyRef:

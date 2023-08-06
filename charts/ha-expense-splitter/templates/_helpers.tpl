@@ -233,7 +233,19 @@ expense-splitter
 
 {{/* An UPPER_SNAKE_CASE reason for an error occurred while trying to publish a task on the MQ */}}
 {{- define "global-messagePublicationErrorReason" -}}
-TASK_PUBLICATION_ERROR
+MESSAGE_PUBLICATION_ERROR
+{{- end}}
+
+{{- define "global-messageSubscriptionErrorReason" -}}
+MESSAGE_SUBSCRIPTION_ERROR
+{{- end}}
+
+{{- define "global-sendCurrentResourceErrorReason" -}}
+SEND_CURRENT_RESOURCE_ERROR
+{{- end}}
+
+{{- define "global-sendStreamAliveErrorReason" -}}
+SEND_STREAM_ALIVE_ERROR
 {{- end}}
 
 {{/* An UPPER_SNAKE_CASE reason for an error occurred while performing a DB select */}}
@@ -252,6 +264,18 @@ GLOBAL_DOMAIN
 
 {{- define "global-messagePublicationErrorReasonKey" -}}
 MESSAGE_PUBLICATION_ERROR_REASON
+{{- end}}
+
+{{- define "global-messageSubscriptionErrorReasonKey" -}}
+MESSAGE_SUBSCRIPTION_ERROR_REASON
+{{- end}}
+
+{{- define "global-sendCurrentResourceErrorReasonKey" -}}
+SEND_CURRENT_RESOURCE_ERROR_REASON
+{{- end}}
+
+{{- define "global-sendStreamAliveErrorReasonKey" -}}
+SEND_STREAM_ALIVE_ERROR_REASON
 {{- end}}
 
 {{- define "global-dbSelectErrorReasonKey" -}}

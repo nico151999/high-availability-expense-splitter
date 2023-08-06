@@ -43,6 +43,9 @@ func main() {
 	environment.GetTraceCollectorPort(ctx)
 	environment.GetMessagePublicationErrorReason(ctx)
 	environment.GetDBSelectErrorReason(ctx)
+	environment.GetMessageSubscriptionErrorReason(ctx)
+	environment.GetSendCurrentResourceErrorReason(ctx)
+	environment.GetSendStreamAliveErrorReason(ctx)
 
 	svc, err := group.NewGroupServer(
 		ctx,
