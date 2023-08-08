@@ -17,7 +17,6 @@ require (
 	github.com/nats-io/nats-server v1.4.1
 	github.com/nats-io/nats.go v1.25.0
 	github.com/rotisserie/eris v0.5.4
-	github.com/rs/cors v1.8.3
 	github.com/uptrace/bun v1.1.14
 	github.com/uptrace/bun/dialect/pgdialect v1.1.14
 	github.com/uptrace/bun/driver/pgdriver v1.1.14

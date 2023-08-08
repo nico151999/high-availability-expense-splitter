@@ -14,7 +14,7 @@ import (
 	"github.com/bufbuild/connect-go"
 	natsserver "github.com/nats-io/gnatsd/server"
 	natstestserver "github.com/nats-io/nats-server/test"
-	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
@@ -76,9 +76,6 @@ func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (
 		groupv1connect.NewGroupServiceHandler,
 		"TestGroupService",
 		tracetest.NewInMemoryExporter(),
-		[]string{"*"},
-		[]string{"*"},
-		[]string{"GET", "POST", "PUT", "PATCH", "DELETE"},
 	)
 	if err != nil {
 		t.Fatal("failed to create grpc server", err)

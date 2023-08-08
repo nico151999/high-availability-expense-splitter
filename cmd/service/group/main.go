@@ -2,29 +2,19 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
-	"github.com/nico151999/high-availability-expense-splitter/internal/config/cors"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/param"
 )
 
 const serviceName = "groupService"
-
-var corsCfgFlag param.StringParam
-
-func init() {
-	flag.Var(&corsCfgFlag, "groupSvcCorsCfg", "the filepath of the cors config yaml")
-	flag.Parse()
-}
 
 func main() {
 	log := logging.GetLogger().Named(serviceName)
@@ -64,7 +54,6 @@ func main() {
 	}
 	defer svc.Close()
 
-	corsSettings := cors.MustLoadCorsFromParam(ctx, &corsCfgFlag)
 	serverAddress := fmt.Sprintf(":%d", environment.GetGroupServerPort(ctx))
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
@@ -79,10 +68,7 @@ func main() {
 		serviceName,
 		fmt.Sprintf("%s:%d",
 			environment.GetTraceCollectorHost(ctx),
-			environment.GetTraceCollectorPort(ctx)),
-		corsSettings.UrlPatterns,
-		corsSettings.AllowedHeaders,
-		corsSettings.AllowedMethods)
+			environment.GetTraceCollectorPort(ctx)))
 	if err != nil {
 		log.Panic(
 			"failed running server",

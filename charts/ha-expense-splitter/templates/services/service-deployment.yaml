@@ -81,9 +81,6 @@ spec:
       containers:
         # TODO: add init container that waits for dependencies to become available
         - name: "{{ $.Chart.Name }}-{{ $serviceName }}"
-          args:
-            - "{{ printf "-%sSvcCorsCfg" $serviceName}}"
-            - "{{ include "service-corsConfigFilePath" $serviceName }}"
           image: "{{ $serviceSpec.image.repository }}:{{ $serviceSpec.image.tag }}"
           imagePullPolicy: "{{default $.Values.haExpenseSplitter.imagePullPolicy $serviceSpec.imagePullPolicy}}"
           {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
@@ -191,15 +188,4 @@ spec:
                   name: {{ include "service-name-configMap" $configurableServiceName }}
                   key: {{ include "service-serverPortKey" . }}
             {{- end}}
-          volumeMounts:
-          - name: "{{ include "service-corsConfigVolumeName" $serviceName }}"
-            mountPath: "{{ include "service-corsConfigVolumeMountPath" $serviceName }}"
-            readOnly: true
-      volumes:
-        - name: "{{ include "service-corsConfigVolumeName" $serviceName }}"
-          configMap:
-            name: {{ include "service-name-configMap" $serviceName }}
-            items:
-            - key: "{{ include "service-corsConfigFileName" $serviceName }}"
-              path: "{{ include "service-corsConfigFileName" $serviceName }}"
 {{- end }}

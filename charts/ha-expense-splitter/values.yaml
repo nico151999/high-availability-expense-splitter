@@ -54,9 +54,8 @@ haExpenseSplitter:
       tag: "latest"
   services:
     cors:
-      additionalUrlPatterns: [] # in addition to the the frontends' ingress hosts
-      allowedHeaders: ["*"]
-      allowedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+      allowedHeaders: "x-grpc-web,x-user-agent,content-type"
+      allowedMethods: "GET,POST,PATCH,DELETE"
     ingress:
       host: "services.ha-expense-splitter.localhost"
       certSecret: "svc-ingress-cert"

@@ -53,10 +53,7 @@ func main() {
 		serviceName,
 		fmt.Sprintf("%s:%d",
 			environment.GetTraceCollectorHost(ctx),
-			environment.GetTraceCollectorPort(ctx)),
-		[]string{"*"},
-		[]string{"*"},
-		[]string{"POST"})
+			environment.GetTraceCollectorPort(ctx)))
 	if err != nil {
 		log.Panic(
 			"failed running server",

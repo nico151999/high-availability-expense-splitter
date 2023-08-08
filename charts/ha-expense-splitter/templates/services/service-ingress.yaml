@@ -9,6 +9,10 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     nginx.ingress.kubernetes.io/server-snippet: "grpc_read_timeout 86400s; grpc_send_timeout 86400s;"
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "{{ $.Values.haExpenseSplitter.services.cors.allowedMethods }}"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "{{ $.Values.haExpenseSplitter.services.cors.allowedHeaders }}"
     {{- range $_, $serviceSpec := $.Values.haExpenseSplitter.services.specs }}
       {{- if default $.Values.haExpenseSplitter.linkerdMesh $serviceSpec.linkerdMesh }}
     nginx.ingress.kubernetes.io/service-upstream: "true"

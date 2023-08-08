@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 
     function gotoGroups() {
-        goto('./group');
+        goto('./groups');
     }
 </script>
 

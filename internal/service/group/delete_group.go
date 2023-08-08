@@ -62,6 +62,7 @@ func deleteGroup(ctx context.Context, dbClient bun.IDB, groupId string) error {
 		}
 		return errDeleteGroup
 	}
+	// TODO: write deletion info message to MQ
 
 	return nil
 }

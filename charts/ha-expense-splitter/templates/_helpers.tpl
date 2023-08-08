@@ -82,25 +82,6 @@ SERVER_HOSTNAME
 SERVER_PORT
 {{- end}}
 
-{{/* Accepts the short name of the service as parameter */}}
-{{- define "service-corsConfigFileName" -}}
-{{ . }}CorsConfig.yaml
-{{- end}}
-
-{{/* Accepts the short name of the service as parameter */}}
-{{- define "service-corsConfigVolumeName" -}}
-{{ . }}-crs-vol
-{{- end}}
-
-{{- define "service-corsConfigVolumeMountPath" -}}
-/etc/haExpenseSplitter
-{{- end}}
-
-{{/* Accepts the short name of the service as parameter */}}
-{{- define "service-corsConfigFilePath" -}}
-{{ include "service-corsConfigVolumeMountPath" . }}/{{ include "service-corsConfigFileName" . }}
-{{- end}}
-
 {{/* Accepts the short name of the service as parameter "shortName" and the release name as "releaseName" */}}
 {{- define "service-selectorLabels-deployment" -}}
 app.kubernetes.io/name: {{ include "service-name-deployment" .shortName }}

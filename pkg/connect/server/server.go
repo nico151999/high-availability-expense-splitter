@@ -14,7 +14,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	logginggrpc "github.com/nico151999/high-availability-expense-splitter/pkg/logging/grpc"
 	"github.com/rotisserie/eris"
-	"github.com/rs/cors"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -119,9 +118,6 @@ func ListenAndServe[CONNECT_HANDLER any](
 	createServiceHandler ServiceHandlerCreatorFunc[CONNECT_HANDLER],
 	serviceName string,
 	traceCollectorUrl string,
-	corsPatterns []string,
-	allowedCorsHeaders []string,
-	allowedCorsMethods []string,
 ) error {
 	log := logging.FromContext(ctx).NewNamed("ListenAndServe")
 	ctx = logging.IntoContext(ctx, log)
@@ -142,9 +138,6 @@ func ListenAndServe[CONNECT_HANDLER any](
 		createServiceHandler,
 		serviceName,
 		spanExporter,
-		corsPatterns,
-		allowedCorsHeaders,
-		allowedCorsMethods,
 	)
 	if err != nil {
 		return eris.Wrap(err, "failed to create server")
@@ -166,9 +159,6 @@ func NewServer[CONNECT_HANDLER any](
 	createServiceHandler ServiceHandlerCreatorFunc[CONNECT_HANDLER],
 	serviceName string,
 	spanExporter sdktrace.SpanExporter,
-	corsPatterns []string,
-	allowedCorsHeaders []string,
-	allowedCorsMethods []string,
 ) (*Server, error) {
 	log := logging.FromContext(ctx).NewNamed("NewServer")
 	ctx = logging.IntoContext(ctx, log)
@@ -233,17 +223,10 @@ func NewServer[CONNECT_HANDLER any](
 		}
 	})
 
-	c := cors.New(cors.Options{
-		AllowedOrigins:     corsPatterns,
-		AllowedHeaders:     allowedCorsHeaders,
-		AllowedMethods:     allowedCorsMethods,
-		OptionsPassthrough: false,
-	})
-
 	return &Server{
 		server: http.Server{
 			Addr:    addr,
-			Handler: h2c.NewHandler(c.Handler(mux), &http2.Server{}),
+			Handler: h2c.NewHandler(mux, &http2.Server{}),
 		},
 		tracerProvider: tp,
 	}, nil
