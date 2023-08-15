@@ -28,7 +28,7 @@ RUN go mod download
 
 COPY buf.gen.yaml.tpl buf.gen.tag.yaml.tpl buf.work.yaml ${BUILD_PATH}/
 COPY proto ${BUILD_PATH}/proto
-RUN make generate-proto
+RUN make generate-proto-with-gotag
 
 COPY cmd ${BUILD_PATH}/cmd
 COPY internal ${BUILD_PATH}/internal

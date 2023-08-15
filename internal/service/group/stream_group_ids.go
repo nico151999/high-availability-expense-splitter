@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/bufbuild/connect-go"
@@ -26,7 +27,7 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, environment.GetGroupSubject(), func(ctx context.Context) (*groupsvcv1.StreamGroupIdsResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetGroupsSubject()), func(ctx context.Context) (*groupsvcv1.StreamGroupIdsResponse, error) {
 		return sendCurrentGroupIds(ctx, s.dbClient)
 	}, srv, &streamGroupIdsAlive); err != nil {
 		if eris.Is(err, errSelectGroupIds) {

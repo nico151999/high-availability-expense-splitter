@@ -13,6 +13,6 @@ func (rpProcessor *groupProcessor) groupCreated(ctx context.Context, req *groupv
 		logging.String("name", req.GetName()),
 		logging.String("groupId", req.GetGroupId()),
 		logging.String("requestorEmail", req.GetRequestorEmail()))
-	// TODO: actually process message like sending a project created email and publish an event telling what was done (e.g. project creation email sent)
+	// TODO: actually process message like sending a project created notification and publish an event telling what was done (e.g. project creation notification sent)
 	return nil
 }

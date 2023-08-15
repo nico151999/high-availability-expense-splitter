@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/nats-io/nats.go"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
+	groupprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -15,6 +17,7 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -28,7 +31,7 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	group, err := updateGroup(ctx, s.dbClient, req.Msg.GetGroupId(), req.Msg.GetUpdateFields())
+	group, err := updateGroup(ctx, s.natsClient, s.dbClient, req.Msg.GetGroupId(), req.Msg.GetUpdateFields())
 	if err != nil {
 		if eris.Is(err, errUpdateGroup) {
 			return nil, errors.NewErrorWithDetails(
@@ -55,7 +58,7 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 	}), nil
 }
 
-func updateGroup(ctx context.Context, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
+func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var group groupv1.Group
 	query := dbClient.NewUpdate()
@@ -72,6 +75,19 @@ func updateGroup(ctx context.Context, dbClient bun.IDB, groupId string, params [
 			return nil, errNoGroupWithId
 		}
 		return nil, errUpdateGroup
+	}
+
+	marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
+		GroupId: groupId,
+		Name:    group.GetName(),
+	})
+	if err != nil {
+		log.Error("failed marshalling group updated event", logging.Error(err))
+		return nil, errMarshalGroupUpdated
+	}
+	if err := nc.Publish(environment.GetGroupUpdatedSubject(groupId), marshalled); err != nil {
+		log.Error("failed publishing group updated event", logging.Error(err))
+		return nil, errPublishGroupUpdated
 	}
 
 	return &group, nil

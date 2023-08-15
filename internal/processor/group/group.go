@@ -35,6 +35,23 @@ func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx contex
 			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	// TODO: process the other events as well...
-	return processor.GetUnsubscribeSubscriptionsFunc(gcSub), nil
+	var gdSub *nats.Subscription
+	{
+		eventSubject := environment.GetGroupDeletedSubject("*")
+		var err error
+		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
+		if err != nil {
+			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+		}
+	}
+	var guSub *nats.Subscription
+	{
+		eventSubject := environment.GetGroupUpdatedSubject("*")
+		var err error
+		guSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupUpdated)
+		if err != nil {
+			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+		}
+	}
+	return processor.GetUnsubscribeSubscriptionsFunc(gcSub, gdSub, guSub), nil
 }
