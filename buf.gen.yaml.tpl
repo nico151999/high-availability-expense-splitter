@@ -47,11 +47,11 @@ plugins:
     opt:
       - html
       - index.html
-  - plugin: buf.build/bufbuild/es:v1.2.0
+  - plugin: buf.build/bufbuild/es:v1.3.0
     out: gen/lib/ts
     opt:
       - target=ts
-  - plugin: buf.build/bufbuild/connect-web:v0.8.6
+  - plugin: buf.build/bufbuild/connect-es:v0.12.0
     out: gen/lib/ts
     opt:
       - target=ts
