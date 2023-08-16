@@ -33,9 +33,17 @@ func main() {
 	environment.GetTraceCollectorPort(ctx)
 	environment.GetMessagePublicationErrorReason(ctx)
 	environment.GetDBSelectErrorReason(ctx)
+	environment.GetDBDeleteErrorReason(ctx)
+	environment.GetDBInsertErrorReason(ctx)
+	environment.GetDBUpdateErrorReason(ctx)
 	environment.GetMessageSubscriptionErrorReason(ctx)
 	environment.GetSendCurrentResourceErrorReason(ctx)
 	environment.GetSendStreamAliveErrorReason(ctx)
+	environment.GetGroupsSubject()
+	environment.GetGroupSubject("foo")
+	environment.GetGroupCreatedSubject("foo")
+	environment.GetGroupDeletedSubject("foo")
+	environment.GetGroupUpdatedSubject("foo")
 
 	svc, err := group.NewGroupServer(
 		ctx,

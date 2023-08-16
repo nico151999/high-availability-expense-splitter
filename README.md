@@ -21,6 +21,7 @@ For dev purposes you can run `make skaffold-dev`. If you only want to develop sp
 ## General notes
 - Dockerfiles are expected to have the repository root as their context
 - Skaffold environment variables can be set by creating a `skaffold.env` file (a sample `skaffold.env.dist` is provided)
+- the code is written in a way that aims to rely on only few database-specific features so that replacing the underlying database by another becomes easy
 
 ## Adding a service
 TODO: explain

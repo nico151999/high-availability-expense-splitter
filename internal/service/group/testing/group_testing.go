@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/connect-go"
-	natsserver "github.com/nats-io/gnatsd/server"
-	natstestserver "github.com/nats-io/nats-server/test"
+	"connectrpc.com/connect"
+	natsserver "github.com/nats-io/nats-server/v2/server"
+	natstestserver "github.com/nats-io/nats-server/v2/test"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
@@ -53,11 +53,17 @@ func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (
 
 	ln := bufconn.Listen(1024 * 1024)
 
-	if err := os.Setenv("K8S_GET_REQUEST_ERROR_REASON", "K8S_GET_REQUEST_ERROR"); err != nil {
-		t.Fatal("failed to set env variable K8S_GET_REQUEST_ERROR_REASON", err)
-	}
-	if err := os.Setenv("GLOBAL_DOMAIN", "de.test"); err != nil {
-		t.Fatal("failed to set env variable GLOBAL_DOMAIN", err)
+	for k, v := range map[string]string{
+		"K8S_GET_REQUEST_ERROR_REASON": "K8S_GET_REQUEST_ERROR",
+		"GLOBAL_DOMAIN":                "de.test",
+		"DB_SELECT_ERROR_REASON":       "DB_SELECT_ERROR",
+		"DB_DELETE_ERROR_REASON":       "DB_DELETE_ERROR",
+		"DB_UPDATE_ERROR_REASON":       "DB_UPDATE_ERROR",
+		"DB_INSERT_ERROR_REASON":       "DB_INSERT_ERROR",
+	} {
+		if err := os.Setenv(k, v); err != nil {
+			t.Fatalf("failed to set env variable %s: %+v", k, err)
+		}
 	}
 
 	natsPort := 6222
@@ -101,4 +107,14 @@ func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (
 		s.Shutdown()
 		return errGroup.Wait()
 	}
+}
+
+// SetupGroupTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
+func SetupGroupTest(t *testing.T, ctx context.Context, db bun.IDB) (groupv1connect.GroupServiceClient, net.Listener, func() error) {
+	log := logging.FromContext(ctx).NewNamed("setupGroupTest")
+	ctx = logging.IntoContext(ctx, log)
+
+	ln, shutdownServer := StartGroupTestServer(t, ctx, db)
+	cl := SetupGroupTestClient(t, ln)
+	return cl, ln, shutdownServer
 }

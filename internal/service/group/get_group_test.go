@@ -2,12 +2,16 @@ package group_test // the dedicated _test package prevents import cycles with th
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"testing"
 
+	"connectrpc.com/connect"
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/bufbuild/connect-go"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	groupTesting "github.com/nico151999/high-availability-expense-splitter/internal/service/group/testing"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 )
@@ -22,7 +26,7 @@ func TestGetGroup(t *testing.T) {
 	}
 	defer db.Close()
 
-	client, _, closeServer := setupGroupTest(t, ctx, bun.NewDB(db, pgdialect.New()))
+	client, _, closeServer := groupTesting.SetupGroupTest(t, ctx, bun.NewDB(db, pgdialect.New()))
 	// we want to close the server only which cascadingly closes the client as well
 	defer func() {
 		if err := closeServer(); err != nil {
@@ -32,9 +36,10 @@ func TestGetGroup(t *testing.T) {
 
 	t.Run("Get Group successfully", func(t *testing.T) {
 		groupName := "test-group"
-		mock.ExpectQuery("SELECT (.+) FROM \"groups\" (.+)").WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
+		groupId := "group-123456789012345"
+		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "groups" (.+) WHERE (.+)"id" = '%s'(.+)`, groupId)).WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
 		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
-			GroupId: "group-123456789a",
+			GroupId: groupId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -55,5 +60,23 @@ func TestGetGroup(t *testing.T) {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
 		}
 		t.Logf("Got an error as expected: %+v", err)
+	})
+
+	t.Run("Fail getting Group due to non existence", func(t *testing.T) {
+		groupId := "group-543210987654321"
+		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "groups" (.+) WHERE (.+)"id" = '%s'(.+)`, groupId)).WillReturnError(sql.ErrNoRows)
+		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
+			GroupId: groupId,
+		}))
+		if err == nil {
+			t.Fatalf("Expected request to fail but received a response: %+v", resp)
+		}
+		if connectErr := new(connect.Error); eris.As(err, &connectErr) {
+			if connectErr.Code() != connect.CodeNotFound {
+				t.Fatalf("Expected code: %+v; got: %+v", connect.CodeNotFound, connectErr.Code())
+			}
+		} else {
+			t.Fatalf("Expected connect error, got: %+v", err)
+		}
 	})
 }

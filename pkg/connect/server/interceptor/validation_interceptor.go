@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
@@ -160,7 +160,7 @@ func (i *validationInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryF
 				return nil, err
 			}
 		}
-		return res, nil
+		return res, err
 	})
 }
 

@@ -10,6 +10,8 @@ data:
   {{ include "global-sendStreamAliveErrorReasonKey" . }}: "{{ include "global-sendStreamAliveErrorReason" . }}"
   {{ include "global-dbSelectErrorReasonKey" . }}: "{{ include "global-dbSelectErrorReason" . }}"
   {{ include "global-dbInsertErrorReasonKey" . }}: "{{ include "global-dbInsertErrorReason" . }}"
+  {{ include "global-dbUpdateErrorReasonKey" . }}: "{{ include "global-dbUpdateErrorReason" . }}"
+  {{ include "global-dbDeleteErrorReasonKey" . }}: "{{ include "global-dbDeleteErrorReason" . }}"
   {{ include "global-natsServerHostKey" . }}: "{{ .Values.haExpenseSplitter.services.nats.server.host }}"
   {{ include "global-natsServerPortKey" . }}: "{{ .Values.haExpenseSplitter.services.nats.server.port }}"
   {{ include "global-traceCollectorHostKey" . }}: "{{ .Values.haExpenseSplitter.services.traceCollector.server.host }}"

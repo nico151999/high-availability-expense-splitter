@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"

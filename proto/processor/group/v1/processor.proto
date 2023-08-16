@@ -33,13 +33,6 @@ message GroupDeleted {
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
-  string name = 2 [
-    (google.api.field_behavior) = REQUIRED,
-    (validate.rules).string = {
-      min_len: 1;
-      max_len: 100;
-    }
-  ];
 }
 
 // An event with metadata containing information about a project that was updated
@@ -48,12 +41,5 @@ message GroupUpdated {
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
-  ];
-  string name = 2 [
-    (google.api.field_behavior) = REQUIRED,
-    (validate.rules).string = {
-      min_len: 1;
-      max_len: 100;
-    }
   ];
 }

@@ -239,6 +239,16 @@ DB_SELECT_ERROR
 DB_INSERT_ERROR
 {{- end}}
 
+{{/* An UPPER_SNAKE_CASE reason for an error occurred while performing a DB update */}}
+{{- define "global-dbUpdateErrorReason" -}}
+DB_UPDATE_ERROR
+{{- end}}
+
+{{/* An UPPER_SNAKE_CASE reason for an error occurred while performing a DB delete */}}
+{{- define "global-dbDeleteErrorReason" -}}
+DB_DELETE_ERROR
+{{- end}}
+
 {{- define "global-globalDomainKey" -}}
 GLOBAL_DOMAIN
 {{- end}}
@@ -265,6 +275,14 @@ DB_SELECT_ERROR_REASON
 
 {{- define "global-dbInsertErrorReasonKey" -}}
 DB_INSERT_ERROR_REASON
+{{- end}}
+
+{{- define "global-dbUpdateErrorReasonKey" -}}
+DB_UPDATE_ERROR_REASON
+{{- end}}
+
+{{- define "global-dbDeleteErrorReasonKey" -}}
+DB_DELETE_ERROR_REASON
 {{- end}}
 
 {{- define "global-natsServerHostKey" -}}

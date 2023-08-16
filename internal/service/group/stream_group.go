@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
@@ -38,7 +38,9 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetGroupSubject(req.Msg.GetGroupId())), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
 		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamGroupAlive); err != nil {
-		if eris.Is(err, errSelectGroup) {
+		if eris.Is(err, service.ErrResourceNoLongerFound) {
+			return nil
+		} else if eris.Is(err, service.ErrResourceNotFound) {
 			return errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -99,10 +101,11 @@ func sendCurrentGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*g
 
 	var group groupv1.Group
 	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
-		log.Error("failed getting group", logging.Error(err))
 		if eris.Is(err, sql.ErrNoRows) {
-			return nil, errNoGroupWithId
+			log.Debug("group not found", logging.Error(err))
+			return nil, service.ErrResourceNotFound
 		}
+		log.Error("failed getting group", logging.Error(err))
 		return nil, errSelectGroup
 	}
 	return &groupsvcv1.StreamGroupResponse{

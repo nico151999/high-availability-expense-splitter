@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
@@ -57,12 +57,15 @@ func (s *groupServer) GetGroup(ctx context.Context, req *connect.Request[groupsv
 
 func getGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupv1.Group, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	var group groupv1.Group
-	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
-		log.Error("failed getting group", logging.Error(err))
+	group := groupv1.Group{
+		Id: groupId,
+	}
+	if err := dbClient.NewSelect().Model(&group).WherePK().Limit(1).Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
+			log.Debug("group not found", logging.Error(err))
 			return nil, errNoGroupWithId
 		}
+		log.Error("failed getting group", logging.Error(err))
 		return nil, errSelectGroup
 	}
 

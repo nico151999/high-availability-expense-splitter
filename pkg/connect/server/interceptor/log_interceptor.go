@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 )

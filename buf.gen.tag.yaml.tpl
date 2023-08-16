@@ -5,4 +5,6 @@ managed:
 plugins:  
   - name: gotag
     out: ./
-    opt: outdir={{ (ds "data").relativeGoLibOutDir }},auto=bun-as-snake
+    opt:
+      - outdir={{ (ds "data").relativeGoLibOutDir }}
+      - auto=bun-as-snake

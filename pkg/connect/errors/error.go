@@ -3,7 +3,7 @@ package errors
 import (
 	"context"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/rotisserie/eris"
 	"google.golang.org/protobuf/reflect/protoreflect"

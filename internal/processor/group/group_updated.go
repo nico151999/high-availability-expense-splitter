@@ -10,7 +10,6 @@ import (
 func (rpProcessor *groupProcessor) groupUpdated(ctx context.Context, req *groupv1.GroupUpdated) error {
 	log := logging.FromContext(ctx)
 	log.Info("processing group.GroupUpdated event",
-		logging.String("name", req.GetName()),
 		logging.String("groupId", req.GetGroupId()))
 	// TODO: actually process message like sending a project updated notification and publish an event telling what was done (e.g. project updated notification sent)
 	return nil

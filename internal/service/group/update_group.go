@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/group/v1"
@@ -60,7 +60,9 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 
 func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	var group groupv1.Group
+	group := groupv1.Group{
+		Id: groupId,
+	}
 	query := dbClient.NewUpdate()
 	for _, param := range params {
 		switch param.GetUpdateOption().(type) {
@@ -69,7 +71,7 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 			query.Column("name")
 		}
 	}
-	if _, err := query.Model(&group).Where("id = ?", groupId).Exec(ctx); err != nil {
+	if _, err := query.Model(&group).WherePK().Exec(ctx); err != nil {
 		log.Error("failed updating group", logging.Error(err))
 		if eris.Is(err, sql.ErrNoRows) {
 			return nil, errNoGroupWithId
@@ -79,7 +81,6 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 
 	marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
 		GroupId: groupId,
-		Name:    group.GetName(),
 	})
 	if err != nil {
 		log.Error("failed marshalling group updated event", logging.Error(err))

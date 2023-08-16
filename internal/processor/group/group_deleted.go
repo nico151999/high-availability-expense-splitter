@@ -10,7 +10,6 @@ import (
 func (rpProcessor *groupProcessor) groupDeleted(ctx context.Context, req *groupv1.GroupDeleted) error {
 	log := logging.FromContext(ctx)
 	log.Info("processing group.GroupDeleted event",
-		logging.String("name", req.GetName()),
 		logging.String("groupId", req.GetGroupId()))
 	// TODO: actually process message like sending a project deleted notification and publish an event telling what was done (e.g. project deleted notification sent)
 	return nil

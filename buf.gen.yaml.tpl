@@ -7,12 +7,13 @@ managed:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
       - buf.build/grpc-ecosystem/grpc-gateway
+      - buf.build/srikrsna/protoc-gen-gotag
 plugins:
   - plugin: buf.build/protocolbuffers/go:v1.30.0
     out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative
-  - plugin: buf.build/bufbuild/connect-go:v1.6.0
+  - plugin: buf.build/connectrpc/go:v1.11.0
     out: {{ (ds "data").relativeGoLibOutDir }}
     opt:
       - paths=source_relative

@@ -21,7 +21,7 @@ WORKDIR ${BUILD_PATH}
 
 COPY Makefile ${BUILD_PATH}/
 # install tools required to compile; this is not necessary to be done here already but it can improve build times due to caching
-RUN make install-buf install-gomplate
+RUN make install-buf install-gomplate install-gotag
 
 COPY go.mod go.sum ${BUILD_PATH}/
 RUN go mod download

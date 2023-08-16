@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/bufbuild/connect-go"
-	otelconnect "github.com/bufbuild/connect-opentelemetry-go"
+	"connectrpc.com/connect"
+	otelconnect "connectrpc.com/otelconnect"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server/interceptor"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"

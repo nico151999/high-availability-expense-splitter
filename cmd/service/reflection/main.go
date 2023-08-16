@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/bufbuild/connect-go"
-	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
+	"connectrpc.com/connect"
+	grpcreflect "connectrpc.com/grpcreflect"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
