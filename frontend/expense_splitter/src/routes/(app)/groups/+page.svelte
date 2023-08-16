@@ -11,7 +11,7 @@
 	export let data: PageData;
 
 	const groupClient = createPromiseClient(GroupService, data.grpcWebTransport);
-	let groups: Map<bigint, {group?: Group, abortController: AbortController}> | undefined;
+	let groups: Map<string, {group?: Group, abortController: AbortController}> | undefined;
 
 	const newGroup = writable({
 		name: '',
@@ -100,18 +100,18 @@
 		setTimeout(() => streamGroups(), 5000);
 	}
 
-	function deleteGroup(groupId: bigint) {
+	function deleteGroup(groupId: string) {
 		return async () => {
 			try {
-				const groupRes = await groupClient.deleteGroup({groupId: groupId});
-				console.log('Deleted group', groupRes.group);
+				await groupClient.deleteGroup({groupId: groupId});
+				console.log(`Deleted group ${groupId}`);
 			} catch (e) {
 				console.error(`An error occurred trying to delete group ${groupId}`, e);
 			}
 		}
 	}
 
-	function openGroup(groupId: bigint) {
+	function openGroup(groupId: string) {
 		return () => {
 			goto(`/groups/${groupId}`);
 		}

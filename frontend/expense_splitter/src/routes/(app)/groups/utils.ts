@@ -1,10 +1,10 @@
 import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
 import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
-import type { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connectweb";
+import type { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
 
 export async function streamGroup(
 	groupClient: PromiseClient<typeof GroupService>,
-	groupID: bigint,
+	groupID: string,
 	abortController: AbortController,
     onGroupUpdate: (group: Group) => void
 ) {
