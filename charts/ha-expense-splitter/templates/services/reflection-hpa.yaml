@@ -1,0 +1,28 @@
+{{- if ge .Capabilities.KubeVersion.Minor "23" }}
+apiVersion: autoscaling/v2
+{{- else }}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "service-name-hpa" (include "reflectionService-shortName" .) }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "service-name-deployment" (include "reflectionService-shortName" .) }}
+  minReplicas: {{ .Values.haExpenseSplitter.services.reflection.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.haExpenseSplitter.services.reflection.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.haExpenseSplitter.services.reflection.autoscaling.CPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.haExpenseSplitter.services.reflection.autoscaling.memoryUtilizationPercentage }}

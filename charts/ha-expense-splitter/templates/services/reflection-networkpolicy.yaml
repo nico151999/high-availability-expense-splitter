@@ -1,0 +1,11 @@
+{{- $selectorParam := (dict "shortName" (include "reflectionService-shortName" .) "releaseName" .Release.Name) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "service-name-networkPolicy" (include "reflectionService-shortName" .) }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "service-selectorlabels-pod" $selectorParam | nindent 6 }}
+  policyTypes:
+  - Egress

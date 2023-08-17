@@ -1,0 +1,11 @@
+version: v1
+name: buf.build/nico151999/high-availability-expense-splitter
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/grpc-ecosystem/grpc-gateway
+  - buf.build/envoyproxy/protoc-gen-validate
+  - buf.build/srikrsna/protoc-gen-gotag
+lint:
+  use:
+    - DEFAULT
+  allow_comment_ignores: true

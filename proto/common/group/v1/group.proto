@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package common.group.v1;
+
+import "google/api/resource.proto";
+import "validate/validate.proto";
+import "tagger/tagger.proto";
+
+message Group {
+  option (google.api.resource) = {type: "common.Group.v1/Group"};
+  string id = 1 [
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string name = 2 [
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+  // TODO: add created_at
+  // TODO: add updated_at
+}

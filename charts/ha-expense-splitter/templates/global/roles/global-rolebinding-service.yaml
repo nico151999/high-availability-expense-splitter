@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ include "global-service-rolebinding" . }}"
+subjects:
+{{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+{{- if has (include "global-service" .) $serviceSpec.roles }}
+- namespace: "{{ $.Release.Namespace }}"
+  kind: ServiceAccount
+  name: "{{ include "service-name-serviceaccount" $serviceName }}"
+{{- end }}
+{{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ include "global-service-role" . }}"

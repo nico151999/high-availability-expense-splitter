@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.identityIssuerName }}
+spec:
+  secretName: {{ .Values.identityIssuerName }}
+  duration: 48h
+  renewBefore: 25h
+  issuerRef:
+    name: {{ .Values.tlsTrustAnchorName }}
+    kind: Issuer
+  commonName: identity.linkerd.cluster.local
+  dnsNames:
+  - identity.linkerd.cluster.local
+  isCA: true
+  privateKey:
+    algorithm: ECDSA
+  usages:
+  - cert sign
+  - crl sign
+  - server auth
+  - client auth

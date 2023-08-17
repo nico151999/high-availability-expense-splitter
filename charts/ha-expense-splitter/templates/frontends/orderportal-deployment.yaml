@@ -1,0 +1,54 @@
+{{- $selectorParam := (dict "shortName" (include "expenseSplitterFrontend-shortName" .) "releaseName" .Release.Name) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "frontend-name-deployment" (include "expenseSplitterFrontend-shortName" .) }}
+  labels:
+    {{- include "frontend-selectorLabels-deployment" $selectorParam | nindent 4 }}
+spec:
+  replicas: 1 # TODO: add autoscaling at a later point and remove replicas by then
+  selector:
+    matchLabels:
+      {{- include "frontend-selectorLabels-pod" $selectorParam | nindent 6 }}
+  template:
+    metadata:
+      labels:
+      {{- include "frontend-selectorLabels-pod" $selectorParam | nindent 8 }}
+        app.kubernetes.io/version: "{{ $.Chart.Version }}"
+        helm.sh/revision: "{{ $.Release.Revision }}"
+      {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.frontends.expenseSplitter.linkerdMesh) }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
+    spec:
+      {{- include "imagepullsecrets" (dict "primary" .Values.haExpenseSplitter.frontends.expenseSplitter.imagePullSecrets "fallback" .Values.haExpenseSplitter.imagePullSecrets) | nindent 6 }}
+      {{- include "securitycontext" (dict "primary" .Values.haExpenseSplitter.frontends.expenseSplitter.securityContext "fallback" .Values.haExpenseSplitter.securityContext) | nindent 6 }}
+      containers:
+        - name: "{{ .Chart.Name }}-frontend"
+          image: "{{ .Values.haExpenseSplitter.frontends.expenseSplitter.image.repository }}:{{ .Values.haExpenseSplitter.frontends.expenseSplitter.image.tag }}"
+          imagePullPolicy: "{{.Values.haExpenseSplitter.frontends.expenseSplitter.imagePullPolicy}}"
+          # TODO: unfortunately Vite requires write access in the same directory the app is running in (no empty dir would help)
+          # https://github.com/vitejs/vite/issues/9470
+          # this is only relevant if Vite is in use, i.e. when building a prod bundle Vite is not part of the container
+          # {{- if .Values.readOnlyRootFilesystem }}
+          # securityContext:
+          #   readOnlyRootFilesystem: true
+          # {{- end }}
+          # TODO: only pass port in DEV mode here
+          args:
+            - "--port" # this is for vite dev
+            - "{{ include "frontend-port" . }}"
+          ports:
+            - name: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
+              containerPort: {{ include "frontend-port" . }}
+              protocol: TCP
+          env:
+            # TODO: only pass PORT env in PROD mode here
+            - name: "PORT" # the env variable is for production
+              value: "{{ include "frontend-port" . }}"
+            - name: "API_SECURE"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.secure }}"
+            - name: "API_HOSTNAME"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.host }}"
+            - name: "API_PORT"
+              value: "{{ .Values.haExpenseSplitter.services.ingress.port }}"

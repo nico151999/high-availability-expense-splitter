@@ -1,0 +1,625 @@
+apiVersion: skaffold/v4beta2
+kind: Config
+metadata:
+  name: ha-expense-splitter
+build:
+  local:
+    concurrency: 3
+    push: true
+  tagPolicy:
+    inputDigest: {}
+  artifacts:
+    # Frontends:
+    - image: &expenseSplitterFrontendImage ghcr.io/nico151999/ha-expense-splitter-user-frontend
+      context: ./
+      hooks:
+        before:
+          - command: ["sh", "-c", "cp ./.dockerignore ./frontend/expense_splitter/Dockerfile.dockerignore && cat ./frontend/expense_splitter/.dockerignoreextension >> ./frontend/expense_splitter/Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./frontend/expense_splitter/Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./frontend/expense_splitter/Dockerfile
+      sync:
+        infer:
+          - "frontend/expense_splitter/src/**/*"
+          - "frontend/expense_splitter/static/**/*"
+
+    # Tools supporting third-party devs
+    # - image: &documentationSvcImage ghcr.io/nico151999/ha-expense-splitter-documentation
+    #   hooks:
+    #     before:
+    #       # concatenate main dockerignore and templated documentation dockerignore
+    #       - command: ["sed", "-n", "s/{{SERVICE_NAME}}/documentation/g;w ./cmd/service/documentation.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+    #         os: [darwin, linux]
+    #       # TODO: create windows equivalent
+    #     after:
+    #       - command: ["rm", "./cmd/service/documentation.Dockerfile.dockerignore"]
+    #         os: [darwin, linux]
+    #       # TODO: create windows equivalent
+    #   context: ./
+    #   docker:
+    #     dockerfile: ./cmd/service/documentation.Dockerfile
+    #     buildArgs:
+    #       SERVICE_NAME: "documentation"
+    #       SVC_OUT_DIR_PARAM: "DOCUMENTATION_SVC_OUT_DIR"
+    - image: &reflectionSvcImage ghcr.io/nico151999/ha-expense-splitter-reflection-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated reflection dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/reflection/g;w ./cmd/service/reflection.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          - command: ["sh", "-c", "echo '!/proto/service/**/*' >> ./cmd/service/reflection.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/reflection.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/reflection.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "reflection"
+          SVC_OUT_DIR_PARAM: "REFLECTION_SVC_OUT_DIR"
+
+    # Microservices for handling requests against a resource
+    - image: &groupSvcImage ghcr.io/nico151999/ha-expense-splitter-group-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated group dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/group/g;w ./cmd/service/group.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/group.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/group.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "group"
+          SVC_OUT_DIR_PARAM: "GROUP_SVC_OUT_DIR"
+
+    # Processors for handling events effecting their respective resource
+    - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated group dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/group/g;w ./cmd/processor/group.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/group.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/group.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "group"
+          PROCESSOR_OUT_DIR_PARAM: "GROUP_PROCESSOR_OUT_DIR"
+deploy:
+  statusCheckDeadlineSeconds: 1200
+  helm:
+    flags:
+      install: ["--timeout", "20m"] # the initial image pulling can take quite a while depending on the internet connection
+      upgrade: ["--timeout", "15m"]
+    hooks:
+      before:
+        - host:
+            command:
+              - sh
+              - -c
+              - |
+                for varName in 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME' 'HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD'; do
+                  eval "var=\$$varName"
+                  if [ -z "$var" ]; then
+                    echo "$varName must not be blank" && exit 1
+                  fi
+                done
+                for ns in $(echo $SKAFFOLD_NAMESPACES | sed "s/,/ /g"); do
+                  kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f - || exit 1
+                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" --save-config --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" -n "$ns" --dry-run=client -o yaml | kubectl apply -f - || exit 1
+                done
+            os: [darwin, linux]
+            # TODO: create windows equivalent
+    releases:
+      - name: metrics-server
+        repo: "https://kubernetes-sigs.github.io/metrics-server/"
+        remoteChart: metrics-server
+        namespace: "metrics-server"
+        createNamespace: true
+        version: 3.10.0
+        wait: true
+        setValues:
+          replicas: 3
+          args:
+            - --kubelet-insecure-tls # TODO: this is not ready for production but just temporary
+      - name: cert-manager # reference https://magda.io/docs/how-to-setup-https-to-local-cluster.html
+        repo: "https://charts.jetstack.io"
+        remoteChart: cert-manager
+        namespace: "cert-manager"
+        createNamespace: true
+        version: 1.12.1
+        wait: true
+        setValues:
+          installCRDs: true
+      # TODO: setup persistence for grafana
+      - name: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}"
+        repo: "https://prometheus-community.github.io/helm-charts"
+        remoteChart: kube-prometheus-stack
+        namespace: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}"
+        createNamespace: true
+        version: 47.3.0
+        wait: true
+        setValueTemplates:
+          grafana:
+            enabled: true
+            podAnnotations:
+              "linkerd\\.io/inject": enabled
+            grafana.ini:
+              server:
+                root_url: '%(protocol)s://%(domain)s:/grafana/'
+              auth:
+                disable_login_form: true
+              auth.anonymous:
+                enabled: true
+                org_role: Editor
+              auth.basic:
+                enabled: false
+              analytics:
+                check_for_updates: false
+              panels:
+                disable_sanitize_html: true
+              log:
+                mode: console
+              log.console:
+                format: text
+                level: info
+            datasources:
+              datasources.yaml:
+                apiVersion: 1
+                datasources:
+                - name: &prometheusDataSource prometheus
+                  type: prometheus
+                  access: proxy
+                  orgId: 1
+                  url: http://prometheus-operated.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:9090
+                  isDefault: true
+                  jsonData:
+                    timeInterval: "5s"
+                  editable: true
+            dashboardProviders:
+              dashboardproviders.yaml:
+                apiVersion: 1
+                providers:
+                - name: 'default'
+                  orgId: 1
+                  folder: ''
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/default
+            dashboards:
+              default:
+                # all these charts are hosted at https://grafana.com/grafana/dashboards/{id}
+                top-line:
+                  gnetId: 15474
+                  revision: 4
+                  datasource: *prometheusDataSource
+                health:
+                  gnetId: 15486
+                  revision: 3
+                  datasource: *prometheusDataSource
+                kubernetes:
+                  gnetId: 15479
+                  revision: 2
+                  datasource: *prometheusDataSource
+                namespace:
+                  gnetId: 15478
+                  revision: 3
+                  datasource: *prometheusDataSource
+                deployment:
+                  gnetId: 15475
+                  revision: 6
+                  datasource: *prometheusDataSource
+                pod:
+                  gnetId: 15477
+                  revision: 3
+                  datasource: *prometheusDataSource
+                service:
+                  gnetId: 15480
+                  revision: 3
+                  datasource: *prometheusDataSource
+                route:
+                  gnetId: 15481
+                  revision: 3
+                  datasource: *prometheusDataSource
+                authority:
+                  gnetId: 15482
+                  revision: 3
+                  datasource: *prometheusDataSource
+                cronjob:
+                  gnetId: 15483
+                  revision: 3
+                  datasource: *prometheusDataSource
+                job:
+                  gnetId: 15487
+                  revision: 3
+                  datasource: *prometheusDataSource
+                daemonset:
+                  gnetId: 15484
+                  revision: 3
+                  datasource: *prometheusDataSource
+                replicaset:
+                  gnetId: 15491
+                  revision: 3
+                  datasource: *prometheusDataSource
+                statefulset:
+                  gnetId: 15493
+                  revision: 3
+                  datasource: *prometheusDataSource
+                replicationcontroller:
+                  gnetId: 15492
+                  revision: 4
+                  datasource: *prometheusDataSource
+                prometheus:
+                  gnetId: 15489
+                  revision: 2
+                  datasource: *prometheusDataSource
+                prometheus-benchmark:
+                  gnetId: 15490
+                  revision: 2
+                  datasource: *prometheusDataSource
+                multicluster:
+                  gnetId: 15488
+                  revision: 3
+                  datasource: *prometheusDataSource
+      - name: linkerd-crds
+        repo: "https://helm.linkerd.io/stable"
+        remoteChart: linkerd-crds
+        namespace: &linkerdNamespace "linkerd"
+        createNamespace: true
+        version: 1.6.1
+        wait: true
+      - name: linkerd-cert-config # in accordance with https://linkerd.io/2.13/tasks/automatically-rotating-control-plane-tls-credentials/
+        chartPath: charts/linkerd-cert-config
+        namespace: *linkerdNamespace
+        createNamespace: true
+        setFiles:
+          caCrt: &linkerdCaCrt gen/cert/ca.crt
+          caKey: gen/cert/ca.key
+      - name: linkerd-control-plane
+        repo: "https://helm.linkerd.io/stable"
+        remoteChart: linkerd-control-plane
+        namespace: *linkerdNamespace
+        createNamespace: true
+        version: 1.12.3
+        wait: true
+        setFiles:
+          identityTrustAnchorsPEM: *linkerdCaCrt
+        setValues:
+          identity:
+            issuer:
+              scheme: kubernetes.io/tls
+          proxy:
+            cores: 1
+            resources:
+              cpu:
+                limit: "500m"
+                request: "100m"
+              memory:
+                limit: "250Mi"
+                request: "100Mi"
+      - name: jaeger
+        repo: "https://helm.linkerd.io/stable"
+        remoteChart: linkerd-jaeger
+        namespace: "{{ .HA_EXPENSE_SPLITTER_LINKERD_JAEGER_NAMESPACE }}"
+        createNamespace: true
+        version: 30.8.3
+        wait: true
+      - name: linkerd-viz # TODO: deploy linkerd-viz before jaeger
+        repo: "https://helm.linkerd.io/stable"
+        remoteChart: linkerd-viz
+        namespace: linkerd-viz
+        createNamespace: true
+        version: 30.8.3
+        wait: true
+        setValueTemplates:
+          prometheus:
+            enabled: false
+          prometheusUrl: "http://prometheus-operated.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:9090"
+          jaegerUrl: "jaeger.{{ .HA_EXPENSE_SPLITTER_LINKERD_JAEGER_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:16686"
+          grafana:
+            url: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:80" # TODO: change to new prometheus stack once available
+      - name: ingress-nginx
+        repo: "https://kubernetes.github.io/ingress-nginx"
+        remoteChart: "ingress-nginx"
+        namespace: "ingress-nginx"
+        createNamespace: true
+        version: 4.6.1
+        wait: false # TODO: find out why the installation times out when set to true
+        setValues:
+          controller:
+            podAnnotations:
+              "linkerd\\.io/inject": enabled
+            admissionWebhooks:
+              enabled: false
+      - name: stackgres-operator
+        repo: "https://stackgres.io/downloads/stackgres-k8s/stackgres/helm/"
+        remoteChart: stackgres-operator
+        namespace: "stackgres-operator"
+        createNamespace: true
+        version: "1.5.0"
+        wait: false # waiting causes the cert install job not to be executed; therefore we must not pass the wait flag
+        setValueTemplates:
+          cert:
+            certManager:
+              autoConfigure: true
+          grafana:
+            autoEmbed: true
+            webHost: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:80"
+            secretNamespace: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}"
+            secretName: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana"
+            secretUserKey: admin-user
+            secretPasswordKey: admin-password
+      # TODO: deploy database for ory stack and deploy ory stack itself
+      # TODO: setup Minio
+      # TODO: deploy expense splitter DB as part of the expense splitter chart
+      - name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
+        chartPath: charts/stackgres-cluster
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
+        createNamespace: true
+        wait: true
+        setValues:
+          cluster:
+            metadata:
+              annotations:
+                clusterPods:
+                  "linkerd\\.io/inject": enabled
+      - name: "schemahero"
+        chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
+        namespace: "schemahero"
+        createNamespace: true
+        version: "1.2.0"
+        wait: true
+        upgradeOnChange: false
+        skipBuildDependencies: true # since it's actually a remote chart but hosted under oci we need to let skaffold treat it like a local chart. However, this requires us to skip building dependencies.
+      - name: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}"
+        repo: https://nats-io.github.io/k8s/helm/charts/
+        remoteChart: nats
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NATS_NAMESPACE }}"
+        version: 0.19.14
+        createNamespace: true
+        setValueTemplates:
+          fullnameOverride: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}"
+          podAnnotations:
+            "linkerd\\.io/inject": enabled
+            "config\\.linkerd\\.io/opaque-ports": "6222\\,4222\\,8222\\,7777\\,7422\\,7522"
+          securityContext: &securityContext
+            runAsUser: 1000
+            runAsNonRoot: true
+          imagePullSecrets: &imagePullSecrets
+            - name: "{{ .HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET }}"
+          nats:
+            jetstream:
+              enabled: true
+              memStorage:
+                enabled: true
+                size: 2Gi
+              fileStorage:
+                enabled: true
+                size: 10Gi
+                storageClassName: "{{ .HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME }}"
+          cluster:
+            enabled: true
+            replicas: 3
+          exporter:
+            enabled: true
+          natsbox:
+            enabled: false
+      - name: ha-expense-splitter
+        chartPath: charts/ha-expense-splitter
+        namespace: expense-splitter
+        createNamespace: true
+        setValueTemplates:
+          haExpenseSplitter:
+            imagePullSecrets: *imagePullSecrets
+            securityContext: *securityContext
+            frontends:
+              expenseSplitter:
+                securityContext: *securityContext
+                imagePullSecrets: *imagePullSecrets
+                ingress:
+                  host: "{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}"
+                image:
+                  repository: *expenseSplitterFrontendImage
+                  tag: *expenseSplitterFrontendImage
+            db:
+              name: postgres
+              host: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
+              port: "5432"
+              adminUser:
+                secret:
+                  name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
+                  userKey: superuser-username
+                  passwordKey: superuser-password
+            documentation:
+              securityContext: *securityContext
+              imagePullSecrets: *imagePullSecrets
+            services:
+              nats:
+                server:
+                  host: "{{ .HA_EXPENSE_SPLITTER_NATS_NAME }}.{{ .HA_EXPENSE_SPLITTER_NATS_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
+              traceCollector:
+                server:
+                  host: "collector.{{ .HA_EXPENSE_SPLITTER_LINKERD_JAEGER_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
+                  port: 4317
+              ingress:
+                host: "{{ .HA_EXPENSE_SPLITTER_SERVICES_HOST }}"
+              reflection:
+                securityContext: *securityContext
+                imagePullSecrets: *imagePullSecrets
+                image:
+                  repository: *reflectionSvcImage
+                  tag: *reflectionSvcImage
+              specs:
+                group:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *groupSvcImage
+                    tag: *groupSvcImage
+            processors:
+              specs:
+                group:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *groupProcessorImage
+                    tag: *groupProcessorImage
+profiles:
+  # NOTE: try to order profiles from last to first array element when removing; e.g. remove helm chart 2 before removing helm chart 1 to guarantee array index consistency
+  - name: DEV
+    activation:
+      - command: dev
+    patches:
+      - op: replace
+        path: /build/artifacts/0/docker/dockerfile
+        value: ./frontend/expense_splitter/dev.Dockerfile
+      - op: replace
+        path: /build/artifacts/0/hooks
+        value:
+          before:
+            - command: ["sh", "-c", "cp ./.dockerignore ./frontend/expense_splitter/dev.Dockerfile.dockerignore && cat ./frontend/expense_splitter/.dockerignoreextension >> ./frontend/expense_splitter/dev.Dockerfile.dockerignore"]
+              os: [darwin, linux]
+            # TODO: create windows equivalent
+          after:
+            - command: ["rm", "./frontend/expense_splitter/dev.Dockerfile.dockerignore"]
+              os: [darwin, linux]
+            # TODO: create windows equivalent
+      - op: replace
+        path: /build/local/push
+        value: false
+  - name: ALWAYS_PUSH_IMAGE
+    activation:
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=.+
+    patches:
+      - op: replace
+        path: /build/local/push
+        value: true
+  - name: SKIP_SERVICES_HOST
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.ingress.host
+  - name: SKIP_FRONTEND_HOST
+    activation:
+      - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+  - name: SKIP_IMAGE_PULL_SECRET
+    activation:
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME=
+      - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD=
+    patches:
+      - op: remove
+        path: /deploy/helm/hooks/before/0
+      - op: remove
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+  - name: DEFAULT_STORAGE_CLASS
+    activation:
+      - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/12/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+  - name: DEDICATED_NATS_INSTANCE
+    requiresAllActivations: true
+    activation:
+      - env: HA_EXPENSE_SPLITTER_NATS_HOST=.
+      - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
+    patches:
+      - op: replace
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.host
+        value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
+      - op: add
+        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.port
+        value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
+  - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/13
+  - name: SKIP_NATS_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/12
+  - name: SKIP_SCHEMAHERO_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_SCHEMAHERO_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/11
+  - name: SKIP_STACKGRES_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_STACKGRES_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/10
+      - op: remove
+        path: /deploy/helm/releases/9
+  - name: SKIP_NGINX_INGRESS_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_NGINX_INGRESS_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/8
+  - name: SKIP_LINKERD_VIZ_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_VIZ_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/7
+      - op: remove
+        path: /deploy/helm/releases/6
+  - name: SKIP_LINKERD_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_LINKERD_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/5
+      - op: remove
+        path: /deploy/helm/releases/4
+      - op: remove
+        path: /deploy/helm/releases/3
+  - name: SKIP_PROMETHEUS_STACK
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_PROMETHEUS_STACK_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/2
+  - name: SKIP_CERT_MANAGER_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_CERT_MANAGER_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/1
+  - name: SKIP_METRICS_SERVER_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_METRICS_SERVER_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/0

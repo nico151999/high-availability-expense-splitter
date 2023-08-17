@@ -1,0 +1,201 @@
+{{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+{{- $selectorParam := (dict "shortName" $serviceName "releaseName" $.Release.Name) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "service-name-deployment" $serviceName }}"
+  labels:
+    {{- include "service-selectorLabels-deployment" $selectorParam | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "service-selectorlabels-pod" $selectorParam | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "service-selectorlabels-pod" $selectorParam | nindent 8 }}
+        app.kubernetes.io/version: "{{ $.Chart.Version }}"
+        helm.sh/revision: "{{ $.Release.Revision }}"
+      {{- if default $.Values.haExpenseSplitter.linkerdMesh $serviceSpec.linkerdMesh }}
+      annotations:
+        linkerd.io/inject: enabled
+      {{- end }}
+    spec:
+      serviceAccountName: "{{ include "service-name-serviceaccount" $serviceName }}"
+      {{- include "imagepullsecrets" (dict "primary" $serviceSpec.imagePullSecrets "fallback" $.Values.haExpenseSplitter.imagePullSecrets) | nindent 6 }}
+      {{- include "securitycontext" (dict "primary" $serviceSpec.securityContext "fallback" $.Values.haExpenseSplitter.securityContext) | nindent 6 }}
+      initContainers:
+        - name: wait-for-nats
+          image: {{ include "busyboxImage" $ }}
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until nc -z "${{ include "global-natsServerHostKey" . }}" "${{ include "global-natsServerPortKey" . }}"
+              do
+                echo \"waiting for NATS\"
+                sleep 1
+              done
+          env:
+            - name: {{ include "global-natsServerHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerHostKey" . }}
+            - name: {{ include "global-natsServerPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerPortKey" . }}
+        - name: wait-for-trace-collector
+          image: {{ include "busyboxImage" $ }}
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          command:
+            - 'sh'
+            - '-c'
+            - |
+              until nc -z "${{ include "global-traceCollectorHostKey" . }}" "${{ include "global-traceCollectorPortKey" . }}"
+              do
+                echo \"waiting for trace collector\"
+                sleep 1
+              done
+          env:
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
+      containers:
+        # TODO: add init container that waits for dependencies to become available
+        - name: "{{ $.Chart.Name }}-{{ $serviceName }}"
+          image: "{{ $serviceSpec.image.repository }}:{{ $serviceSpec.image.tag }}"
+          imagePullPolicy: "{{default $.Values.haExpenseSplitter.imagePullPolicy $serviceSpec.imagePullPolicy}}"
+          {{- if $.Values.haExpenseSplitter.readOnlyRootFilesystem }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          {{- end }}
+          resources:
+            {{- toYaml $serviceSpec.resources | nindent 12 }}
+          ports:
+            - name: {{ include "service-name-port" $serviceName }}
+              containerPort: {{ include "service-serverPort" $serviceName }}
+              protocol: TCP
+          env:
+            - name: {{ include "global-globalDomainKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-globalDomainKey" . }}
+            - name: {{ include "global-messagePublicationErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-messagePublicationErrorReasonKey" . }}
+            - name: {{ include "global-messageSubscriptionErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-messageSubscriptionErrorReasonKey" . }}
+            - name: {{ include "global-sendCurrentResourceErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-sendCurrentResourceErrorReasonKey" . }}
+            - name: {{ include "global-sendStreamAliveErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-sendStreamAliveErrorReasonKey" . }}
+            - name: {{ include "global-dbSelectErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbSelectErrorReasonKey" . }}
+            - name: {{ include "global-dbInsertErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbInsertErrorReasonKey" . }}
+            - name: {{ include "global-dbUpdateErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbUpdateErrorReasonKey" . }}
+            - name: {{ include "global-dbDeleteErrorReasonKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-dbDeleteErrorReasonKey" . }}
+            - name: {{ include "global-natsServerHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerHostKey" . }}
+            - name: {{ include "global-natsServerPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-natsServerPortKey" . }}
+            - name: {{ include "global-traceCollectorHostKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorHostKey" . }}
+            - name: {{ include "global-traceCollectorPortKey" . }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" . }}
+                  key: {{ include "global-traceCollectorPortKey" . }}
+            {{- if hasKey $serviceSpec "db" }}
+            - name: {{ include "global-dbNameKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbNameKey" . }}
+            - name: {{ include "dbUserKey" $serviceName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "service-name-secret" $serviceName }}
+                  key: {{ include "dbUserKey" . }}
+            - name: {{ include "dbPasswordKey" $serviceName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "service-name-secret" $serviceName }}
+                  key: {{ include "dbPasswordKey" . }}
+            - name: {{ include "global-dbHostKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbHostKey" . }}
+            - name: {{ include "global-dbPortKey" $serviceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "global-name-configMap" $serviceName }}
+                  key: {{ include "global-dbPortKey" . }}
+            {{- end}}
+            {{- range $_, $configurableServiceName := prepend $serviceSpec.dependencies $serviceName }}
+            - name: {{ include "service-serverHostnameKeyName" $configurableServiceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $configurableServiceName }}
+                  key: {{ include "service-serverHostnameKey" . }}
+            - name: {{ include "service-serverPortKeyName" $configurableServiceName }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "service-name-configMap" $configurableServiceName }}
+                  key: {{ include "service-serverPortKey" . }}
+            {{- end}}
+{{- end }}

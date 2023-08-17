@@ -1,0 +1,1 @@
+Note that this is a chart based on https://gitlab.com/ongresinc/stackgres/-/blob/1.5.0-rc2/stackgres-k8s/install/helm/stackgres-cluster/cluster-restart.sh

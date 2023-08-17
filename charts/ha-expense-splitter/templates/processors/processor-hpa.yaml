@@ -1,0 +1,31 @@
+{{- range $processorName, $processorSpec := .Values.haExpenseSplitter.processors.specs }}
+---
+{{- if ge $.Capabilities.KubeVersion.Minor "23" }}
+apiVersion: autoscaling/v2
+{{- else }}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "processor-name-hpa" $processorName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "processor-name-deployment" $processorName }}
+  minReplicas: {{ $processorSpec.autoscaling.minReplicas }}
+  maxReplicas: {{ $processorSpec.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $processorSpec.autoscaling.CPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $processorSpec.autoscaling.memoryUtilizationPercentage }}
+{{- end}}

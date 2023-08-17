@@ -1,0 +1,17 @@
+{{- range $serviceName, $serviceSpec := .Values.haExpenseSplitter.services.specs }}
+{{- $selectorParam := (dict "shortName" $serviceName "releaseName" $.Release.Name) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "service-name-service" $serviceName }}"
+spec:
+  ports:
+    - name: "{{ include "service-name-port" $serviceName }}"
+      port: {{ include "service-serverPort" . }}
+      protocol: TCP
+      targetPort: "{{ include "service-name-port" $serviceName }}"
+  selector:
+    {{- include "service-selectorlabels-pod" $selectorParam | nindent 8 }}
+  type: ClusterIP
+{{- end }}

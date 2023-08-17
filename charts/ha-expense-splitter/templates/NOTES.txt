@@ -1,0 +1,3 @@
+Successfully installed {{ .Release.Name }} in {{ .Release.Namespace }}.
+
+Linkerd annotations are globally {{if not .Values.haExpenseSplitter.linkerdMesh}}not {{end}}enabled. Keep in mind that some pods might have this annotation even if it is not enabled.
