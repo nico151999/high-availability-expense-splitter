@@ -1,3 +1,413 @@
 syntax = "proto3";
 
 package service.person.v1;
+
+
+import "common/person/v1/person.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service PersonService {
+  // Requests the creation of a person with the provided specs
+  rpc CreatePerson(CreatePersonRequest) returns (CreatePersonResponse) {
+    option (google.api.http) = {post: "/v1/persons"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
+          value: {
+            description: "Returns specs describing the created person";
+            schema: {
+              json_schema: {ref: ".service.person.v1.CreatePersonResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets a person
+  rpc GetPerson(GetPersonRequest) returns (GetPersonResponse) {
+    option (google.api.http) = {get: "/v1/persons/{person_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested person";
+            schema: {
+              json_schema: {ref: ".service.person.v1.GetPersonResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Deletes a person
+  rpc DeletePerson(DeletePersonRequest) returns (DeletePersonResponse) {
+    option (google.api.http) = {delete: "/v1/persons/{person_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Tells the person was successfully deleted";
+            schema: {
+              json_schema: {ref: ".service.person.v1.DeletePersonResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Updates a person
+  rpc UpdatePerson(UpdatePersonRequest) returns (UpdatePersonResponse) {
+    option (google.api.http) = {patch: "/v1/persons/{person_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the specs of the updated person";
+            schema: {
+              json_schema: {ref: ".service.person.v1.UpdatePersonResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all person IDs
+  rpc ListPersonIds(ListPersonIdsRequest) returns (ListPersonIdsResponse) {
+    option (google.api.http) = {get: "/v1/persons:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested person IDs";
+            schema: {
+              json_schema: {ref: ".service.person.v1.ListPersonIdsResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamPersonIds streams the list of all person IDs
+  rpc StreamPersonIds(StreamPersonIdsRequest) returns (stream StreamPersonIdsResponse) {}
+  // StreamPerson streams the requested person
+  rpc StreamPerson(StreamPersonRequest) returns (stream StreamPersonResponse) {}
+}
+
+message UpdatePersonRequest {
+  message UpdateField {
+    oneof update_option {
+      option (validate.required) = true;
+      string name = 1 [
+        (google.api.field_behavior) = REQUIRED,
+        (validate.rules).string = {
+          min_len: 1;
+          max_len: 100;
+        }
+      ];
+    }
+  }
+  string person_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  repeated UpdateField update_fields = 2 [
+    (validate.rules).repeated = {
+      min_items: 1;
+      max_items: 1;
+    },
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message UpdatePersonResponse {
+  common.person.v1.Person person = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message DeletePersonRequest {
+  // the ID of the person
+  string person_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeletePersonResponse {}
+
+message CreatePersonRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+}
+
+message CreatePersonResponse {
+  // the ID of the person
+  string person_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetPersonRequest {
+  // the ID of the person
+  string person_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetPersonResponse {
+  common.person.v1.Person person = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message ListPersonIdsRequest {}
+
+message ListPersonIdsResponse {
+  repeated string person_ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamPersonIdsRequest {}
+
+message StreamPersonIdsResponse {
+  // the current list of person IDs
+  message PersonIds {
+    repeated string person_ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    PersonIds person_ids = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+  }
+}
+
+message StreamPersonRequest {
+  // the ID of the person
+  string person_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamPersonResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed person
+    common.person.v1.Person person = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}
