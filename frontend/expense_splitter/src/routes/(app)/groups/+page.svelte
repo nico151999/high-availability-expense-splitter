@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Code, ConnectError, createPromiseClient } from "@bufbuild/connect";
 	import type { PageData } from "./$types";
-	import { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connectweb";
+	import { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import { onDestroy, onMount } from "svelte";
 	import { writable } from "svelte/store";
@@ -124,7 +124,6 @@
 	<thead>
 		<th>ID</th>
 		<th>Name</th>
-		<th>Currency</th>
 		<th>Action</th>
 	</thead>
 	<tbody>

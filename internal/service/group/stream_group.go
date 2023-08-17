@@ -39,8 +39,10 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamGroupAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {
-			return nil
-		} else if eris.Is(err, service.ErrResourceNotFound) {
+			return connect.NewError(
+				connect.CodeDataLoss,
+				eris.New("the group does no longer exist"))
+		} else if eris.Is(err, errSelectGroup) {
 			return errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -51,10 +53,10 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 						Domain: environment.GetDBSelectErrorReason(ctx),
 					},
 				})
-		} else if eris.Is(err, errNoGroupWithId) {
+		} else if eris.Is(err, service.ErrResourceNotFound) {
 			return connect.NewError(
 				connect.CodeNotFound,
-				eris.New("the group ID does not exist"))
+				eris.New("the group does not exist"))
 		} else if eris.Is(err, service.ErrSubscribeResource) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -69,7 +71,7 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 		} else if eris.Is(err, service.ErrSendCurrentResourceMessage) {
 			return errors.NewErrorWithDetails(
 				ctx,
-				connect.CodeDataLoss,
+				connect.CodeCanceled,
 				"failed returning current resource",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
