@@ -1,0 +1,31 @@
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: {{ include "table-name-resource-persons" . }}
+spec:
+  database: {{ include "db-name" . }}
+  name: {{ include "table-name-persons" . }}
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      foreignKeys:
+        - columns:
+            - groupId
+          references:
+            table: {{ include "table-name-groups" . }}
+            columns:
+              - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: groupId
+        type: text
+        constraints:
+          notNull: true
+      - name: name
+        type: text
+        constraints:
+          notNull: true

@@ -342,8 +342,24 @@ processor-rolebinding
 
 
 {{/* Accepts the name of the table as parameter */}}
-{{- define "table-name" -}}
+{{- define "table-name-resource" -}}
 {{ . }}-table
+{{- end}}
+
+{{- define "table-name-persons" -}}
+persons
+{{- end}}
+
+{{- define "table-name-groups" -}}
+groups
+{{- end}}
+
+{{- define "table-name-resource-persons" -}}
+{{ include "table-name-resource" (include "table-name-persons" .) }}
+{{- end}}
+
+{{- define "table-name-resource-groups" -}}
+{{ include "table-name-resource" (include "table-name-groups" .) }}
 {{- end}}
 
 
