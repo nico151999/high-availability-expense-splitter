@@ -218,7 +218,7 @@ service PersonService {
     };
   }
   // Lists all person IDs
-  rpc ListPersonIds(ListPersonIdsRequest) returns (ListPersonIdsResponse) {
+  rpc ListPersonIdsInGroup(ListPersonIdsInGroupRequest) returns (ListPersonIdsInGroupResponse) {
     option (google.api.http) = {get: "/v1/people:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
@@ -227,7 +227,7 @@ service PersonService {
           value: {
             description: "Returns the requested person IDs";
             schema: {
-              json_schema: {ref: ".service.person.v1.ListPersonIdsResponse"};
+              json_schema: {ref: ".service.person.v1.ListPersonIdsInGroupResponse"};
             };
           };
         },
@@ -270,8 +270,8 @@ service PersonService {
       ];
     };
   }
-  // StreamPersonIds streams the list of all person IDs
-  rpc StreamPersonIds(StreamPersonIdsRequest) returns (stream StreamPersonIdsResponse) {}
+  // StreamPersonIdsInGroup streams the list of all person IDs
+  rpc StreamPersonIdsInGroup(StreamPersonIdsInGroupRequest) returns (stream StreamPersonIdsInGroupResponse) {}
   // StreamPerson streams the requested person
   rpc StreamPerson(StreamPersonRequest) returns (stream StreamPersonResponse) {}
 }
@@ -361,9 +361,15 @@ message GetPersonResponse {
   ];
 }
 
-message ListPersonIdsRequest {}
+message ListPersonIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
 
-message ListPersonIdsResponse {
+message ListPersonIdsInGroupResponse {
   repeated string person_ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -371,9 +377,15 @@ message ListPersonIdsResponse {
   ];
 }
 
-message StreamPersonIdsRequest {}
+message StreamPersonIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
 
-message StreamPersonIdsResponse {
+message StreamPersonIdsInGroupResponse {
   // the current list of person IDs
   message PersonIds {
     repeated string person_ids = 1 [
