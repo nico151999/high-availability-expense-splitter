@@ -5,9 +5,14 @@ import (
 	"fmt"
 )
 
-// GetServerPort returns the port the service will run on
+// GetGroupServerPort returns the port the group service will run on
 func GetGroupServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "GROUP_SERVER_PORT")
+}
+
+// GetPersonServerPort returns the port the person service will run on
+func GetPersonServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "PERSON_SERVER_PORT")
 }
 
 func GetDbUser(ctx context.Context) string {
@@ -128,6 +133,38 @@ func GetGroupsSubject() string {
 	return "group"
 }
 
+// TODO: as env variable with %s parameter
+// GetPersonCreatedSubject returns the name of the subject events are published on when a person was created
+func GetPersonCreatedSubject(personId string) string {
+	return fmt.Sprintf("%s.personCreated", GetPersonSubject(personId))
+}
+
+// TODO: as env variable with %s parameter
+// GetPersonDeletedSubject returns the name of the subject events are published on when a person was deleted
+func GetPersonDeletedSubject(personId string) string {
+	return fmt.Sprintf("%s.personDeleted", GetPersonSubject(personId))
+}
+
+// TODO: as env variable with %s parameter
+// GetPersonUpdatedSubject returns the name of the subject events are published on when a person was updated
+func GetPersonUpdatedSubject(personId string) string {
+	return fmt.Sprintf("%s.personUpdated", GetPersonSubject(personId))
+}
+
+// TODO: as env variable with %s parameter
+// GetPersonSubject returns the name of the subject events of a single person are published on
+func GetPersonSubject(personId string) string {
+	return fmt.Sprintf("%s.%s", GetPeopleSubject(), personId)
+}
+
 // TODO: as env variable
-// HttpStatusCodeKey is the header key used internally to modify the http status code as suggested here: https://grpc-ecosystem.github.io/grpc-gateway/docs/mapping/customizing_your_gateway/
-var HttpStatusCodeKey string = "x-http-code"
+// GetPeopleSubject returns the name of the subject events of all people are published on
+func GetPeopleSubject() string {
+	return "person"
+}
+
+// TODO: as env variable
+// GetHttpStatusCodeKey returns the header key used internally to modify the http status code as suggested here: https://grpc-ecosystem.github.io/grpc-gateway/docs/mapping/customizing_your_gateway/
+func GetHttpStatusCodeKey() string {
+	return "x-http-code"
+}

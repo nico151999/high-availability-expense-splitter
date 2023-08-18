@@ -18,7 +18,7 @@ func HttpResponseCodeModifier(ctx context.Context, w http.ResponseWriter, p prot
 	}
 
 	// set http status code
-	httpStatusCodeKey := environment.HttpStatusCodeKey
+	httpStatusCodeKey := environment.GetHttpStatusCodeKey()
 	if vals := md.HeaderMD.Get(httpStatusCodeKey); len(vals) == 1 {
 		code, err := strconv.Atoi(vals[0])
 		if err != nil {

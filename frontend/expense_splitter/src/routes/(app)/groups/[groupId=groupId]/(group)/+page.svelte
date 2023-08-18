@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
-	import { writable, type Writable } from "svelte/store";
+	import { writable } from "svelte/store";
 	import type { Group } from "../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import { GroupService } from "../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import { streamGroup } from "../../utils";
@@ -61,7 +61,7 @@
 		goto(`/group/${data.groupId}/category`);
 	}
 
-	function openPersons() {
+	function openPeople() {
 		goto(`/group/${data.groupId}/person`);
 	}
 
@@ -110,5 +110,5 @@
 <div>
 	<button on:click={openExpenses}>Open expenses</button>
 	<button on:click={openCategories}>Open categories</button>
-	<button on:click={openPersons}>Open persons</button>
+	<button on:click={openPeople}>Open people</button>
 </div>

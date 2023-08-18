@@ -1,10 +1,10 @@
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
-  name: {{ include "table-name-resource-persons" . }}
+  name: {{ include "table-name-resource-people" . }}
 spec:
   database: {{ include "db-name" . }}
-  name: {{ include "table-name-persons" . }}
+  name: {{ include "table-name-people" . }}
   schema:
     postgres:
       primaryKey:

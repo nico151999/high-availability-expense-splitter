@@ -16,7 +16,7 @@ import "validate/validate.proto";
 service PersonService {
   // Requests the creation of a person with the provided specs
   rpc CreatePerson(CreatePersonRequest) returns (CreatePersonResponse) {
-    option (google.api.http) = {post: "/v1/persons"};
+    option (google.api.http) = {post: "/v1/people"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -60,7 +60,7 @@ service PersonService {
   }
   // Gets a person
   rpc GetPerson(GetPersonRequest) returns (GetPersonResponse) {
-    option (google.api.http) = {get: "/v1/persons/{person_id}"};
+    option (google.api.http) = {get: "/v1/people/{person_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -113,7 +113,7 @@ service PersonService {
   }
   // Deletes a person
   rpc DeletePerson(DeletePersonRequest) returns (DeletePersonResponse) {
-    option (google.api.http) = {delete: "/v1/persons/{person_id}"};
+    option (google.api.http) = {delete: "/v1/people/{person_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -166,7 +166,7 @@ service PersonService {
   }
   // Updates a person
   rpc UpdatePerson(UpdatePersonRequest) returns (UpdatePersonResponse) {
-    option (google.api.http) = {patch: "/v1/persons/{person_id}"};
+    option (google.api.http) = {patch: "/v1/people/{person_id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -219,7 +219,7 @@ service PersonService {
   }
   // Lists all person IDs
   rpc ListPersonIds(ListPersonIdsRequest) returns (ListPersonIdsResponse) {
-    option (google.api.http) = {get: "/v1/persons:id"};
+    option (google.api.http) = {get: "/v1/people:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
