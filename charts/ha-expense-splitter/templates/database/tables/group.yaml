@@ -7,10 +7,8 @@ spec:
   name: {{ include "table-name-groups" . }}
   schema:
     postgres:
-      primaryKey:
-      - id
       columns:
-      - name: id
+      - name: &id id
         type: text
         constraints:
           notNull: true
@@ -18,3 +16,5 @@ spec:
         type: text
         constraints:
           notNull: true
+      primaryKey:
+      - *id

@@ -7,21 +7,12 @@ spec:
   name: {{ include "table-name-people" . }}
   schema:
     postgres:
-      primaryKey:
-      - id
-      foreignKeys:
-        - columns:
-            - groupId
-          references:
-            table: {{ include "table-name-groups" . }}
-            columns:
-              - id
       columns:
-      - name: id
+      - name: &id id
         type: text
         constraints:
           notNull: true
-      - name: groupId
+      - name: &groupId group_id
         type: text
         constraints:
           notNull: true
@@ -29,3 +20,12 @@ spec:
         type: text
         constraints:
           notNull: true
+      primaryKey:
+      - *id
+      foreignKeys:
+        - columns:
+            - *groupId
+          references:
+            table: {{ include "table-name-groups" . }}
+            columns:
+              - id
