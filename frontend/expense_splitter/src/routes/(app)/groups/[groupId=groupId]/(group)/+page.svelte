@@ -54,15 +54,15 @@
 	}
 
 	function openExpenses() {
-		goto(`/group/${data.groupId}/expense`);
+		goto(`./${data.groupId}/expenses`);
 	}
 
 	function openCategories() {
-		goto(`/group/${data.groupId}/category`);
+		goto(`./${data.groupId}/categories`);
 	}
 
 	function openPeople() {
-		goto(`/group/${data.groupId}/person`);
+		goto(`./${data.groupId}/people`);
 	}
 
     function startEdit() {

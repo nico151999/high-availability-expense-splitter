@@ -29,9 +29,9 @@ export async function streamGroup(
                 return false;
             }
         }
-        console.error('An error occurred trying to stream group. Trying anew in 5 seconds.', e);
+        console.error('An error occurred trying to stream group.', e);
     }
-    console.log(`Ended group ${groupID} stream`);
+    console.log(`Ended group ${groupID} stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     return await streamGroup(groupClient, groupID, abortController, onGroupUpdate);
 }

@@ -15,7 +15,7 @@
 
 	const newGroup = writable({
 		name: '',
-		currency: ''
+		currency: '' // TODO: add to UI once a currency service is available
 	});
 
 	const abortController = new AbortController();
@@ -36,17 +36,10 @@
 
 	async function createGroup() {
 		try {
-			const createRequest = async () => {
-				groupClient.createGroup
-				const group = await groupClient.createGroup({
-					name: $newGroup.name
-				});
-				console.log('Created group', group);
-			};
-
-			const creationRequests = [];
-			creationRequests.push(createRequest());
-			await Promise.all(creationRequests);
+			const res = await groupClient.createGroup({
+				name: $newGroup.name
+			});
+			console.log('Created group', res.groupId);
 
 			newGroup.set({name: '', currency: ''});
 		} catch (e) {
