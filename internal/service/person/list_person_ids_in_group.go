@@ -17,11 +17,11 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-func (s *personServer) ListPersonIds(ctx context.Context, req *connect.Request[personsvcv1.ListPersonIdsRequest]) (*connect.Response[personsvcv1.ListPersonIdsResponse], error) {
+func (s *personServer) ListPersonIdsInGroup(ctx context.Context, req *connect.Request[personsvcv1.ListPersonIdsInGroupRequest]) (*connect.Response[personsvcv1.ListPersonIdsInGroupResponse], error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	personIds, err := listPersonIds(ctx, s.dbClient)
+	personIds, err := listPersonIds(ctx, s.dbClient, req.Msg.GetGroupId())
 	if err != nil {
 		if eris.Is(err, errSelectPersonIds) {
 			return nil, errors.NewErrorWithDetails(
@@ -39,15 +39,15 @@ func (s *personServer) ListPersonIds(ctx context.Context, req *connect.Request[p
 		}
 	}
 
-	return connect.NewResponse(&personsvcv1.ListPersonIdsResponse{
+	return connect.NewResponse(&personsvcv1.ListPersonIdsInGroupResponse{
 		PersonIds: personIds,
 	}), nil
 }
 
-func listPersonIds(ctx context.Context, dbClient bun.IDB) ([]string, error) {
+func listPersonIds(ctx context.Context, dbClient bun.IDB, groupId string) ([]string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var personIds []string
-	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Column("id").Scan(ctx, &personIds); err != nil {
+	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Where("group_id = ?", groupId).Column("id").Scan(ctx, &personIds); err != nil {
 		log.Error("failed getting person IDs", logging.Error(err))
 		// TODO: determine reason why person ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectPersonIds

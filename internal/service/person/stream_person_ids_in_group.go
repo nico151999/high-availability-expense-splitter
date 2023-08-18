@@ -19,16 +19,16 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-var streamPersonIdsAlive = personsvcv1.StreamPersonIdsResponse{
-	Update: &personsvcv1.StreamPersonIdsResponse_StillAlive{},
+var streamPersonIdsAlive = personsvcv1.StreamPersonIdsInGroupResponse{
+	Update: &personsvcv1.StreamPersonIdsInGroupResponse_StillAlive{},
 }
 
-func (s *personServer) StreamPersonIds(ctx context.Context, req *connect.Request[personsvcv1.StreamPersonIdsRequest], srv *connect.ServerStream[personsvcv1.StreamPersonIdsResponse]) error {
+func (s *personServer) StreamPersonIdsInGroup(ctx context.Context, req *connect.Request[personsvcv1.StreamPersonIdsInGroupRequest], srv *connect.ServerStream[personsvcv1.StreamPersonIdsInGroupResponse]) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetPeopleSubject()), func(ctx context.Context) (*personsvcv1.StreamPersonIdsResponse, error) {
-		return sendCurrentPersonIds(ctx, s.dbClient)
+	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetPeopleSubject()), func(ctx context.Context) (*personsvcv1.StreamPersonIdsInGroupResponse, error) {
+		return sendCurrentPersonIds(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamPersonIdsAlive); err != nil {
 		if eris.Is(err, errSelectPersonIds) {
 			return errors.NewErrorWithDetails(
@@ -82,18 +82,18 @@ func (s *personServer) StreamPersonIds(ctx context.Context, req *connect.Request
 	return nil
 }
 
-func sendCurrentPersonIds(ctx context.Context, dbClient bun.IDB) (*personsvcv1.StreamPersonIdsResponse, error) {
+func sendCurrentPersonIds(ctx context.Context, dbClient bun.IDB, groupId string) (*personsvcv1.StreamPersonIdsInGroupResponse, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var personIds []string
-	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Column("id").Scan(ctx, &personIds); err != nil {
+	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Where("group_id = ?", groupId).Column("id").Scan(ctx, &personIds); err != nil {
 		log.Error("failed getting person IDs", logging.Error(err))
 		// TODO: determine reason why person IDs couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectPersonIds
 	}
-	return &personsvcv1.StreamPersonIdsResponse{
-		Update: &personsvcv1.StreamPersonIdsResponse_PersonIds_{
-			PersonIds: &personsvcv1.StreamPersonIdsResponse_PersonIds{
+	return &personsvcv1.StreamPersonIdsInGroupResponse{
+		Update: &personsvcv1.StreamPersonIdsInGroupResponse_PersonIds_{
+			PersonIds: &personsvcv1.StreamPersonIdsInGroupResponse_PersonIds{
 				PersonIds: personIds,
 			},
 		},
