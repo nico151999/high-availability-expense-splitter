@@ -103,8 +103,8 @@ func validateMessage(log otel.OtelLogger, msg interface{}) ([]*errdetails.BadReq
 		}
 	}
 
-	msgType := reflect.TypeOf(msg)
-	for i := 0; i < msgType.Elem().NumField(); i++ {
+	msgType := reflect.TypeOf(msg).Elem()
+	for i := 0; i < msgType.NumField(); i++ {
 		fieldVal := reflect.ValueOf(msg).Elem().Field(i)
 		if fieldVal.Kind() == reflect.Pointer && fieldVal.Elem().Kind() == reflect.Struct {
 			violations, err := validateMessage(log, fieldVal.Interface())
@@ -112,6 +112,7 @@ func validateMessage(log otel.OtelLogger, msg interface{}) ([]*errdetails.BadReq
 				return nil, err
 			}
 			for _, violation := range violations {
+				log.Info(msgType.Field(i).Name)
 				violation.Field = fmt.Sprintf("%s.%s", msgType.Field(i).Name, violation.GetField())
 				fieldViolations = append(fieldViolations, violation)
 			}
