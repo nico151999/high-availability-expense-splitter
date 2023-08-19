@@ -35,7 +35,8 @@ func (s *personServer) StreamPerson(ctx context.Context, req *connect.Request[pe
 		time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetPersonSubject(req.Msg.GetPersonId())), func(ctx context.Context) (*personsvcv1.StreamPersonResponse, error) {
+	streamSubject := fmt.Sprintf("%s.*", environment.GetPersonSubject("*", req.Msg.GetPersonId()))
+	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*personsvcv1.StreamPersonResponse, error) {
 		return sendCurrentPerson(ctx, s.dbClient, req.Msg.GetPersonId())
 	}, srv, &streamPersonAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {

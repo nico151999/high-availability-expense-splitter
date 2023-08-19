@@ -97,7 +97,7 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 		log.Error("failed marshalling person created event", logging.Error(err))
 		return "", errMarshalPersonCreated
 	}
-	if err := nc.Publish(environment.GetPersonCreatedSubject(personId), marshalled); err != nil {
+	if err := nc.Publish(environment.GetPersonCreatedSubject(req.GetGroupId(), personId), marshalled); err != nil {
 		log.Error("failed publishing person created event", logging.Error(err))
 		return "", errPublishPersonCreated
 	}

@@ -106,19 +106,19 @@ func GetTraceCollectorPort(ctx context.Context) uint16 {
 // TODO: as env variable with %s parameter
 // GetGroupCreatedSubject returns the name of the subject events are published on when a group was created
 func GetGroupCreatedSubject(groupId string) string {
-	return fmt.Sprintf("%s.groupCreated", GetGroupSubject(groupId))
+	return fmt.Sprintf("%s.created", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable with %s parameter
 // GetGroupDeletedSubject returns the name of the subject events are published on when a group was deleted
 func GetGroupDeletedSubject(groupId string) string {
-	return fmt.Sprintf("%s.groupDeleted", GetGroupSubject(groupId))
+	return fmt.Sprintf("%s.deleted", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable with %s parameter
 // GetGroupUpdatedSubject returns the name of the subject events are published on when a group was updated
 func GetGroupUpdatedSubject(groupId string) string {
-	return fmt.Sprintf("%s.groupUpdated", GetGroupSubject(groupId))
+	return fmt.Sprintf("%s.updated", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable with %s parameter
@@ -135,32 +135,32 @@ func GetGroupsSubject() string {
 
 // TODO: as env variable with %s parameter
 // GetPersonCreatedSubject returns the name of the subject events are published on when a person was created
-func GetPersonCreatedSubject(personId string) string {
-	return fmt.Sprintf("%s.personCreated", GetPersonSubject(personId))
+func GetPersonCreatedSubject(groupId string, personId string) string {
+	return fmt.Sprintf("%s.created", GetPersonSubject(groupId, personId))
 }
 
 // TODO: as env variable with %s parameter
 // GetPersonDeletedSubject returns the name of the subject events are published on when a person was deleted
-func GetPersonDeletedSubject(personId string) string {
-	return fmt.Sprintf("%s.personDeleted", GetPersonSubject(personId))
+func GetPersonDeletedSubject(groupId string, personId string) string {
+	return fmt.Sprintf("%s.deleted", GetPersonSubject(groupId, personId))
 }
 
 // TODO: as env variable with %s parameter
 // GetPersonUpdatedSubject returns the name of the subject events are published on when a person was updated
-func GetPersonUpdatedSubject(personId string) string {
-	return fmt.Sprintf("%s.personUpdated", GetPersonSubject(personId))
+func GetPersonUpdatedSubject(groupId string, personId string) string {
+	return fmt.Sprintf("%s.updated", GetPersonSubject(groupId, personId))
 }
 
 // TODO: as env variable with %s parameter
 // GetPersonSubject returns the name of the subject events of a single person are published on
-func GetPersonSubject(personId string) string {
-	return fmt.Sprintf("%s.%s", GetPeopleSubject(), personId)
+func GetPersonSubject(groupId string, personId string) string {
+	return fmt.Sprintf("%s.%s", GetPeopleSubject(groupId), personId)
 }
 
 // TODO: as env variable
 // GetPeopleSubject returns the name of the subject events of all people are published on
-func GetPeopleSubject() string {
-	return "person"
+func GetPeopleSubject(groupId string) string {
+	return fmt.Sprintf("%s.person", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable

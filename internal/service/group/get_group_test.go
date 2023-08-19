@@ -78,5 +78,8 @@ func TestGetGroup(t *testing.T) {
 		} else {
 			t.Fatalf("Expected connect error, got: %+v", err)
 		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("there were unfulfilled expectations: %+v", err)
+		}
 	})
 }

@@ -35,7 +35,7 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 		time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetGroupSubject(req.Msg.GetGroupId())), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetGroupSubject(req.Msg.GetGroupId())), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
 		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamGroupAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {

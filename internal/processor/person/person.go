@@ -28,7 +28,7 @@ func NewPersonProcessor(natsUrl string) (*personProcessor, error) {
 func (rpProcessor *personProcessor) Process(ctx context.Context) (func(ctx context.Context) error, error) {
 	var gcSub *nats.Subscription
 	{
-		eventSubject := environment.GetPersonCreatedSubject("*")
+		eventSubject := environment.GetPersonCreatedSubject("*", "*")
 		var err error
 		gcSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.personCreated)
 		if err != nil {
@@ -37,7 +37,7 @@ func (rpProcessor *personProcessor) Process(ctx context.Context) (func(ctx conte
 	}
 	var gdSub *nats.Subscription
 	{
-		eventSubject := environment.GetPersonDeletedSubject("*")
+		eventSubject := environment.GetPersonDeletedSubject("*", "*")
 		var err error
 		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.personDeleted)
 		if err != nil {
@@ -46,7 +46,7 @@ func (rpProcessor *personProcessor) Process(ctx context.Context) (func(ctx conte
 	}
 	var guSub *nats.Subscription
 	{
-		eventSubject := environment.GetPersonUpdatedSubject("*")
+		eventSubject := environment.GetPersonUpdatedSubject("*", "*")
 		var err error
 		guSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.personUpdated)
 		if err != nil {

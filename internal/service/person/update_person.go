@@ -71,11 +71,12 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 			query.Column("name")
 		}
 	}
-	if _, err := query.Model(&person).WherePK().Exec(ctx); err != nil {
-		log.Error("failed updating person", logging.Error(err))
+	if err := query.Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
+			log.Info("person not found", logging.Error(err))
 			return nil, errNoPersonWithId
 		}
+		log.Error("failed updating person", logging.Error(err))
 		return nil, errUpdatePerson
 	}
 
@@ -86,7 +87,7 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		log.Error("failed marshalling person updated event", logging.Error(err))
 		return nil, errMarshalPersonUpdated
 	}
-	if err := nc.Publish(environment.GetPersonUpdatedSubject(personId), marshalled); err != nil {
+	if err := nc.Publish(environment.GetPersonUpdatedSubject(person.GroupId, personId), marshalled); err != nil {
 		log.Error("failed publishing person updated event", logging.Error(err))
 		return nil, errPublishPersonUpdated
 	}

@@ -27,7 +27,7 @@ func (s *personServer) StreamPersonIdsInGroup(ctx context.Context, req *connect.
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.>", environment.GetPeopleSubject()), func(ctx context.Context) (*personsvcv1.StreamPersonIdsInGroupResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetPersonSubject(req.Msg.GetGroupId(), "*")), func(ctx context.Context) (*personsvcv1.StreamPersonIdsInGroupResponse, error) {
 		return sendCurrentPersonIds(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamPersonIdsAlive); err != nil {
 		if eris.Is(err, errSelectPersonIds) {

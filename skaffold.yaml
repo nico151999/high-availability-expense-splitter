@@ -84,6 +84,23 @@ build:
         buildArgs:
           SERVICE_NAME: "group"
           SVC_OUT_DIR_PARAM: "GROUP_SVC_OUT_DIR"
+    - image: &personSvcImage ghcr.io/nico151999/ha-expense-splitter-person-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated person dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/person/g;w ./cmd/service/person.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/person.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/person.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "person"
+          SVC_OUT_DIR_PARAM: "PERSON_SVC_OUT_DIR"
 
     # Processors for handling events effecting their respective resource
     - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
@@ -103,6 +120,23 @@ build:
         buildArgs:
           PROCESSOR_NAME: "group"
           PROCESSOR_OUT_DIR_PARAM: "GROUP_PROCESSOR_OUT_DIR"
+    - image: &personProcessorImage ghcr.io/nico151999/ha-expense-splitter-person-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated person dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/person/g;w ./cmd/processor/person.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/person.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/person.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "person"
+          PROCESSOR_OUT_DIR_PARAM: "PERSON_PROCESSOR_OUT_DIR"
 deploy:
   statusCheckDeadlineSeconds: 1200
   helm:
@@ -476,6 +510,12 @@ deploy:
                   image:
                     repository: *groupSvcImage
                     tag: *groupSvcImage
+                person:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *personSvcImage
+                    tag: *personSvcImage
             processors:
               specs:
                 group:
@@ -484,6 +524,12 @@ deploy:
                   image:
                     repository: *groupProcessorImage
                     tag: *groupProcessorImage
+                person:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *personProcessorImage
+                    tag: *personProcessorImage
 profiles:
   # NOTE: try to order profiles from last to first array element when removing; e.g. remove helm chart 2 before removing helm chart 1 to guarantee array index consistency
   - name: DEV

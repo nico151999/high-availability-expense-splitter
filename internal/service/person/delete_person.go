@@ -60,9 +60,9 @@ func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 	person := personv1.Person{
 		Id: personId,
 	}
-	if _, err := dbClient.NewDelete().Model(&person).WherePK().Exec(ctx); err != nil {
+	if err := dbClient.NewDelete().Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("person not found", logging.Error(err))
+			log.Info("person not found", logging.Error(err))
 			return errNoPersonWithId
 		}
 		log.Error("failed deleting person", logging.Error(err))
@@ -76,7 +76,7 @@ func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		log.Error("failed marshalling person deleted event", logging.Error(err))
 		return errMarshalPersonDeleted
 	}
-	if err := nc.Publish(environment.GetPersonDeletedSubject(personId), marshalled); err != nil {
+	if err := nc.Publish(environment.GetPersonDeletedSubject(person.GroupId, personId), marshalled); err != nil {
 		log.Error("failed publishing person deleted event", logging.Error(err))
 		return errPublishPersonDeleted
 	}

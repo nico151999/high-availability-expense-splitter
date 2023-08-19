@@ -151,6 +151,66 @@ haExpenseSplitter:
           repository: "my-registry/my-group/my-group-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
+      person:
+        roles: [] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.person\.v1\.PersonService/CreatePerson$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/GetPerson$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/GetPersons$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/ListPersonIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/UpdatePerson$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/DeletePerson$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/StreamPerson$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.person\.v1\.PersonService/StreamPersonIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-person-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
   processors:
     specs:
       group:
@@ -175,6 +235,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-group-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      person:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-person-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []
