@@ -60,7 +60,7 @@
 
 	function openPerson(personId: string) {
 		return () => {
-			goto(`/group/${data.groupId}/person/${personId}`);
+			goto(`./people/${personId}`);
 		}
 	}
 </script>

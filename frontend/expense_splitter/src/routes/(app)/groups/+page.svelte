@@ -106,7 +106,7 @@
 
 	function openGroup(groupId: string) {
 		return () => {
-			goto(`/groups/${groupId}`);
+			goto(`./groups/${groupId}`);
 		}
 	}
 </script>
