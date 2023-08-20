@@ -346,12 +346,20 @@ processor-rolebinding
 {{ . }}-table
 {{- end}}
 
+{{- define "table-name-categories" -}}
+categories
+{{- end}}
+
 {{- define "table-name-people" -}}
 people
 {{- end}}
 
 {{- define "table-name-groups" -}}
 groups
+{{- end}}
+
+{{- define "table-name-resource-categories" -}}
+{{ include "table-name-resource" (include "table-name-categories" .) }}
 {{- end}}
 
 {{- define "table-name-resource-people" -}}
