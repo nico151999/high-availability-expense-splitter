@@ -1,4 +1,4 @@
-package group
+package person
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
-	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
+	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
+	personsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -20,40 +20,41 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-var streamGroupAlive = groupsvcv1.StreamGroupResponse{
-	Update: &groupsvcv1.StreamGroupResponse_StillAlive{},
+var streamPersonAlive = personsvcv1.StreamPersonResponse{
+	Update: &personsvcv1.StreamPersonResponse_StillAlive{},
 }
 
-func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[groupsvcv1.StreamGroupRequest], srv *connect.ServerStream[groupsvcv1.StreamGroupResponse]) error {
+func (s *personServer) StreamPerson(ctx context.Context, req *connect.Request[personsvcv1.StreamPersonRequest], srv *connect.ServerStream[personsvcv1.StreamPersonResponse]) error {
 	ctx, cancel := context.WithTimeout(
 		logging.IntoContext(
 			ctx,
 			logging.FromContext(ctx).With(
 				logging.String(
-					"groupId",
-					req.Msg.GetGroupId()))),
+					"personId",
+					req.Msg.GetPersonId()))),
 		time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetGroupSubject(req.Msg.GetGroupId())), func(ctx context.Context) (*groupsvcv1.StreamGroupResponse, error) {
-		return sendCurrentGroup(ctx, s.dbClient, req.Msg.GetGroupId())
-	}, srv, &streamGroupAlive); err != nil {
+	streamSubject := fmt.Sprintf("%s.*", environment.GetPersonSubject("*", req.Msg.GetPersonId()))
+	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*personsvcv1.StreamPersonResponse, error) {
+		return sendCurrentPerson(ctx, s.dbClient, req.Msg.GetPersonId())
+	}, srv, &streamPersonAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {
 			return connect.NewError(
 				connect.CodeDataLoss,
-				eris.New("the group does no longer exist"))
+				eris.New("the person does no longer exist"))
 		} else if eris.Is(err, service.ErrResourceNotFound) {
 			return connect.NewError(
 				connect.CodeNotFound,
-				eris.New("the group does not exist"))
-		} else if eris.Is(err, errSelectGroup) {
+				eris.New("the person does not exist"))
+		} else if eris.Is(err, errSelectPerson) {
 			return errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting current group from database failed",
+						Reason: "requesting current person from database failed",
 						Domain: environment.GetDBSelectErrorReason(ctx),
 					},
 				})
@@ -64,7 +65,7 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 				"failed subscribing to updates",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "subscribing to group updates failed",
+						Reason: "subscribing to person updates failed",
 						Domain: environment.GetMessageSubscriptionErrorReason(ctx),
 					},
 				})
@@ -75,7 +76,7 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 				"failed returning current resource",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "returning current group failed",
+						Reason: "returning current person failed",
 						Domain: environment.GetSendCurrentResourceErrorReason(ctx),
 					},
 				})
@@ -98,21 +99,21 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 	return nil
 }
 
-func sendCurrentGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupsvcv1.StreamGroupResponse, error) {
+func sendCurrentPerson(ctx context.Context, dbClient bun.IDB, personId string) (*personsvcv1.StreamPersonResponse, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
-	var group groupv1.Group
-	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
+	var person personv1.Person
+	if err := dbClient.NewSelect().Model(&person).Where("id = ?", personId).Limit(1).Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("group not found", logging.Error(err))
+			log.Debug("person not found", logging.Error(err))
 			return nil, service.ErrResourceNotFound
 		}
-		log.Error("failed getting group", logging.Error(err))
-		return nil, errSelectGroup
+		log.Error("failed getting person", logging.Error(err))
+		return nil, errSelectPerson
 	}
-	return &groupsvcv1.StreamGroupResponse{
-		Update: &groupsvcv1.StreamGroupResponse_Group{
-			Group: &group,
+	return &personsvcv1.StreamPersonResponse{
+		Update: &personsvcv1.StreamPersonResponse_Person{
+			Person: &person,
 		},
 	}, nil
 }

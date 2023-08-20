@@ -86,7 +86,7 @@ func sendCurrentResource[T any](
 	}
 
 	if err := srv.Send(res); err != nil {
-		log.Error("failed sending still alive message to client", logging.Error(err))
+		log.Error("failed sending current resource message to client", logging.Error(err))
 		return ErrSendCurrentResourceMessage
 	}
 

@@ -72,10 +72,11 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 		}
 	}
 	if _, err := query.Model(&group).WherePK().Exec(ctx); err != nil {
-		log.Error("failed updating group", logging.Error(err))
 		if eris.Is(err, sql.ErrNoRows) {
+			log.Info("group not found", logging.Error(err))
 			return nil, errNoGroupWithId
 		}
+		log.Error("failed updating group", logging.Error(err))
 		return nil, errUpdateGroup
 	}
 

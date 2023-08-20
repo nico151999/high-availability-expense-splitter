@@ -1,16 +1,14 @@
 apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
 metadata:
-  name: {{ include "table-name" "group" }}
+  name: {{ include "table-name-resource-groups" . }}
 spec:
   database: {{ include "db-name" . }}
-  name: groups
+  name: {{ include "table-name-groups" . }}
   schema:
     postgres:
-      primaryKey:
-      - id
       columns:
-      - name: id
+      - name: &id id
         type: text
         constraints:
           notNull: true
@@ -18,3 +16,5 @@ spec:
         type: text
         constraints:
           notNull: true
+      primaryKey:
+      - *id

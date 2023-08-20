@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Code, ConnectError, createPromiseClient } from "@bufbuild/connect";
 	import type { PageData } from "./$types";
-	import { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connectweb";
+	import { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import { onDestroy, onMount } from "svelte";
 	import { writable } from "svelte/store";
@@ -15,7 +15,7 @@
 
 	const newGroup = writable({
 		name: '',
-		currency: ''
+		currency: '' // TODO: add to UI once a currency service is available
 	});
 
 	const abortController = new AbortController();
@@ -36,17 +36,10 @@
 
 	async function createGroup() {
 		try {
-			const createRequest = async () => {
-				groupClient.createGroup
-				const group = await groupClient.createGroup({
-					name: $newGroup.name
-				});
-				console.log('Created group', group);
-			};
-
-			const creationRequests = [];
-			creationRequests.push(createRequest());
-			await Promise.all(creationRequests);
+			const res = await groupClient.createGroup({
+				name: $newGroup.name
+			});
+			console.log('Created group', res.groupId);
 
 			newGroup.set({name: '', currency: ''});
 		} catch (e) {
@@ -113,7 +106,7 @@
 
 	function openGroup(groupId: string) {
 		return () => {
-			goto(`/groups/${groupId}`);
+			goto(`./groups/${groupId}`);
 		}
 	}
 </script>
@@ -124,7 +117,6 @@
 	<thead>
 		<th>ID</th>
 		<th>Name</th>
-		<th>Currency</th>
 		<th>Action</th>
 	</thead>
 	<tbody>
