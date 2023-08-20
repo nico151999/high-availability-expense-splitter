@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package common.category.v1;
+
+import "google/api/resource.proto";
+import "validate/validate.proto";
+import "tagger/tagger.proto";
+
+message Category {
+  option (google.api.resource) = {type: "common.category.v1/Category"};
+  string id = 1 [
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string group_id = 2 [
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  string name = 3 [
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+  // TODO: add created_at
+  // TODO: add updated_at
+}
