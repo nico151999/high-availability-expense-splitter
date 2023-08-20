@@ -335,7 +335,7 @@ build-person-service: generate-proto
 # builds category service
 .PHONY: build-category-service
 build-category-service: generate-proto
-	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
+	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
 
 # builds group processor
 .PHONY: build-group-processor
