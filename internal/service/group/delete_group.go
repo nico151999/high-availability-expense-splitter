@@ -39,8 +39,8 @@ func (s *groupServer) DeleteGroup(ctx context.Context, req *connect.Request[grou
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "deleting group from database failed",
-						Domain: environment.GetDBDeleteErrorReason(ctx),
+						Reason: environment.GetDBDeleteErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoGroupWithId) {

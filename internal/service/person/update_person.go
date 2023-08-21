@@ -40,8 +40,8 @@ func (s *personServer) UpdatePerson(ctx context.Context, req *connect.Request[pe
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "updating person failed",
-						Domain: environment.GetDBUpdateErrorReason(ctx),
+						Reason: environment.GetDBUpdateErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoPersonWithId) {

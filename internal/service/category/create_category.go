@@ -41,8 +41,8 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 				"failed finalizing category creation",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "failed publishing category created task",
-						Domain: environment.GetMessagePublicationErrorReason(ctx),
+						Reason: environment.GetMessagePublicationErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errInsertCategory) {
@@ -52,8 +52,8 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "inserting category into database failed",
-						Domain: environment.GetDBInsertErrorReason(ctx),
+						Reason: environment.GetDBInsertErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoGroupWithId) {

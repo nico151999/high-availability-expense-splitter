@@ -40,8 +40,8 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "updating group failed",
-						Domain: environment.GetDBUpdateErrorReason(ctx),
+						Reason: environment.GetDBUpdateErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoGroupWithId) {

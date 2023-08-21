@@ -30,8 +30,8 @@ func (s *groupServer) ListGroupIds(ctx context.Context, req *connect.Request[gro
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting group IDs from database failed",
-						Domain: environment.GetDBSelectErrorReason(ctx),
+						Reason: environment.GetDBSelectErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else {

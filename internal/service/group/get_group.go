@@ -37,8 +37,8 @@ func (s *groupServer) GetGroup(ctx context.Context, req *connect.Request[groupsv
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting group from database failed",
-						Domain: environment.GetDBSelectErrorReason(ctx),
+						Reason: environment.GetDBSelectErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoGroupWithId) {

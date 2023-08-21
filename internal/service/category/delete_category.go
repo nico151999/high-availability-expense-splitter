@@ -39,8 +39,8 @@ func (s *categoryServer) DeleteCategory(ctx context.Context, req *connect.Reques
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "deleting category from database failed",
-						Domain: environment.GetDBDeleteErrorReason(ctx),
+						Reason: environment.GetDBDeleteErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoCategoryWithId) {

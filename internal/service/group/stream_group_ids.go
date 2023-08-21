@@ -37,8 +37,8 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting group IDs from database failed",
-						Domain: environment.GetDBSelectErrorReason(ctx),
+						Reason: environment.GetDBSelectErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
@@ -48,8 +48,8 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 				"failed subscribing to updates",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "subscribing to group ID updates failed",
-						Domain: environment.GetMessageSubscriptionErrorReason(ctx),
+						Reason: environment.GetMessageSubscriptionErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSendCurrentResourceMessage) {
@@ -59,8 +59,8 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 				"failed returning current resource",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "returning current group IDs failed",
-						Domain: environment.GetSendCurrentResourceErrorReason(ctx),
+						Reason: environment.GetSendCurrentResourceErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSendStreamAliveMessage) {
@@ -70,8 +70,8 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 				"failed sending alive message to client",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "the periodic alive check failed",
-						Domain: environment.GetSendStreamAliveErrorReason(ctx),
+						Reason: environment.GetSendStreamAliveErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else {

@@ -40,8 +40,8 @@ func (s *categoryServer) UpdateCategory(ctx context.Context, req *connect.Reques
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "updating category failed",
-						Domain: environment.GetDBUpdateErrorReason(ctx),
+						Reason: environment.GetDBUpdateErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoCategoryWithId) {

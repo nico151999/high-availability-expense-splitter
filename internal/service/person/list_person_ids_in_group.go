@@ -30,8 +30,8 @@ func (s *personServer) ListPersonIdsInGroup(ctx context.Context, req *connect.Re
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting person IDs from database failed",
-						Domain: environment.GetDBSelectErrorReason(ctx),
+						Reason: environment.GetDBSelectErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else {

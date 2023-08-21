@@ -39,8 +39,8 @@ func (s *personServer) DeletePerson(ctx context.Context, req *connect.Request[pe
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "deleting person from database failed",
-						Domain: environment.GetDBDeleteErrorReason(ctx),
+						Reason: environment.GetDBDeleteErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoPersonWithId) {

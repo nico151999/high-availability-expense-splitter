@@ -40,8 +40,8 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 				"failed finalizing group creation",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "failed publishing group created task",
-						Domain: environment.GetMessagePublicationErrorReason(ctx),
+						Reason: environment.GetMessagePublicationErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errInsertGroup) {
@@ -51,8 +51,8 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "inserting group into database failed",
-						Domain: environment.GetDBInsertErrorReason(ctx),
+						Reason: environment.GetDBInsertErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else {

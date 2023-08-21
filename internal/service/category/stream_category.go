@@ -54,8 +54,8 @@ func (s *categoryServer) StreamCategory(ctx context.Context, req *connect.Reques
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "requesting current category from database failed",
-						Domain: environment.GetDBSelectErrorReason(ctx),
+						Reason: environment.GetDBSelectErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
@@ -65,8 +65,8 @@ func (s *categoryServer) StreamCategory(ctx context.Context, req *connect.Reques
 				"failed subscribing to updates",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "subscribing to category updates failed",
-						Domain: environment.GetMessageSubscriptionErrorReason(ctx),
+						Reason: environment.GetMessageSubscriptionErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSendCurrentResourceMessage) {
@@ -76,8 +76,8 @@ func (s *categoryServer) StreamCategory(ctx context.Context, req *connect.Reques
 				"failed returning current resource",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "returning current category failed",
-						Domain: environment.GetSendCurrentResourceErrorReason(ctx),
+						Reason: environment.GetSendCurrentResourceErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, service.ErrSendStreamAliveMessage) {
@@ -87,8 +87,8 @@ func (s *categoryServer) StreamCategory(ctx context.Context, req *connect.Reques
 				"failed sending alive message to client",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "the periodic alive check failed",
-						Domain: environment.GetSendStreamAliveErrorReason(ctx),
+						Reason: environment.GetSendStreamAliveErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else {

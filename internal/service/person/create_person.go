@@ -41,8 +41,8 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 				"failed finalizing person creation",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "failed publishing person created task",
-						Domain: environment.GetMessagePublicationErrorReason(ctx),
+						Reason: environment.GetMessagePublicationErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errInsertPerson) {
@@ -52,8 +52,8 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 				"failed interacting with database",
 				[]protoreflect.ProtoMessage{
 					&errdetails.ErrorInfo{
-						Reason: "inserting person into database failed",
-						Domain: environment.GetDBInsertErrorReason(ctx),
+						Reason: environment.GetDBInsertErrorReason(ctx),
+						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
 		} else if eris.Is(err, errNoGroupWithId) {
