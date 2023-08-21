@@ -211,6 +211,66 @@ haExpenseSplitter:
           repository: "my-registry/my-group/my-person-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
+      category:
+        roles: [] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.category\.v1\.CategoryService/CreateCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/GetCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/GetCategorys$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/ListCategoryIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/UpdateCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/DeleteCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/StreamCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.category\.v1\.CategoryService/StreamCategoryIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-category-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
   processors:
     specs:
       group:
@@ -260,6 +320,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-person-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      category:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-category-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []

@@ -26,8 +26,10 @@ DOCUMENTATION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/documentation
 REFLECTION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/reflection
 GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
 PERSON_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/person
+CATEGORY_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/category
 GROUP_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/group
 PERSON_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/person
+CATEGORY_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/category
 OUT_DIR:=$(REPO_ROOT_PATH)/gen
 BIN_INSTALL_DIR:=$(OUT_DIR)/bin
 HELM_PLUGIN_INSTALL_DIR:=$(BIN_INSTALL_DIR)/plugins/helm
@@ -50,8 +52,10 @@ DOCUMENTATION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative
 REFLECTION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(REFLECTION_SVC_DIR))
 GROUP_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_SVC_DIR))
 PERSON_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
+CATEGORY_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
 GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_PROCESSOR_DIR))
 PERSON_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_PROCESSOR_DIR))
+CATEGORY_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
 
 # prioritise executables in the repo's bin dir
 export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
@@ -243,9 +247,11 @@ generate-dockerfile-links:
 	ln -sf Dockerfile ./cmd/service/documentation.Dockerfile
 	ln -sf Dockerfile ./cmd/service/group.Dockerfile
 	ln -sf Dockerfile ./cmd/service/person.Dockerfile
+	ln -sf Dockerfile ./cmd/service/category.Dockerfile
 	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/group.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/person.Dockerfile
+	ln -sf Dockerfile ./cmd/processor/category.Dockerfile
 
 # generates new certs for Linkerd communication and overwrites existing ones
 .PHONY: build
@@ -326,6 +332,11 @@ build-group-service: generate-proto
 build-person-service: generate-proto
 	CGO_ENABLED=0 go build -o $(PERSON_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
 
+# builds category service
+.PHONY: build-category-service
+build-category-service: generate-proto
+	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
+
 # builds group processor
 .PHONY: build-group-processor
 build-group-processor: generate-proto
@@ -335,6 +346,11 @@ build-group-processor: generate-proto
 .PHONY: build-person-processor
 build-person-processor: generate-proto
 	CGO_ENABLED=0 go build -o $(PERSON_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_PROCESSOR_DIR))
+
+# builds category processor
+.PHONY: build-category-processor
+build-category-processor: generate-proto
+	CGO_ENABLED=0 go build -o $(CATEGORY_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
 
 # starts the dev mode of skaffold
 .PHONY: skaffold-dev

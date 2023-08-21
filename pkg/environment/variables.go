@@ -15,6 +15,11 @@ func GetPersonServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "PERSON_SERVER_PORT")
 }
 
+// GetCategoryServerPort returns the port the person service will run on
+func GetCategoryServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "CATEGORY_SERVER_PORT")
+}
+
 func GetDbUser(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_USER")
 }
@@ -161,6 +166,36 @@ func GetPersonSubject(groupId string, personId string) string {
 // GetPeopleSubject returns the name of the subject events of all people are published on
 func GetPeopleSubject(groupId string) string {
 	return fmt.Sprintf("%s.person", GetGroupSubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCategoryCreatedSubject returns the name of the subject events are published on when a category was created
+func GetCategoryCreatedSubject(groupId string, categoryId string) string {
+	return fmt.Sprintf("%s.created", GetCategorySubject(groupId, categoryId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCategoryDeletedSubject returns the name of the subject events are published on when a category was deleted
+func GetCategoryDeletedSubject(groupId string, categoryId string) string {
+	return fmt.Sprintf("%s.deleted", GetCategorySubject(groupId, categoryId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCategoryUpdatedSubject returns the name of the subject events are published on when a category was updated
+func GetCategoryUpdatedSubject(groupId string, categoryId string) string {
+	return fmt.Sprintf("%s.updated", GetCategorySubject(groupId, categoryId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCategorySubject returns the name of the subject events of a single category are published on
+func GetCategorySubject(groupId string, categoryId string) string {
+	return fmt.Sprintf("%s.%s", GetCategoriesSubject(groupId), categoryId)
+}
+
+// TODO: as env variable
+// GetCategoriesSubject returns the name of the subject events of all categories are published on
+func GetCategoriesSubject(groupId string) string {
+	return fmt.Sprintf("%s.category", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable

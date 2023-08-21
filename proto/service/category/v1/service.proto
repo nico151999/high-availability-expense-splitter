@@ -1,0 +1,425 @@
+syntax = "proto3";
+
+package service.category.v1;
+
+
+import "common/category/v1/category.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service CategoryService {
+  // Requests the creation of a category with the provided specs
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse) {
+    option (google.api.http) = {post: "/v1/categories"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
+          value: {
+            description: "Returns specs describing the created category";
+            schema: {
+              json_schema: {ref: ".service.category.v1.CreateCategoryResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets a category
+  rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse) {
+    option (google.api.http) = {get: "/v1/categories/{category_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested category";
+            schema: {
+              json_schema: {ref: ".service.category.v1.GetCategoryResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Deletes a category
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse) {
+    option (google.api.http) = {delete: "/v1/categories/{category_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Tells the category was successfully deleted";
+            schema: {
+              json_schema: {ref: ".service.category.v1.DeleteCategoryResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Updates a category
+  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse) {
+    option (google.api.http) = {patch: "/v1/categories/{category_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the specs of the updated category";
+            schema: {
+              json_schema: {ref: ".service.category.v1.UpdateCategoryResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all category IDs
+  rpc ListCategoryIdsInGroup(ListCategoryIdsInGroupRequest) returns (ListCategoryIdsInGroupResponse) {
+    option (google.api.http) = {get: "/v1/categories:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested category IDs";
+            schema: {
+              json_schema: {ref: ".service.category.v1.ListCategoryIdsInGroupResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamCategoryIdsInGroup streams the list of all category IDs
+  rpc StreamCategoryIdsInGroup(StreamCategoryIdsInGroupRequest) returns (stream StreamCategoryIdsInGroupResponse) {}
+  // StreamCategory streams the requested category
+  rpc StreamCategory(StreamCategoryRequest) returns (stream StreamCategoryResponse) {}
+}
+
+message UpdateCategoryRequest {
+  message UpdateField {
+    oneof update_option {
+      option (validate.required) = true;
+      string name = 1 [
+        (google.api.field_behavior) = REQUIRED,
+        (validate.rules).string = {
+          min_len: 1;
+          max_len: 100;
+        }
+      ];
+    }
+  }
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+  repeated UpdateField update_fields = 2 [
+    (validate.rules).repeated = {
+      min_items: 1;
+      max_items: 1;
+    },
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message UpdateCategoryResponse {
+  common.category.v1.Category category = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message DeleteCategoryRequest {
+  // the ID of the category
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteCategoryResponse {}
+
+message CreateCategoryRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      min_len: 1;
+      max_len: 100;
+    }
+  ];
+}
+
+message CreateCategoryResponse {
+  // the ID of the category
+  string category_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetCategoryRequest {
+  // the ID of the category
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetCategoryResponse {
+  common.category.v1.Category category = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message ListCategoryIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListCategoryIdsInGroupResponse {
+  repeated string category_ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamCategoryIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamCategoryIdsInGroupResponse {
+  // the current list of category IDs
+  message CategoryIds {
+    repeated string category_ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    CategoryIds category_ids = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY
+    ];
+  }
+}
+
+message StreamCategoryRequest {
+  // the ID of the category
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamCategoryResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed category
+    common.category.v1.Category category = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}
