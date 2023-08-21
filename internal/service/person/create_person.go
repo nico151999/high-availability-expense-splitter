@@ -2,10 +2,12 @@ package person
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
+	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
 	personprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/person/v1"
 	personsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1"
@@ -16,7 +18,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/driver/pgdriver"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -74,17 +75,28 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 	personId := util.GenerateIdWithPrefix("person")
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
-	if _, err := db.NewInsert().Model(&personv1.Person{
-		Id:      personId,
-		GroupId: req.GetGroupId(),
-		Name:    req.GetName(),
-	}).Exec(ctx); err != nil {
-		log.Error("failed inserting person", logging.Error(err))
-		// Check for foreign key violation as documented here: https://www.postgresql.org/docs/current/errcodes-appendix.html
-		if pgErr := new(pgdriver.Error); eris.As(err, pgErr) && pgErr.Field('C') == "23503" {
-			return "", errNoGroupWithId
+	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		if err := tx.NewSelect().Model(&groupv1.Group{
+			Id: req.GetGroupId(),
+		}).WherePK().Limit(1).Scan(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Debug("group not found", logging.Error(err))
+				return errNoGroupWithId
+			}
+			log.Error("failed getting group", logging.Error(err))
+			return errSelectGroup
 		}
-		return "", errInsertPerson
+		if _, err := tx.NewInsert().Model(&personv1.Person{
+			Id:      personId,
+			GroupId: req.GetGroupId(),
+			Name:    req.GetName(),
+		}).Exec(ctx); err != nil {
+			log.Error("failed inserting person", logging.Error(err))
+			return errInsertPerson
+		}
+		return nil
+	}); err != nil {
+		return "", err
 	}
 
 	marshalled, err := proto.Marshal(&personprocv1.PersonCreated{

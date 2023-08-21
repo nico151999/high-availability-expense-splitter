@@ -6,6 +6,4 @@
 /internal/processor
 !/internal/processor/{{PROCESSOR_NAME}}/**/*
 /internal/service
-/proto/processor
-!/proto/processor/{{PROCESSOR_NAME}}/**/*
 /proto/service

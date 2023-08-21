@@ -276,7 +276,6 @@ haExpenseSplitter:
       group:
         roles: [] # roles this processor should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
-        db: true # tells if it uses the database
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
         linkerdMesh: *linkerdMesh

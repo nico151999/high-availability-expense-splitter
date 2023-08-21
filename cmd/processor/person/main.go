@@ -25,7 +25,11 @@ func main() {
 	rpProcessor, err := person.NewPersonProcessor(
 		fmt.Sprintf("%s:%d",
 			environment.GetNatsServerHost(ctx),
-			environment.GetNatsServerPort(ctx)))
+			environment.GetNatsServerPort(ctx)),
+		environment.GetDbUser(ctx),
+		environment.GetDbPassword(ctx),
+		fmt.Sprintf("%s:%d", environment.GetDbHost(ctx), environment.GetDbPort(ctx)),
+		environment.GetDbName(ctx))
 	if err != nil {
 		log.Panic("failed creating person processor", logging.Error(err))
 	}

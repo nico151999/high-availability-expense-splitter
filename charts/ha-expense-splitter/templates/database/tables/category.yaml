@@ -22,10 +22,8 @@ spec:
           notNull: true
       primaryKey:
       - *id
-      foreignKeys:
-        - columns:
-            - *groupId
-          references:
-            table: {{ include "table-name-groups" . }}
-            columns:
-              - id
+      # no foreign keys since we do not want to rely on Postgres features
+      indexes:
+      - columns:
+        - *groupId
+        isUnique: false

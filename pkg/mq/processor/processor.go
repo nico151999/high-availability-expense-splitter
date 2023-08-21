@@ -18,25 +18,26 @@ func GetSubjectProcessor[E proto.Message](
 	natsClient *nats.Conn,
 	processor func(ctx context.Context, event E) error,
 ) (*nats.Subscription, error) {
-	log := logging.FromContext(ctx)
+	log := logging.FromContext(ctx).With(logging.String("subject", subjectName))
 	sub, err := natsClient.Subscribe(subjectName, func(msg *nats.Msg) {
 		// if err := msg.InProgress(); err != nil {
-		// 	log.Errorw("failed to inform NATS that a message is in progress", logging.String("subject", subjectName), logging.Error(err))
+		// 	log.Errorw("failed to inform NATS that a message is in progress", logging.Error(err))
 		// 	return
 		// }
 		var event E
 		event = reflect.New(reflect.TypeOf(event).Elem()).Interface().(E)
 
 		if err := proto.Unmarshal(msg.Data, event); err != nil {
-			log.Error("failed to unmarshal data of a message", logging.String("subject", subjectName), logging.Error(err))
+			log.Error("failed to unmarshal data of a message", logging.Error(err))
 			return
 		}
+		log.Debug("processing event")
 		if err := processor(ctx, event); err != nil {
-			log.Error("failed to process a message", logging.String("subject", subjectName), logging.Error(err))
+			log.Error("failed to process a message", logging.Error(err))
 			return
 		}
 		// if err := msg.Ack(); err != nil {
-		// 	log.Errorw("failed to acknowledge a message", logging.String("subject", subjectName), logging.Error(err))
+		// 	log.Errorw("failed to acknowledge a message", logging.Error(err))
 		// 	return
 		// }
 	})
