@@ -63,33 +63,39 @@ func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 	category := categoryv1.Category{
 		Id: categoryId,
 	}
-	query := dbClient.NewUpdate()
-	for _, param := range params {
-		switch param.GetUpdateOption().(type) {
-		case *categorysvcv1.UpdateCategoryRequest_UpdateField_Name:
-			category.Name = param.GetName()
-			query.Column("name")
-		}
-	}
-	if err := query.Model(&category).WherePK().Returning("group_id").Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Info("category not found", logging.Error(err))
-			return nil, errNoCategoryWithId
-		}
-		log.Error("failed updating category", logging.Error(err))
-		return nil, errUpdateCategory
-	}
 
-	marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
-		CategoryId: categoryId,
-	})
-	if err != nil {
-		log.Error("failed marshalling category updated event", logging.Error(err))
-		return nil, errMarshalCategoryUpdated
-	}
-	if err := nc.Publish(environment.GetCategoryUpdatedSubject(category.GroupId, categoryId), marshalled); err != nil {
-		log.Error("failed publishing category updated event", logging.Error(err))
-		return nil, errPublishCategoryUpdated
+	if err := dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		query := tx.NewUpdate()
+		for _, param := range params {
+			switch param.GetUpdateOption().(type) {
+			case *categorysvcv1.UpdateCategoryRequest_UpdateField_Name:
+				category.Name = param.GetName()
+				query.Column("name")
+			}
+		}
+		if err := query.Model(&category).WherePK().Returning("group_id").Scan(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Info("category not found", logging.Error(err))
+				return errNoCategoryWithId
+			}
+			log.Error("failed updating category", logging.Error(err))
+			return errUpdateCategory
+		}
+
+		marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
+			CategoryId: categoryId,
+		})
+		if err != nil {
+			log.Error("failed marshalling category updated event", logging.Error(err))
+			return errMarshalCategoryUpdated
+		}
+		if err := nc.Publish(environment.GetCategoryUpdatedSubject(category.GroupId, categoryId), marshalled); err != nil {
+			log.Error("failed publishing category updated event", logging.Error(err))
+			return errPublishCategoryUpdated
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &category, nil

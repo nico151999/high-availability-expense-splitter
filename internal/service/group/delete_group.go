@@ -57,29 +57,32 @@ func (s *groupServer) DeleteGroup(ctx context.Context, req *connect.Request[grou
 
 func deleteGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	group := groupv1.Group{
-		Id: groupId,
-	}
-	if _, err := dbClient.NewDelete().Model(&group).WherePK().Exec(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("group not found", logging.Error(err))
-			return errNoGroupWithId
+
+	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		group := groupv1.Group{
+			Id: groupId,
 		}
-		log.Error("failed deleting group", logging.Error(err))
-		return errDeleteGroup
-	}
+		if _, err := tx.NewDelete().Model(&group).WherePK().Exec(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Debug("group not found", logging.Error(err))
+				return errNoGroupWithId
+			}
+			log.Error("failed deleting group", logging.Error(err))
+			return errDeleteGroup
+		}
 
-	marshalled, err := proto.Marshal(&groupprocv1.GroupDeleted{
-		GroupId: groupId,
+		marshalled, err := proto.Marshal(&groupprocv1.GroupDeleted{
+			GroupId: groupId,
+		})
+		if err != nil {
+			log.Error("failed marshalling group deleted event", logging.Error(err))
+			return errMarshalGroupDeleted
+		}
+		if err := nc.Publish(environment.GetGroupDeletedSubject(groupId), marshalled); err != nil {
+			log.Error("failed publishing group deleted event", logging.Error(err))
+			return errPublishGroupDeleted
+		}
+
+		return nil
 	})
-	if err != nil {
-		log.Error("failed marshalling group deleted event", logging.Error(err))
-		return errMarshalGroupDeleted
-	}
-	if err := nc.Publish(environment.GetGroupDeletedSubject(groupId), marshalled); err != nil {
-		log.Error("failed publishing group deleted event", logging.Error(err))
-		return errPublishGroupDeleted
-	}
-
-	return nil
 }

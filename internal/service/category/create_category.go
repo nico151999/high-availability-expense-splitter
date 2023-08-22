@@ -86,6 +86,7 @@ func createCategory(ctx context.Context, nc *nats.Conn, db bun.IDB, req *categor
 			log.Error("failed getting group", logging.Error(err))
 			return errSelectGroup
 		}
+
 		if _, err := tx.NewInsert().Model(&categoryv1.Category{
 			Id:      categoryId,
 			GroupId: req.GetGroupId(),
@@ -94,24 +95,24 @@ func createCategory(ctx context.Context, nc *nats.Conn, db bun.IDB, req *categor
 			log.Error("failed inserting category", logging.Error(err))
 			return errInsertCategory
 		}
+
+		marshalled, err := proto.Marshal(&categoryprocv1.CategoryCreated{
+			CategoryId:     categoryId,
+			GroupId:        req.GetGroupId(),
+			Name:           req.GetName(),
+			RequestorEmail: requestorEmail,
+		})
+		if err != nil {
+			log.Error("failed marshalling category created event", logging.Error(err))
+			return errMarshalCategoryCreated
+		}
+		if err := nc.Publish(environment.GetCategoryCreatedSubject(req.GetGroupId(), categoryId), marshalled); err != nil {
+			log.Error("failed publishing category created event", logging.Error(err))
+			return errPublishCategoryCreated
+		}
 		return nil
 	}); err != nil {
 		return "", err
-	}
-
-	marshalled, err := proto.Marshal(&categoryprocv1.CategoryCreated{
-		CategoryId:     categoryId,
-		GroupId:        req.GetGroupId(),
-		Name:           req.GetName(),
-		RequestorEmail: requestorEmail,
-	})
-	if err != nil {
-		log.Error("failed marshalling category created event", logging.Error(err))
-		return "", errMarshalCategoryCreated
-	}
-	if err := nc.Publish(environment.GetCategoryCreatedSubject(req.GetGroupId(), categoryId), marshalled); err != nil {
-		log.Error("failed publishing category created event", logging.Error(err))
-		return "", errPublishCategoryCreated
 	}
 	return categoryId, nil
 }

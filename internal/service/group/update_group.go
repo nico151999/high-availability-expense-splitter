@@ -63,33 +63,39 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 	group := groupv1.Group{
 		Id: groupId,
 	}
-	query := dbClient.NewUpdate()
-	for _, param := range params {
-		switch param.GetUpdateOption().(type) {
-		case *groupsvcv1.UpdateGroupRequest_UpdateField_Name:
-			group.Name = param.GetName()
-			query.Column("name")
-		}
-	}
-	if _, err := query.Model(&group).WherePK().Exec(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Info("group not found", logging.Error(err))
-			return nil, errNoGroupWithId
-		}
-		log.Error("failed updating group", logging.Error(err))
-		return nil, errUpdateGroup
-	}
 
-	marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
-		GroupId: groupId,
-	})
-	if err != nil {
-		log.Error("failed marshalling group updated event", logging.Error(err))
-		return nil, errMarshalGroupUpdated
-	}
-	if err := nc.Publish(environment.GetGroupUpdatedSubject(groupId), marshalled); err != nil {
-		log.Error("failed publishing group updated event", logging.Error(err))
-		return nil, errPublishGroupUpdated
+	if err := dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		query := tx.NewUpdate()
+		for _, param := range params {
+			switch param.GetUpdateOption().(type) {
+			case *groupsvcv1.UpdateGroupRequest_UpdateField_Name:
+				group.Name = param.GetName()
+				query.Column("name")
+			}
+		}
+		if _, err := query.Model(&group).WherePK().Exec(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Info("group not found", logging.Error(err))
+				return errNoGroupWithId
+			}
+			log.Error("failed updating group", logging.Error(err))
+			return errUpdateGroup
+		}
+
+		marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
+			GroupId: groupId,
+		})
+		if err != nil {
+			log.Error("failed marshalling group updated event", logging.Error(err))
+			return errMarshalGroupUpdated
+		}
+		if err := nc.Publish(environment.GetGroupUpdatedSubject(groupId), marshalled); err != nil {
+			log.Error("failed publishing group updated event", logging.Error(err))
+			return errPublishGroupUpdated
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &group, nil

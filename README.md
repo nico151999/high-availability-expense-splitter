@@ -31,7 +31,6 @@ TODO: explain
 
 ## Roadmap
 Some elemental features that are intended to be implemented in the near future include:
-- add nats publications to SQL transactions so that changes to the DB are rolled back if a publication fails
 - design the frontend
 - export protoc artefacts as libraries to registries in a pipeline
 - host API documentation

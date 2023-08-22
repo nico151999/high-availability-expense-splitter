@@ -63,33 +63,39 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 	person := personv1.Person{
 		Id: personId,
 	}
-	query := dbClient.NewUpdate()
-	for _, param := range params {
-		switch param.GetUpdateOption().(type) {
-		case *personsvcv1.UpdatePersonRequest_UpdateField_Name:
-			person.Name = param.GetName()
-			query.Column("name")
-		}
-	}
-	if err := query.Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Info("person not found", logging.Error(err))
-			return nil, errNoPersonWithId
-		}
-		log.Error("failed updating person", logging.Error(err))
-		return nil, errUpdatePerson
-	}
 
-	marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
-		PersonId: personId,
-	})
-	if err != nil {
-		log.Error("failed marshalling person updated event", logging.Error(err))
-		return nil, errMarshalPersonUpdated
-	}
-	if err := nc.Publish(environment.GetPersonUpdatedSubject(person.GroupId, personId), marshalled); err != nil {
-		log.Error("failed publishing person updated event", logging.Error(err))
-		return nil, errPublishPersonUpdated
+	if err := dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		query := tx.NewUpdate()
+		for _, param := range params {
+			switch param.GetUpdateOption().(type) {
+			case *personsvcv1.UpdatePersonRequest_UpdateField_Name:
+				person.Name = param.GetName()
+				query.Column("name")
+			}
+		}
+		if err := query.Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Info("person not found", logging.Error(err))
+				return errNoPersonWithId
+			}
+			log.Error("failed updating person", logging.Error(err))
+			return errUpdatePerson
+		}
+
+		marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
+			PersonId: personId,
+		})
+		if err != nil {
+			log.Error("failed marshalling person updated event", logging.Error(err))
+			return errMarshalPersonUpdated
+		}
+		if err := nc.Publish(environment.GetPersonUpdatedSubject(person.GroupId, personId), marshalled); err != nil {
+			log.Error("failed publishing person updated event", logging.Error(err))
+			return errPublishPersonUpdated
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return &person, nil

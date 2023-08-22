@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"connectrpc.com/connect"
@@ -71,26 +72,31 @@ func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1
 	groupId := util.GenerateIdWithPrefix("group")
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
-	if _, err := db.NewInsert().Model(&groupv1.Group{
-		Id:   groupId,
-		Name: req.GetName(),
-	}).Exec(ctx); err != nil {
-		log.Error("failed inserting group", logging.Error(err))
-		return "", errInsertGroup
-	}
+	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		if _, err := tx.NewInsert().Model(&groupv1.Group{
+			Id:   groupId,
+			Name: req.GetName(),
+		}).Exec(ctx); err != nil {
+			log.Error("failed inserting group", logging.Error(err))
+			return errInsertGroup
+		}
 
-	marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
-		GroupId:        groupId,
-		Name:           req.GetName(),
-		RequestorEmail: requestorEmail,
-	})
-	if err != nil {
-		log.Error("failed marshalling group created event", logging.Error(err))
-		return "", errMarshalGroupCreated
-	}
-	if err := nc.Publish(environment.GetGroupCreatedSubject(groupId), marshalled); err != nil {
-		log.Error("failed publishing group created event", logging.Error(err))
-		return "", errPublishGroupCreated
+		marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
+			GroupId:        groupId,
+			Name:           req.GetName(),
+			RequestorEmail: requestorEmail,
+		})
+		if err != nil {
+			log.Error("failed marshalling group created event", logging.Error(err))
+			return errMarshalGroupCreated
+		}
+		if err := nc.Publish(environment.GetGroupCreatedSubject(groupId), marshalled); err != nil {
+			log.Error("failed publishing group created event", logging.Error(err))
+			return errPublishGroupCreated
+		}
+		return nil
+	}); err != nil {
+		return "", err
 	}
 	return groupId, nil
 }

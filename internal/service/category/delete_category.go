@@ -57,29 +57,31 @@ func (s *categoryServer) DeleteCategory(ctx context.Context, req *connect.Reques
 
 func deleteCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, categoryId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	category := categoryv1.Category{
-		Id: categoryId,
-	}
-	if err := dbClient.NewDelete().Model(&category).WherePK().Returning("group_id").Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Info("category not found", logging.Error(err))
-			return errNoCategoryWithId
+
+	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		category := categoryv1.Category{
+			Id: categoryId,
 		}
-		log.Error("failed deleting category", logging.Error(err))
-		return errDeleteCategory
-	}
+		if err := tx.NewDelete().Model(&category).WherePK().Returning("group_id").Scan(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Info("category not found", logging.Error(err))
+				return errNoCategoryWithId
+			}
+			log.Error("failed deleting category", logging.Error(err))
+			return errDeleteCategory
+		}
 
-	marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
-		CategoryId: categoryId,
+		marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
+			CategoryId: categoryId,
+		})
+		if err != nil {
+			log.Error("failed marshalling category deleted event", logging.Error(err))
+			return errMarshalCategoryDeleted
+		}
+		if err := nc.Publish(environment.GetCategoryDeletedSubject(category.GroupId, categoryId), marshalled); err != nil {
+			log.Error("failed publishing category deleted event", logging.Error(err))
+			return errPublishCategoryDeleted
+		}
+		return nil
 	})
-	if err != nil {
-		log.Error("failed marshalling category deleted event", logging.Error(err))
-		return errMarshalCategoryDeleted
-	}
-	if err := nc.Publish(environment.GetCategoryDeletedSubject(category.GroupId, categoryId), marshalled); err != nil {
-		log.Error("failed publishing category deleted event", logging.Error(err))
-		return errPublishCategoryDeleted
-	}
-
-	return nil
 }

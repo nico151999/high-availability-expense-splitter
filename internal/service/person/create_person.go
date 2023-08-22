@@ -86,6 +86,7 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 			log.Error("failed getting group", logging.Error(err))
 			return errSelectGroup
 		}
+
 		if _, err := tx.NewInsert().Model(&personv1.Person{
 			Id:      personId,
 			GroupId: req.GetGroupId(),
@@ -94,24 +95,24 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 			log.Error("failed inserting person", logging.Error(err))
 			return errInsertPerson
 		}
+
+		marshalled, err := proto.Marshal(&personprocv1.PersonCreated{
+			PersonId:       personId,
+			GroupId:        req.GetGroupId(),
+			Name:           req.GetName(),
+			RequestorEmail: requestorEmail,
+		})
+		if err != nil {
+			log.Error("failed marshalling person created event", logging.Error(err))
+			return errMarshalPersonCreated
+		}
+		if err := nc.Publish(environment.GetPersonCreatedSubject(req.GetGroupId(), personId), marshalled); err != nil {
+			log.Error("failed publishing person created event", logging.Error(err))
+			return errPublishPersonCreated
+		}
 		return nil
 	}); err != nil {
 		return "", err
-	}
-
-	marshalled, err := proto.Marshal(&personprocv1.PersonCreated{
-		PersonId:       personId,
-		GroupId:        req.GetGroupId(),
-		Name:           req.GetName(),
-		RequestorEmail: requestorEmail,
-	})
-	if err != nil {
-		log.Error("failed marshalling person created event", logging.Error(err))
-		return "", errMarshalPersonCreated
-	}
-	if err := nc.Publish(environment.GetPersonCreatedSubject(req.GetGroupId(), personId), marshalled); err != nil {
-		log.Error("failed publishing person created event", logging.Error(err))
-		return "", errPublishPersonCreated
 	}
 	return personId, nil
 }

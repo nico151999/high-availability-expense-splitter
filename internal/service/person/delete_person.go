@@ -57,29 +57,32 @@ func (s *personServer) DeletePerson(ctx context.Context, req *connect.Request[pe
 
 func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
-	person := personv1.Person{
-		Id: personId,
-	}
-	if err := dbClient.NewDelete().Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Info("person not found", logging.Error(err))
-			return errNoPersonWithId
+
+	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		person := personv1.Person{
+			Id: personId,
 		}
-		log.Error("failed deleting person", logging.Error(err))
-		return errDeletePerson
-	}
+		if err := tx.NewDelete().Model(&person).WherePK().Returning("group_id").Scan(ctx); err != nil {
+			if eris.Is(err, sql.ErrNoRows) {
+				log.Info("person not found", logging.Error(err))
+				return errNoPersonWithId
+			}
+			log.Error("failed deleting person", logging.Error(err))
+			return errDeletePerson
+		}
 
-	marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
-		PersonId: personId,
+		marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
+			PersonId: personId,
+		})
+		if err != nil {
+			log.Error("failed marshalling person deleted event", logging.Error(err))
+			return errMarshalPersonDeleted
+		}
+		if err := nc.Publish(environment.GetPersonDeletedSubject(person.GroupId, personId), marshalled); err != nil {
+			log.Error("failed publishing person deleted event", logging.Error(err))
+			return errPublishPersonDeleted
+		}
+
+		return nil
 	})
-	if err != nil {
-		log.Error("failed marshalling person deleted event", logging.Error(err))
-		return errMarshalPersonDeleted
-	}
-	if err := nc.Publish(environment.GetPersonDeletedSubject(person.GroupId, personId), marshalled); err != nil {
-		log.Error("failed publishing person deleted event", logging.Error(err))
-		return errPublishPersonDeleted
-	}
-
-	return nil
 }
