@@ -118,6 +118,23 @@ build:
         buildArgs:
           SERVICE_NAME: "category"
           SVC_OUT_DIR_PARAM: "CATEGORY_SVC_OUT_DIR"
+    - image: &expenseSvcImage ghcr.io/nico151999/ha-expense-splitter-expense-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expense dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/expense/g;w ./cmd/service/expense.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/expense.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/expense.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "expense"
+          SVC_OUT_DIR_PARAM: "EXPENSE_SVC_OUT_DIR"
 
     # Processors for handling events effecting their respective resource
     - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
@@ -171,6 +188,23 @@ build:
         buildArgs:
           PROCESSOR_NAME: "category"
           PROCESSOR_OUT_DIR_PARAM: "CATEGORY_PROCESSOR_OUT_DIR"
+    - image: &expenseProcessorImage ghcr.io/nico151999/ha-expense-splitter-expense-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expense dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/expense/g;w ./cmd/processor/expense.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/expense.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/expense.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "expense"
+          PROCESSOR_OUT_DIR_PARAM: "EXPENSE_PROCESSOR_OUT_DIR"
 deploy:
   statusCheckDeadlineSeconds: 1200
   helm:
@@ -556,6 +590,12 @@ deploy:
                   image:
                     repository: *categorySvcImage
                     tag: *categorySvcImage
+                expense:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expenseSvcImage
+                    tag: *expenseSvcImage
             processors:
               specs:
                 group:
@@ -576,6 +616,12 @@ deploy:
                   image:
                     repository: *categoryProcessorImage
                     tag: *categoryProcessorImage
+                expense:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expenseProcessorImage
+                    tag: *expenseProcessorImage
 profiles:
   # NOTE: try to order profiles from last to first array element when removing; e.g. remove helm chart 2 before removing helm chart 1 to guarantee array index consistency
   - name: DEV
