@@ -350,6 +350,10 @@ processor-rolebinding
 categories
 {{- end}}
 
+{{- define "table-name-expenses" -}}
+expenses
+{{- end}}
+
 {{- define "table-name-people" -}}
 people
 {{- end}}
@@ -360,6 +364,10 @@ groups
 
 {{- define "table-name-resource-categories" -}}
 {{ include "table-name-resource" (include "table-name-categories" .) }}
+{{- end}}
+
+{{- define "table-name-resource-expenses" -}}
+{{ include "table-name-resource" (include "table-name-expenses" .) }}
 {{- end}}
 
 {{- define "table-name-resource-people" -}}
