@@ -15,9 +15,14 @@ func GetPersonServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "PERSON_SERVER_PORT")
 }
 
-// GetCategoryServerPort returns the port the person service will run on
+// GetCategoryServerPort returns the port the category service will run on
 func GetCategoryServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "CATEGORY_SERVER_PORT")
+}
+
+// GetExpenseServerPort returns the port the expense service will run on
+func GetExpenseServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "EXPENSE_SERVER_PORT")
 }
 
 func GetDbUser(ctx context.Context) string {
@@ -196,6 +201,36 @@ func GetCategorySubject(groupId string, categoryId string) string {
 // GetCategoriesSubject returns the name of the subject events of all categories are published on
 func GetCategoriesSubject(groupId string) string {
 	return fmt.Sprintf("%s.category", GetGroupSubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseCreatedSubject returns the name of the subject events are published on when a expense was created
+func GetExpenseCreatedSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.created", GetExpenseSubject(groupId, expenseId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseDeletedSubject returns the name of the subject events are published on when a expense was deleted
+func GetExpenseDeletedSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.deleted", GetExpenseSubject(groupId, expenseId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseUpdatedSubject returns the name of the subject events are published on when a expense was updated
+func GetExpenseUpdatedSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.updated", GetExpenseSubject(groupId, expenseId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseSubject returns the name of the subject events of a single expense are published on
+func GetExpenseSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.%s", GetExpensesSubject(groupId), expenseId)
+}
+
+// TODO: as env variable
+// GetExpensesSubject returns the name of the subject events of all expenses are published on
+func GetExpensesSubject(groupId string) string {
+	return fmt.Sprintf("%s.expense", GetGroupSubject(groupId))
 }
 
 // TODO: as env variable
