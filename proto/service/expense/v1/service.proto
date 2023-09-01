@@ -347,7 +347,7 @@ message CreateExpenseRequest {
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
   optional string name = 2 [
-    (google.api.field_behavior) = REQUIRED,
+    (google.api.field_behavior) = OPTIONAL,
     (validate.rules).string = {
       min_len: 1;
       max_len: 100;
