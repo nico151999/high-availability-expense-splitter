@@ -40,7 +40,7 @@ func (s *categoryServer) ListCategoryIdsInGroup(ctx context.Context, req *connec
 	}
 
 	return connect.NewResponse(&categorysvcv1.ListCategoryIdsInGroupResponse{
-		CategoryIds: categoryIds,
+		Ids: categoryIds,
 	}), nil
 }
 

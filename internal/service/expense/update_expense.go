@@ -28,11 +28,11 @@ func (s *expenseServer) UpdateExpense(ctx context.Context, req *connect.Request[
 		logging.FromContext(ctx).With(
 			logging.String(
 				"expenseId",
-				req.Msg.GetExpenseId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := updateExpense(ctx, s.natsClient, s.dbClient, req.Msg.GetExpenseId(), req.Msg.GetUpdateFields())
+	expense, err := updateExpense(ctx, s.natsClient, s.dbClient, req.Msg.GetId(), req.Msg.GetUpdateFields())
 	if err != nil {
 		if eris.Is(err, errUpdateExpense) {
 			return nil, errors.NewErrorWithDetails(
@@ -72,15 +72,15 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 			case *expensesvcv1.UpdateExpenseRequest_UpdateField_Name:
 				expense.Name = &option.Name
 				query.Column("name")
-			case *expensesvcv1.UpdateExpenseRequest_UpdateField_By:
-				expense.By = option.By
-				query.Column("by")
+			case *expensesvcv1.UpdateExpenseRequest_UpdateField_ById:
+				expense.ById = option.ById
+				query.Column("by_id")
 			case *expensesvcv1.UpdateExpenseRequest_UpdateField_Timestamp:
 				expense.Timestamp = option.Timestamp
 				query.Column("timestamp")
-			case *expensesvcv1.UpdateExpenseRequest_UpdateField_CurrencyAcronym:
-				expense.CurrencyAcronym = option.CurrencyAcronym
-				query.Column("currency_acronym")
+			case *expensesvcv1.UpdateExpenseRequest_UpdateField_CurrencyId:
+				expense.CurrencyId = option.CurrencyId
+				query.Column("currency_id")
 			}
 		}
 		expenseModel := model.NewExpense(expense)
@@ -95,7 +95,7 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 		expense = expenseModel.IntoExpense()
 
 		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseUpdated{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		})
 		if err != nil {
 			log.Error("failed marshalling expense updated event", logging.Error(err))

@@ -43,7 +43,7 @@ func TestDeleteExpense(t *testing.T) {
 				FromCSVString(groupId))
 		mock.ExpectCommit()
 		_, err := client.DeleteExpense(ctx, connect.NewRequest(&expensesvcv1.DeleteExpenseRequest{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -55,7 +55,7 @@ func TestDeleteExpense(t *testing.T) {
 
 	t.Run("Fail deleting Expense due to empty ID", func(t *testing.T) {
 		resp, err := client.DeleteExpense(ctx, connect.NewRequest(&expensesvcv1.DeleteExpenseRequest{
-			ExpenseId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -69,7 +69,7 @@ func TestDeleteExpense(t *testing.T) {
 		mock.ExpectQuery(fmt.Sprintf(`DELETE FROM "expenses" (.+) WHERE (.+)"id" = '%s'(.+)`, expenseId)).WillReturnError(sql.ErrNoRows)
 		mock.ExpectRollback()
 		resp, err := client.DeleteExpense(ctx, connect.NewRequest(&expensesvcv1.DeleteExpenseRequest{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

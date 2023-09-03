@@ -40,7 +40,7 @@ func (s *expenseServer) ListExpenseIdsInGroup(ctx context.Context, req *connect.
 	}
 
 	return connect.NewResponse(&expensesvcv1.ListExpenseIdsInGroupResponse{
-		ExpenseIds: expenseIds,
+		Ids: expenseIds,
 	}), nil
 }
 

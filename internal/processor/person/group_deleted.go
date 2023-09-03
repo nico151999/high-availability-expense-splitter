@@ -15,12 +15,12 @@ import (
 )
 
 func (rpProcessor *personProcessor) groupDeleted(ctx context.Context, req *groupprocv1.GroupDeleted) error {
-	log := logging.FromContext(ctx).With(logging.String("groupId", req.GetGroupId()))
+	log := logging.FromContext(ctx).With(logging.String("groupId", req.GetId()))
 	log.Info("processing group.GroupDeleted event")
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		var people []*personv1.Person
-		if err := tx.NewDelete().Model(&people).Where("group_id = ?", req.GetGroupId()).Returning("id").Scan(ctx); err != nil {
+		if err := tx.NewDelete().Model(&people).Where("group_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
 			log.Error("failed deleting people related to deleted group", logging.Error(err))
 			return errDeletePeople
 		}
@@ -30,13 +30,13 @@ func (rpProcessor *personProcessor) groupDeleted(ctx context.Context, req *group
 			person := c
 			g.Go(func() error {
 				marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
-					PersonId: person.Id,
+					Id: person.Id,
 				})
 				if err != nil {
 					log.Error("failed marshalling person deleted event", logging.Error(err))
 					return errMarshalPersonDeleted
 				}
-				if err := rpProcessor.natsClient.Publish(environment.GetPersonDeletedSubject(req.GetGroupId(), person.Id), marshalled); err != nil {
+				if err := rpProcessor.natsClient.Publish(environment.GetPersonDeletedSubject(req.GetId(), person.Id), marshalled); err != nil {
 					log.Error("failed publishing person deleted event", logging.Error(err))
 					return errPublishPersonDeleted
 				}

@@ -11,7 +11,7 @@
 	export let data: PageData;
 
 	const categoryClient = createPromiseClient(CategoryService, data.grpcWebTransport);
-	let category: Category | undefined;
+	let category = writable(undefined as Category | undefined);
 	const abortController = new AbortController();
     let editMode = false;
 
@@ -24,19 +24,16 @@
 	});
 
 	onMount(async () => {
-		const res = await streamCategory(categoryClient, data.categoryId, abortController, (p) => {
-			category = p;
-		});
+		const res = await streamCategory(categoryClient, data.categoryId, abortController, category);
         if (!res) {
-            console.log('Navigating level up due to no longer existing category');
-            goto('./');
+            console.error('Category no longer exists');
         }
 	});
 
 	async function updateCategory() {
 		try {
 			const res = await categoryClient.updateCategory({
-				categoryId: data.categoryId,
+				id: data.categoryId,
 				updateFields: [
 					{
 						updateOption: {
@@ -54,11 +51,11 @@
 	}
 
     function startEdit() {
-        if (!category) {
+        if (!$category) {
             return;
         }
         editedCategory.set({
-            name: category.name
+            name: $category.name
         })
         editMode = true;
     }
@@ -75,7 +72,7 @@
 		<th>Action</th>
 	</thead>
 	<tbody>
-		{#if category}
+		{#if $category}
             {#if editMode}
                 <tr>
                     <td><input type="text" placeholder="Category name" bind:value={$editedCategory.name}/></td>
@@ -86,7 +83,7 @@
                 </tr>
             {:else}
                 <tr>
-                    <td>{category.name}</td>
+                    <td>{$category.name}</td>
                     <td><button on:click={startEdit}>Update category</button></td>
                 </tr>
             {/if}

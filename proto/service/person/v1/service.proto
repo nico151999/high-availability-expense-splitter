@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package service.person.v1;
 
-
 import "common/person/v1/person.proto";
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
@@ -16,7 +15,7 @@ import "validate/validate.proto";
 service PersonService {
   // Requests the creation of a person with the provided specs
   rpc CreatePerson(CreatePersonRequest) returns (CreatePersonResponse) {
-    option (google.api.http) = {post: "/v1/people"};
+    option (google.api.http) = {post: "/v1/groups/{group_id}/people"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -60,7 +59,7 @@ service PersonService {
   }
   // Gets a person
   rpc GetPerson(GetPersonRequest) returns (GetPersonResponse) {
-    option (google.api.http) = {get: "/v1/people/{person_id}"};
+    option (google.api.http) = {get: "/v1/people/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -113,7 +112,7 @@ service PersonService {
   }
   // Deletes a person
   rpc DeletePerson(DeletePersonRequest) returns (DeletePersonResponse) {
-    option (google.api.http) = {delete: "/v1/people/{person_id}"};
+    option (google.api.http) = {delete: "/v1/people/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -166,7 +165,7 @@ service PersonService {
   }
   // Updates a person
   rpc UpdatePerson(UpdatePersonRequest) returns (UpdatePersonResponse) {
-    option (google.api.http) = {patch: "/v1/people/{person_id}"};
+    option (google.api.http) = {patch: "/v1/people/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -219,7 +218,7 @@ service PersonService {
   }
   // Lists all person IDs
   rpc ListPersonIdsInGroup(ListPersonIdsInGroupRequest) returns (ListPersonIdsInGroupResponse) {
-    option (google.api.http) = {get: "/v1/people:id"};
+    option (google.api.http) = {get: "/v1/groups/{group_id}/people:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -280,16 +279,13 @@ message UpdatePersonRequest {
   message UpdateField {
     oneof update_option {
       option (validate.required) = true;
-      string name = 1 [
-        (google.api.field_behavior) = REQUIRED,
-        (validate.rules).string = {
-          min_len: 1;
-          max_len: 100;
-        }
-      ];
+      string name = 1 [(validate.rules).string = {
+        min_len: 1;
+        max_len: 100;
+      }];
     }
   }
-  string person_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -312,7 +308,7 @@ message UpdatePersonResponse {
 
 message DeletePersonRequest {
   // the ID of the person
-  string person_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -338,7 +334,7 @@ message CreatePersonRequest {
 
 message CreatePersonResponse {
   // the ID of the person
-  string person_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -347,7 +343,7 @@ message CreatePersonResponse {
 
 message GetPersonRequest {
   // the ID of the person
-  string person_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -370,7 +366,7 @@ message ListPersonIdsInGroupRequest {
 }
 
 message ListPersonIdsInGroupResponse {
-  repeated string person_ids = 1 [
+  repeated string ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -388,7 +384,7 @@ message StreamPersonIdsInGroupRequest {
 message StreamPersonIdsInGroupResponse {
   // the current list of person IDs
   message PersonIds {
-    repeated string person_ids = 1 [
+    repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
@@ -397,15 +393,13 @@ message StreamPersonIdsInGroupResponse {
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    PersonIds person_ids = 2 [
-      (google.api.field_behavior) = OUTPUT_ONLY
-    ];
+    PersonIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 }
 
 message StreamPersonRequest {
   // the ID of the person
-  string person_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}

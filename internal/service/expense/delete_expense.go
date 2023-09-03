@@ -28,11 +28,11 @@ func (s *expenseServer) DeleteExpense(ctx context.Context, req *connect.Request[
 		logging.FromContext(ctx).With(
 			logging.String(
 				"expenseId",
-				req.Msg.GetExpenseId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := deleteExpense(ctx, s.natsClient, s.dbClient, req.Msg.GetExpenseId()); err != nil {
+	if err := deleteExpense(ctx, s.natsClient, s.dbClient, req.Msg.GetId()); err != nil {
 		if eris.Is(err, errDeleteExpense) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
@@ -76,7 +76,7 @@ func deleteExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 		expense = expenseModel.IntoExpense()
 
 		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseDeleted{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		})
 		if err != nil {
 			log.Error("failed marshalling expense deleted event", logging.Error(err))

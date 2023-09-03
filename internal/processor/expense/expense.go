@@ -70,5 +70,14 @@ func (rpProcessor *expenseProcessor) Process(ctx context.Context) (func(ctx cont
 			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	return processor.GetUnsubscribeSubscriptionsFunc(ccSub, cdSub, cuSub, gdSub), nil
+	var pdSub *nats.Subscription
+	{
+		eventSubject := environment.GetPersonDeletedSubject("*", "*")
+		var err error
+		pdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.personDeleted)
+		if err != nil {
+			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+		}
+	}
+	return processor.GetUnsubscribeSubscriptionsFunc(ccSub, cdSub, cuSub, gdSub, pdSub), nil
 }

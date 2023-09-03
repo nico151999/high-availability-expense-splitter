@@ -59,7 +59,7 @@ service GroupService {
   }
   // Gets a group
   rpc GetGroup(GetGroupRequest) returns (GetGroupResponse) {
-    option (google.api.http) = {get: "/v1/groups/{group_id}"};
+    option (google.api.http) = {get: "/v1/groups/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -112,7 +112,7 @@ service GroupService {
   }
   // Deletes a group
   rpc DeleteGroup(DeleteGroupRequest) returns (DeleteGroupResponse) {
-    option (google.api.http) = {delete: "/v1/groups/{group_id}"};
+    option (google.api.http) = {delete: "/v1/groups/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -165,7 +165,7 @@ service GroupService {
   }
   // Updates a group
   rpc UpdateGroup(UpdateGroupRequest) returns (UpdateGroupResponse) {
-    option (google.api.http) = {patch: "/v1/groups/{group_id}"};
+    option (google.api.http) = {patch: "/v1/groups/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -279,16 +279,17 @@ message UpdateGroupRequest {
   message UpdateField {
     oneof update_option {
       option (validate.required) = true;
-      string name = 1 [
-        (google.api.field_behavior) = REQUIRED,
-        (validate.rules).string = {
-          min_len: 1;
-          max_len: 100;
-        }
+      string name = 1 [(validate.rules).string = {
+        min_len: 1;
+        max_len: 100;
+      }];
+      string currency_id = 2 [
+        (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+        (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
       ];
     }
   }
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -296,7 +297,7 @@ message UpdateGroupRequest {
   repeated UpdateField update_fields = 2 [
     (validate.rules).repeated = {
       min_items: 1;
-      max_items: 1;
+      max_items: 2;
     },
     (google.api.field_behavior) = REQUIRED
   ];
@@ -311,7 +312,7 @@ message UpdateGroupResponse {
 
 message DeleteGroupRequest {
   // the ID of the group
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -328,11 +329,15 @@ message CreateGroupRequest {
       max_len: 100;
     }
   ];
+  string currency_id = 2 [
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
 }
 
 message CreateGroupResponse {
   // the ID of the group
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -341,7 +346,7 @@ message CreateGroupResponse {
 
 message GetGroupRequest {
   // the ID of the group
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -358,7 +363,7 @@ message GetGroupResponse {
 message ListGroupIdsRequest {}
 
 message ListGroupIdsResponse {
-  repeated string group_ids = 1 [
+  repeated string ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -370,7 +375,7 @@ message StreamGroupIdsRequest {}
 message StreamGroupIdsResponse {
   // the current list of group IDs
   message GroupIds {
-    repeated string group_ids = 1 [
+    repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).repeated.items.string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -379,15 +384,13 @@ message StreamGroupIdsResponse {
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    GroupIds group_ids = 2 [
-      (google.api.field_behavior) = OUTPUT_ONLY
-    ];
+    GroupIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 }
 
 message StreamGroupRequest {
   // the ID of the group
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}

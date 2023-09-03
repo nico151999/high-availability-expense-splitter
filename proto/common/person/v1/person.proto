@@ -3,8 +3,8 @@ syntax = "proto3";
 package common.person.v1;
 
 import "google/api/resource.proto";
-import "validate/validate.proto";
 import "tagger/tagger.proto";
+import "validate/validate.proto";
 
 message Person {
   option (google.api.resource) = {type: "common.person.v1/Person"};
@@ -16,12 +16,10 @@ message Person {
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
-  string name = 3 [
-    (validate.rules).string = {
-      min_len: 1;
-      max_len: 100;
-    }
-  ];
+  string name = 3 [(validate.rules).string = {
+    min_len: 1;
+    max_len: 100;
+  }];
   // TODO: add created_at
   // TODO: add updated_at
 }

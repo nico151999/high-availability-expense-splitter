@@ -10,7 +10,7 @@ import (
 func (rpProcessor *expenseProcessor) expenseDeleted(ctx context.Context, req *expensev1.ExpenseDeleted) error {
 	log := logging.FromContext(ctx)
 	log.Info("processing expense.ExpenseDeleted event",
-		logging.String("expenseId", req.GetExpenseId()))
+		logging.String("expenseId", req.GetId()))
 	// TODO: actually process message like sending a project deleted notification and publish an event telling what was done (e.g. project deleted notification sent)
 	return nil
 }

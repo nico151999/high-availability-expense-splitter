@@ -27,11 +27,11 @@ func (s *personServer) DeletePerson(ctx context.Context, req *connect.Request[pe
 		logging.FromContext(ctx).With(
 			logging.String(
 				"personId",
-				req.Msg.GetPersonId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := deletePerson(ctx, s.natsClient, s.dbClient, req.Msg.GetPersonId()); err != nil {
+	if err := deletePerson(ctx, s.natsClient, s.dbClient, req.Msg.GetId()); err != nil {
 		if eris.Is(err, errDeletePerson) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
@@ -72,7 +72,7 @@ func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
-			PersonId: personId,
+			Id: personId,
 		})
 		if err != nil {
 			log.Error("failed marshalling person deleted event", logging.Error(err))

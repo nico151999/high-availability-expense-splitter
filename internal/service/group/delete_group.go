@@ -27,11 +27,11 @@ func (s *groupServer) DeleteGroup(ctx context.Context, req *connect.Request[grou
 		logging.FromContext(ctx).With(
 			logging.String(
 				"groupId",
-				req.Msg.GetGroupId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := deleteGroup(ctx, s.natsClient, s.dbClient, req.Msg.GetGroupId()); err != nil {
+	if err := deleteGroup(ctx, s.natsClient, s.dbClient, req.Msg.GetId()); err != nil {
 		if eris.Is(err, errDeleteGroup) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
@@ -72,7 +72,7 @@ func deleteGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 		}
 
 		marshalled, err := proto.Marshal(&groupprocv1.GroupDeleted{
-			GroupId: groupId,
+			Id: groupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling group deleted event", logging.Error(err))

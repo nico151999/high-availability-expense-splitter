@@ -12,24 +12,17 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	natsserver "github.com/nats-io/nats-server/v2/server"
-	natstestserver "github.com/nats-io/nats-server/v2/test"
 	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1/expensev1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/expense"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqTesting "github.com/nico151999/high-availability-expense-splitter/pkg/mq/testing"
 	"github.com/uptrace/bun"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/test/bufconn"
 )
-
-func runNATSServerOnPort(port int) *natsserver.Server {
-	opts := natstestserver.DefaultTestOptions
-	opts.Port = port
-	return natstestserver.RunServer(&opts)
-}
 
 func SetupExpenseTestClient(t *testing.T, ln *bufconn.Listener) expensev1connect.ExpenseServiceClient {
 	catClient := expensev1connect.NewExpenseServiceClient(
@@ -66,8 +59,7 @@ func StartExpenseTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB)
 		}
 	}
 
-	natsPort := 6222
-	s := runNATSServerOnPort(natsPort)
+	s, natsPort := mqTesting.RunMQServer(t)
 
 	expenseServer, err := expense.NewExpenseServerWithDBClient(ctx, dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {

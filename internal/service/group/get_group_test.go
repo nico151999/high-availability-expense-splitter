@@ -36,16 +36,25 @@ func TestGetGroup(t *testing.T) {
 
 	t.Run("Get Group successfully", func(t *testing.T) {
 		groupName := "test-group"
+		currencyId := "currency-543210987654321"
 		groupId := "group-123456789012345"
-		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "groups" (.+) WHERE (.+)"id" = '%s'(.+)`, groupId)).WillReturnRows(sqlmock.NewRows([]string{"name"}).FromCSVString(groupName))
+		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "groups" (.+) WHERE (.+)"id" = '%s'(.+)`, groupId)).WillReturnRows(
+			sqlmock.NewRows(
+				[]string{"name", "currency_id"},
+			).FromCSVString(
+				fmt.Sprintf("%s,%s", groupName, currencyId),
+			))
 		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
-			GroupId: groupId,
+			Id: groupId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
 		}
 		if resp.Msg.GetGroup().GetName() != groupName {
 			t.Errorf("expected group name to be '%s' but it was '%s'", groupName, resp.Msg.GetGroup().GetName())
+		}
+		if resp.Msg.GetGroup().GetCurrencyId() != currencyId {
+			t.Errorf("expected group name to be '%s' but it was '%s'", currencyId, resp.Msg.GetGroup().GetCurrencyId())
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %+v", err)
@@ -54,7 +63,7 @@ func TestGetGroup(t *testing.T) {
 
 	t.Run("Fail getting Group due to empty ID", func(t *testing.T) {
 		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
-			GroupId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -66,7 +75,7 @@ func TestGetGroup(t *testing.T) {
 		groupId := "group-543210987654321"
 		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "groups" (.+) WHERE (.+)"id" = '%s'(.+)`, groupId)).WillReturnError(sql.ErrNoRows)
 		resp, err := client.GetGroup(ctx, connect.NewRequest(&groupsvcv1.GetGroupRequest{
-			GroupId: groupId,
+			Id: groupId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

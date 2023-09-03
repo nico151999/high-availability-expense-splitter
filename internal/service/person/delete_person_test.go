@@ -43,7 +43,7 @@ func TestDeletePerson(t *testing.T) {
 				FromCSVString(groupId))
 		mock.ExpectCommit()
 		_, err := client.DeletePerson(ctx, connect.NewRequest(&personsvcv1.DeletePersonRequest{
-			PersonId: personId,
+			Id: personId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -55,7 +55,7 @@ func TestDeletePerson(t *testing.T) {
 
 	t.Run("Fail deleting Person due to empty ID", func(t *testing.T) {
 		resp, err := client.DeletePerson(ctx, connect.NewRequest(&personsvcv1.DeletePersonRequest{
-			PersonId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -69,7 +69,7 @@ func TestDeletePerson(t *testing.T) {
 		mock.ExpectQuery(fmt.Sprintf(`DELETE FROM "people" (.+) WHERE (.+)"id" = '%s'(.+)`, personId)).WillReturnError(sql.ErrNoRows)
 		mock.ExpectRollback()
 		resp, err := client.DeletePerson(ctx, connect.NewRequest(&personsvcv1.DeletePersonRequest{
-			PersonId: personId,
+			Id: personId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

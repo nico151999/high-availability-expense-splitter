@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package service.category.v1;
 
-
 import "common/category/v1/category.proto";
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
@@ -60,7 +59,7 @@ service CategoryService {
   }
   // Gets a category
   rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse) {
-    option (google.api.http) = {get: "/v1/categories/{category_id}"};
+    option (google.api.http) = {get: "/v1/categories/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -113,7 +112,7 @@ service CategoryService {
   }
   // Deletes a category
   rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse) {
-    option (google.api.http) = {delete: "/v1/categories/{category_id}"};
+    option (google.api.http) = {delete: "/v1/categories/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -166,7 +165,7 @@ service CategoryService {
   }
   // Updates a category
   rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse) {
-    option (google.api.http) = {patch: "/v1/categories/{category_id}"};
+    option (google.api.http) = {patch: "/v1/categories/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -280,16 +279,13 @@ message UpdateCategoryRequest {
   message UpdateField {
     oneof update_option {
       option (validate.required) = true;
-      string name = 1 [
-        (google.api.field_behavior) = REQUIRED,
-        (validate.rules).string = {
-          min_len: 1;
-          max_len: 100;
-        }
-      ];
+      string name = 1 [(validate.rules).string = {
+        min_len: 1;
+        max_len: 100;
+      }];
     }
   }
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -312,7 +308,7 @@ message UpdateCategoryResponse {
 
 message DeleteCategoryRequest {
   // the ID of the category
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -323,7 +319,7 @@ message DeleteCategoryResponse {}
 
 message CreateCategoryRequest {
   string group_id = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
@@ -338,7 +334,7 @@ message CreateCategoryRequest {
 
 message CreateCategoryResponse {
   // the ID of the category
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -347,7 +343,7 @@ message CreateCategoryResponse {
 
 message GetCategoryRequest {
   // the ID of the category
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -370,7 +366,7 @@ message ListCategoryIdsInGroupRequest {
 }
 
 message ListCategoryIdsInGroupResponse {
-  repeated string category_ids = 1 [
+  repeated string ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -388,7 +384,7 @@ message StreamCategoryIdsInGroupRequest {
 message StreamCategoryIdsInGroupResponse {
   // the current list of category IDs
   message CategoryIds {
-    repeated string category_ids = 1 [
+    repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -397,15 +393,13 @@ message StreamCategoryIdsInGroupResponse {
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    CategoryIds category_ids = 2 [
-      (google.api.field_behavior) = OUTPUT_ONLY
-    ];
+    CategoryIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 }
 
 message StreamCategoryRequest {
   // the ID of the category
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}

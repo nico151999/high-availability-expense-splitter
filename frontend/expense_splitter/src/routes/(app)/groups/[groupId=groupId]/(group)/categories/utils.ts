@@ -1,5 +1,5 @@
 import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
-import { get, type Writable } from "svelte/store";
+import { get, writable, type Writable } from "svelte/store";
 import type { Category } from "../../../../../../../../../gen/lib/ts/common/category/v1/category_pb";
 import type { CategoryService } from "../../../../../../../../../gen/lib/ts/service/category/v1/service_connect";
 
@@ -7,14 +7,14 @@ export async function streamCategory(
 	categoryClient: PromiseClient<typeof CategoryService>,
 	categoryID: string,
 	abortController: AbortController,
-    onCategoryUpdate: (category: Category) => void
+    category: Writable<Category | undefined>
 ): Promise<boolean> {
 	try {
-		for await (const pRes of categoryClient.streamCategory({categoryId: categoryID}, {signal: abortController.signal})) {
+		for await (const pRes of categoryClient.streamCategory({id: categoryID}, {signal: abortController.signal})) {
 			if (pRes.update.case === 'stillAlive') {
 				continue;
 			}
-			onCategoryUpdate(pRes.update.value!);
+            category.set(pRes.update.value);
 		}
     } catch (e) {
         if (e instanceof ConnectError) {
@@ -30,7 +30,7 @@ export async function streamCategory(
     }
     console.log(`Ended category ${categoryID} stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
-    return await streamCategory(categoryClient, categoryID, abortController, onCategoryUpdate);
+    return await streamCategory(categoryClient, categoryID, abortController, category);
 }
 
 export async function streamCategories(
@@ -46,7 +46,7 @@ export async function streamCategories(
             if (cIDsRes.update.case === 'stillAlive') {
                 continue;
             }
-            const categoryIDs = cIDsRes.update.value!.categoryIds;
+            const categoryIDs = cIDsRes.update.value!.ids;
             let categories = get(categoriesStore);
             if (categories === undefined) {
                 categories = new Map();
@@ -66,12 +66,14 @@ export async function streamCategories(
                 categories.set(pID, {
                     abortController: abortController
                 });
-                streamCategory(categoryClient, pID, abortController, (category) => {
+                const category: Writable<Category | undefined> = writable();
+                category.subscribe((e) => {
                     categoriesStore.set(categories?.set(pID, {
                         abortController: abortController,
-                        category: category
+                        category: e
                     }));
                 });
+                streamCategory(categoryClient, pID, abortController, category);
             }
             categoriesStore.set(categories);
         }

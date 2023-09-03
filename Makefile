@@ -22,6 +22,7 @@ SKIP_BREAKING_CHANGES_CHECK:=false
 # skips GOLANGCI-related tasks; useful during pipeline execution in dev mode to speed up development
 SKIP_GOLANGCI:=true
 REPO_ROOT_PATH:=$(shell pwd)
+EXPENSESPLITTER_FRONTEND_DEV_PORT=8080
 DOCUMENTATION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/documentation
 REFLECTION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/reflection
 GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
@@ -281,7 +282,9 @@ lint: install-buf generate-proto-with-node install-kubeconform install-helm gene
 ifeq (false,$(SKIP_BREAKING_CHANGES_CHECK))
 	$(BUF_INSTALL_LOCATION) breaking --against '.git#branch=main'
 endif
-	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary ./charts/ha-expense-splitter
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/ha-expense-splitter'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/linkerd-cert-config'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/stackgres-cluster'
 	go vet ./...
 ifeq (false,$(SKIP_GOLANGCI))
 	$(GOLANGCI_LINT_INSTALL_LOCATION) run --concurrency 1 --verbose
@@ -317,6 +320,14 @@ clean: clean-lib clean-doc clean-proto clean-application clean-cert clean-bin
 test: generate format lint generate-proto-with-node
 	go test ./... -coverprofile cover.out
 # TODO: also test TS
+
+.PHONY: run-expensesplitter-frontend
+run-expensesplitter-frontend: pnpm-install install-pnpm
+	$(PNPM_INSTALL_LOCATION) -C '$(REPO_ROOT_PATH)/frontend/expense_splitter' dev --host --port $(EXPENSESPLITTER_FRONTEND_DEV_PORT)
+
+.PHONY: build-expensesplitter-frontend
+build-expensesplitter-frontend: pnpm-install install-pnpm
+	$(PNPM_INSTALL_LOCATION) -C '$(REPO_ROOT_PATH)/frontend/expense_splitter' build
 
 # build documentation UI
 .PHONY: build-documentation

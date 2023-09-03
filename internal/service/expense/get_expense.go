@@ -25,11 +25,11 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 		logging.FromContext(ctx).With(
 			logging.String(
 				"expenseId",
-				req.Msg.GetExpenseId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := getExpense(ctx, s.dbClient, req.Msg.GetExpenseId())
+	expense, err := getExpense(ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, errSelectExpense) {
 			return nil, errors.NewErrorWithDetails(

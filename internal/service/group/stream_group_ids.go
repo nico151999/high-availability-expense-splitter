@@ -92,9 +92,9 @@ func sendCurrentGroupIds(ctx context.Context, dbClient bun.IDB) (*groupsvcv1.Str
 		return nil, errSelectGroupIds
 	}
 	return &groupsvcv1.StreamGroupIdsResponse{
-		Update: &groupsvcv1.StreamGroupIdsResponse_GroupIds_{
-			GroupIds: &groupsvcv1.StreamGroupIdsResponse_GroupIds{
-				GroupIds: groupIds,
+		Update: &groupsvcv1.StreamGroupIdsResponse_Ids{
+			Ids: &groupsvcv1.StreamGroupIdsResponse_GroupIds{
+				Ids: groupIds,
 			},
 		},
 	}, nil

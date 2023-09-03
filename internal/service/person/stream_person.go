@@ -31,13 +31,13 @@ func (s *personServer) StreamPerson(ctx context.Context, req *connect.Request[pe
 			logging.FromContext(ctx).With(
 				logging.String(
 					"personId",
-					req.Msg.GetPersonId()))),
+					req.Msg.GetId()))),
 		time.Hour)
 	defer cancel()
 
-	streamSubject := fmt.Sprintf("%s.*", environment.GetPersonSubject("*", req.Msg.GetPersonId()))
+	streamSubject := fmt.Sprintf("%s.*", environment.GetPersonSubject("*", req.Msg.GetId()))
 	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*personsvcv1.StreamPersonResponse, error) {
-		return sendCurrentPerson(ctx, s.dbClient, req.Msg.GetPersonId())
+		return sendCurrentPerson(ctx, s.dbClient, req.Msg.GetId())
 	}, srv, &streamPersonAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {
 			return connect.NewError(

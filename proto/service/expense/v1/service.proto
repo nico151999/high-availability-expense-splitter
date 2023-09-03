@@ -2,17 +2,16 @@ syntax = "proto3";
 
 package service.expense.v1;
 
-
 import "common/expense/v1/expense.proto";
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 // buf:lint:ignore IMPORT_USED
 import "google/rpc/error_details.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 
 service ExpenseService {
   // Requests the creation of a expense with the provided specs
@@ -61,7 +60,7 @@ service ExpenseService {
   }
   // Gets an expense
   rpc GetExpense(GetExpenseRequest) returns (GetExpenseResponse) {
-    option (google.api.http) = {get: "/v1/expenses/{expense_id}"};
+    option (google.api.http) = {get: "/v1/expenses/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -114,7 +113,7 @@ service ExpenseService {
   }
   // Deletes an expense
   rpc DeleteExpense(DeleteExpenseRequest) returns (DeleteExpenseResponse) {
-    option (google.api.http) = {delete: "/v1/expenses/{expense_id}"};
+    option (google.api.http) = {delete: "/v1/expenses/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -167,7 +166,7 @@ service ExpenseService {
   }
   // Updates an expense
   rpc UpdateExpense(UpdateExpenseRequest) returns (UpdateExpenseResponse) {
-    option (google.api.http) = {patch: "/v1/expenses/{expense_id}"};
+    option (google.api.http) = {patch: "/v1/expenses/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -281,34 +280,29 @@ message UpdateExpenseRequest {
   message UpdateField {
     oneof update_option {
       option (validate.required) = true;
-      string name = 1 [
-        (google.api.field_behavior) = REQUIRED,
-        (validate.rules).string = {
-          min_len: 1;
-          max_len: 100;
-        }
-      ];
-      string by = 2 [
+      string name = 1 [(validate.rules).string = {
+        min_len: 1;
+        max_len: 100;
+      }];
+      string by_id = 2 [
         (google.api.resource_reference) = {type: "common.person.v1/Person"},
         (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
       ];
-      google.protobuf.Timestamp timestamp = 3 [
-        (validate.rules).timestamp = {
-          required: true,
-          // gte the first of January 2022 00:00 GMT+0000
-          gte: {
-            seconds: 1640995200,
-            nanos: 0
-          }
+      google.protobuf.Timestamp timestamp = 3 [(validate.rules).timestamp = {
+        required: true,
+        // gte the first of January 2022 00:00 GMT+0000
+        gte: {
+          seconds: 1640995200,
+          nanos: 0
         }
-      ];
-      string currency_acronym = 4 [
+      }];
+      string currency_id = 4 [
         (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
-        (validate.rules).string = {pattern: "^[A-Z]{3}$"}
+        (validate.rules).string = {pattern: "currency-[A-Za-z0-9]{15}$"}
       ];
     }
   }
-  string expense_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -316,7 +310,7 @@ message UpdateExpenseRequest {
   repeated UpdateField update_fields = 2 [
     (validate.rules).repeated = {
       min_items: 1;
-      max_items: 1;
+      max_items: 4;
     },
     (google.api.field_behavior) = REQUIRED
   ];
@@ -331,7 +325,7 @@ message UpdateExpenseResponse {
 
 message DeleteExpenseRequest {
   // the ID of the expense
-  string expense_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -342,40 +336,35 @@ message DeleteExpenseResponse {}
 
 message CreateExpenseRequest {
   string group_id = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
   optional string name = 2 [
     (google.api.field_behavior) = OPTIONAL,
-    (validate.rules).string = {
-      min_len: 1;
-      max_len: 100;
-    }
+    (validate.rules).string = {max_len: 100}
   ];
-  string by = 3 [
+  string by_id = 3 [
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
   ];
-  google.protobuf.Timestamp timestamp = 4 [
-    (validate.rules).timestamp = {
-      required: true,
-      // gte the first of January 2022 00:00 GMT+0000
-      gte: {
-        seconds: 1640995200,
-        nanos: 0
-      }
+  google.protobuf.Timestamp timestamp = 4 [(validate.rules).timestamp = {
+    required: true,
+    // gte the first of January 2022 00:00 GMT+0000
+    gte: {
+      seconds: 1640995200,
+      nanos: 0
     }
-  ];
-  string currency_acronym = 5 [
+  }];
+  string currency_id = 5 [
     (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
-    (validate.rules).string = {pattern: "^[A-Z]{3}$"}
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
   ];
 }
 
 message CreateExpenseResponse {
   // the ID of the expense
-  string expense_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -384,7 +373,7 @@ message CreateExpenseResponse {
 
 message GetExpenseRequest {
   // the ID of the expense
-  string expense_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -407,7 +396,7 @@ message ListExpenseIdsInGroupRequest {
 }
 
 message ListExpenseIdsInGroupResponse {
-  repeated string expense_ids = 1 [
+  repeated string ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -425,7 +414,7 @@ message StreamExpenseIdsInGroupRequest {
 message StreamExpenseIdsInGroupResponse {
   // the current list of expense IDs
   message ExpenseIds {
-    repeated string expense_ids = 1 [
+    repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
@@ -434,15 +423,13 @@ message StreamExpenseIdsInGroupResponse {
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    ExpenseIds expense_ids = 2 [
-      (google.api.field_behavior) = OUTPUT_ONLY
-    ];
+    ExpenseIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 }
 
 message StreamExpenseRequest {
   // the ID of the expense
-  string expense_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}

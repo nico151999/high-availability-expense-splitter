@@ -43,7 +43,7 @@ func TestDeleteCategory(t *testing.T) {
 				FromCSVString(groupId))
 		mock.ExpectCommit()
 		_, err := client.DeleteCategory(ctx, connect.NewRequest(&categorysvcv1.DeleteCategoryRequest{
-			CategoryId: categoryId,
+			Id: categoryId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -55,7 +55,7 @@ func TestDeleteCategory(t *testing.T) {
 
 	t.Run("Fail deleting Category due to empty ID", func(t *testing.T) {
 		resp, err := client.DeleteCategory(ctx, connect.NewRequest(&categorysvcv1.DeleteCategoryRequest{
-			CategoryId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -69,7 +69,7 @@ func TestDeleteCategory(t *testing.T) {
 		mock.ExpectQuery(fmt.Sprintf(`DELETE FROM "categories" (.+) WHERE (.+)"id" = '%s'(.+)`, categoryId)).WillReturnError(sql.ErrNoRows)
 		mock.ExpectRollback()
 		resp, err := client.DeleteCategory(ctx, connect.NewRequest(&categorysvcv1.DeleteCategoryRequest{
-			CategoryId: categoryId,
+			Id: categoryId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

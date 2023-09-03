@@ -24,11 +24,11 @@ func (s *groupServer) GetGroup(ctx context.Context, req *connect.Request[groupsv
 		logging.FromContext(ctx).With(
 			logging.String(
 				"groupId",
-				req.Msg.GetGroupId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	group, err := getGroup(ctx, s.dbClient, req.Msg.GetGroupId())
+	group, err := getGroup(ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, errSelectGroup) {
 			return nil, errors.NewErrorWithDetails(

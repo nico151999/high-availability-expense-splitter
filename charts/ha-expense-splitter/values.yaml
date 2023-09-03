@@ -13,7 +13,8 @@ haExpenseSplitter:
   ingressClassName: nginx
   readOnlyRootFilesystem: true
   db:
-    name: postgres
+    resourceName: expense-splitter-db
+    name: expense_splitter
     host: expense-splitter-db-host
     port: "5432"
     adminUser:
@@ -21,10 +22,125 @@ haExpenseSplitter:
         name: expense-splitter-db-sec
         userKey: user
         passwordKey: password
+      # -- if you want to create a new secret you need to remove the credentials key
+      # credentials:
+      #   user: username
+      #   password: my-secure-password
     image:
       psql:
         repository: governmentpaas/psql
         tag: latest
+    tables:
+      category:
+        name: categories
+        schema:
+          columns:
+          - name: &categoryId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &categoryGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *categoryId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *categoryGroupId
+            isUnique: false
+      expense:
+        name: expenses
+        schema:
+          columns:
+          - name: &expenseId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &expenseGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: false
+          - name: &expenseById by_id
+            type: text
+            constraints:
+              notNull: true
+          - name: timestamp
+            type: timestamptz
+            constraints:
+              notNull: true
+          - name: &expenseCurrencyId currency_id
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *expenseId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *expenseGroupId
+            isUnique: false
+          - columns:
+            - *expenseById
+            isUnique: false
+          - columns:
+            - *expenseCurrencyId
+            isUnique: false
+      group:
+        name: groups
+        schema:
+          columns:
+          - name: &groupId id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          - name: &groupCurrencyId currency_id
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *groupId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *groupCurrencyId
+            isUnique: false
+      person:
+        name: people
+        schema:
+          columns:
+          - name: &personId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &personGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *personId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *personGroupId
+            isUnique: false
   securityContext: &securityContext
     runAsUser: 1000
     runAsNonRoot: true

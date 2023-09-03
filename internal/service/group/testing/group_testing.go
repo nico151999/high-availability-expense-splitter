@@ -12,24 +12,17 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	natsserver "github.com/nats-io/nats-server/v2/server"
-	natstestserver "github.com/nats-io/nats-server/v2/test"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/group"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqTesting "github.com/nico151999/high-availability-expense-splitter/pkg/mq/testing"
 	"github.com/uptrace/bun"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/test/bufconn"
 )
-
-func runNATSServerOnPort(port int) *natsserver.Server {
-	opts := natstestserver.DefaultTestOptions
-	opts.Port = port
-	return natstestserver.RunServer(&opts)
-}
 
 func SetupGroupTestClient(t *testing.T, ln *bufconn.Listener) groupv1connect.GroupServiceClient {
 	catClient := groupv1connect.NewGroupServiceClient(
@@ -66,8 +59,7 @@ func StartGroupTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) (
 		}
 	}
 
-	natsPort := 6222
-	s := runNATSServerOnPort(natsPort)
+	s, natsPort := mqTesting.RunMQServer(t)
 
 	groupServer, err := group.NewGroupServerWithDBClient(ctx, dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {

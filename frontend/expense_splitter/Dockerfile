@@ -5,7 +5,7 @@ FROM node:lts-alpine AS builder
 ARG USER_ID
 ARG GROUP_ID
 
-RUN apk --no-cache add curl make musl-dev coreutils &&\
+RUN apk --no-cache add curl make coreutils &&\
     (addgroup -S $GROUP_ID || echo "Group $GROUP_ID already exists.") &&\
     (adduser -S $USER_ID -G $GROUP_ID -u $USER_ID || echo "User $USER_ID already exists.") &&\
     mkdir -p /usr/src/app/frontend/expense_splitter &&\
@@ -24,8 +24,7 @@ RUN make generate-proto-with-node &&\
     rm -rf gen/doc &&\
     rm -rf gen/lib/go
 COPY --chown=$USER_ID:$GROUP_ID ./frontend/expense_splitter /usr/src/app/frontend/expense_splitter
-WORKDIR /usr/src/app/frontend/expense_splitter
-RUN pnpm build
+RUN make build-expensesplitter-frontend
 
 FROM node:lts-alpine
 ARG USER_ID

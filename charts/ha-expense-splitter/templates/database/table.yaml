@@ -1,0 +1,12 @@
+{{- range $tableResourceName, $tableSpec := .Values.haExpenseSplitter.db.tables }}
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: {{ include "table-name-resource" $tableResourceName }}
+spec:
+  database: {{ $.Values.haExpenseSplitter.db.resourceName }}
+  name: {{ $tableSpec.name }}
+  schema:
+    postgres:
+      {{- $tableSpec.schema | toYaml | nindent 6 }}
+{{- end }}

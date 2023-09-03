@@ -24,11 +24,11 @@ func (s *categoryServer) GetCategory(ctx context.Context, req *connect.Request[c
 		logging.FromContext(ctx).With(
 			logging.String(
 				"categoryId",
-				req.Msg.GetCategoryId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	category, err := getCategory(ctx, s.dbClient, req.Msg.GetCategoryId())
+	category, err := getCategory(ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, errSelectCategory) {
 			return nil, errors.NewErrorWithDetails(

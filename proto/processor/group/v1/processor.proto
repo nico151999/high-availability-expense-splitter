@@ -8,7 +8,7 @@ import "validate/validate.proto";
 
 // An event with metadata containing information about a project that was created
 message GroupCreated {
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -20,7 +20,12 @@ message GroupCreated {
       max_len: 100;
     }
   ];
-  string requestor_email = 3 [
+  string currency_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  string requestor_email = 4 [
     (google.api.field_behavior) = REQUIRED,
     (validate.rules).string.email = true
   ];
@@ -28,7 +33,7 @@ message GroupCreated {
 
 // An event with metadata containing information about a project that was deleted
 message GroupDeleted {
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
@@ -37,7 +42,7 @@ message GroupDeleted {
 
 // An event with metadata containing information about a project that was updated
 message GroupUpdated {
-  string group_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}

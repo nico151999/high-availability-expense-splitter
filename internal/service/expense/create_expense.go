@@ -66,7 +66,7 @@ func (s *expenseServer) CreateExpense(ctx context.Context, req *connect.Request[
 	}
 
 	return connect.NewResponse(&expensesvcv1.CreateExpenseResponse{
-		ExpenseId: expenseId,
+		Id: expenseId,
 	}), nil
 }
 
@@ -94,12 +94,12 @@ func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expenses
 		}
 		if _, err := tx.NewInsert().Model(
 			model.NewExpense(&expensev1.Expense{
-				Id:              expenseId,
-				GroupId:         req.GetGroupId(),
-				Name:            name,
-				By:              req.GetBy(),
-				Timestamp:       req.GetTimestamp(),
-				CurrencyAcronym: req.GetCurrencyAcronym(),
+				Id:         expenseId,
+				GroupId:    req.GetGroupId(),
+				Name:       name,
+				ById:       req.GetById(),
+				Timestamp:  req.GetTimestamp(),
+				CurrencyId: req.GetCurrencyId(),
 			}),
 		).Exec(ctx); err != nil {
 			log.Error("failed inserting expense", logging.Error(err))
@@ -107,9 +107,9 @@ func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expenses
 		}
 
 		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseCreated{
-			ExpenseId:      expenseId,
+			Id:             expenseId,
 			GroupId:        req.GetGroupId(),
-			Name:           req.GetName(),
+			Name:           name,
 			RequestorEmail: requestorEmail,
 		})
 		if err != nil {

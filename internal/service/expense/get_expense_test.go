@@ -41,13 +41,13 @@ func TestGetExpense(t *testing.T) {
 		by := "person-123456789012345"
 		tsFormat := "2006-01-02 15:04:05-07"
 		timestamp := time.Unix(1693523248, 0)
-		currencyAcronym := "EUR"
+		currencyId := "currency-135791357913579"
 		expenseId := "expense-123456789012345"
 		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "expenses" (.+) WHERE (.+)"id" = '%s'(.+)`, expenseId)).
-			WillReturnRows(sqlmock.NewRows([]string{"name", "group_id", "by", "timestamp", "currency_acronym"}).
-				FromCSVString(fmt.Sprintf("%s,%s,%s,%s,%s", expenseName, groupId, by, timestamp.Format(tsFormat), currencyAcronym)))
+			WillReturnRows(sqlmock.NewRows([]string{"name", "group_id", "by_id", "timestamp", "currency_id"}).
+				FromCSVString(fmt.Sprintf("%s,%s,%s,%s,%s", expenseName, groupId, by, timestamp.Format(tsFormat), currencyId)))
 		resp, err := client.GetExpense(ctx, connect.NewRequest(&expensesvcv1.GetExpenseRequest{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -58,14 +58,14 @@ func TestGetExpense(t *testing.T) {
 		if resp.Msg.GetExpense().GetGroupId() != groupId {
 			t.Errorf("expected group ID to be '%s' but it was '%s'", groupId, resp.Msg.GetExpense().GetGroupId())
 		}
-		if resp.Msg.GetExpense().GetBy() != by {
-			t.Errorf("expected by to be '%s' but it was '%s'", by, resp.Msg.GetExpense().GetBy())
+		if resp.Msg.GetExpense().GetById() != by {
+			t.Errorf("expected by to be '%s' but it was '%s'", by, resp.Msg.GetExpense().GetById())
 		}
 		if resp.Msg.GetExpense().GetTimestamp().AsTime().UTC() != timestamp.UTC() {
 			t.Errorf("expected timestamp to be '%s' but it was '%s'", timestamp.UTC().Format(tsFormat), resp.Msg.GetExpense().GetTimestamp().AsTime().UTC().Format(tsFormat))
 		}
-		if resp.Msg.GetExpense().GetCurrencyAcronym() != currencyAcronym {
-			t.Errorf("expected by to be '%s' but it was '%s'", currencyAcronym, resp.Msg.GetExpense().GetCurrencyAcronym())
+		if resp.Msg.GetExpense().GetCurrencyId() != currencyId {
+			t.Errorf("expected by to be '%s' but it was '%s'", currencyId, resp.Msg.GetExpense().GetCurrencyId())
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %+v", err)
@@ -74,7 +74,7 @@ func TestGetExpense(t *testing.T) {
 
 	t.Run("Fail getting Expense due to empty ID", func(t *testing.T) {
 		resp, err := client.GetExpense(ctx, connect.NewRequest(&expensesvcv1.GetExpenseRequest{
-			ExpenseId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -86,7 +86,7 @@ func TestGetExpense(t *testing.T) {
 		expenseId := "expense-543210987654321"
 		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "expenses" (.+) WHERE (.+)"id" = '%s'(.+)`, expenseId)).WillReturnError(sql.ErrNoRows)
 		resp, err := client.GetExpense(ctx, connect.NewRequest(&expensesvcv1.GetExpenseRequest{
-			ExpenseId: expenseId,
+			Id: expenseId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

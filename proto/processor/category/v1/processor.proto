@@ -8,7 +8,7 @@ import "validate/validate.proto";
 
 // An event with metadata containing information about a project that was created
 message CategoryCreated {
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -33,7 +33,7 @@ message CategoryCreated {
 
 // An event with metadata containing information about a project that was deleted
 message CategoryDeleted {
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
@@ -42,7 +42,7 @@ message CategoryDeleted {
 
 // An event with metadata containing information about a project that was updated
 message CategoryUpdated {
-  string category_id = 1 [
+  string id = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.category.v1/Category"},
     (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}

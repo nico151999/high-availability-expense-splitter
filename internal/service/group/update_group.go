@@ -27,11 +27,11 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 		logging.FromContext(ctx).With(
 			logging.String(
 				"groupId",
-				req.Msg.GetGroupId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	group, err := updateGroup(ctx, s.natsClient, s.dbClient, req.Msg.GetGroupId(), req.Msg.GetUpdateFields())
+	group, err := updateGroup(ctx, s.natsClient, s.dbClient, req.Msg.GetId(), req.Msg.GetUpdateFields())
 	if err != nil {
 		if eris.Is(err, errUpdateGroup) {
 			return nil, errors.NewErrorWithDetails(
@@ -71,6 +71,9 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 			case *groupsvcv1.UpdateGroupRequest_UpdateField_Name:
 				group.Name = param.GetName()
 				query.Column("name")
+			case *groupsvcv1.UpdateGroupRequest_UpdateField_CurrencyId:
+				group.CurrencyId = param.GetCurrencyId()
+				query.Column("currency_id")
 			}
 		}
 		if _, err := query.Model(&group).WherePK().Exec(ctx); err != nil {
@@ -83,7 +86,7 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 		}
 
 		marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
-			GroupId: groupId,
+			Id: groupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling group updated event", logging.Error(err))

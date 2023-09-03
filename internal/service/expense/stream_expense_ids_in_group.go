@@ -92,9 +92,9 @@ func sendCurrentExpenseIds(ctx context.Context, dbClient bun.IDB, groupId string
 		return nil, errSelectExpenseIds
 	}
 	return &expensesvcv1.StreamExpenseIdsInGroupResponse{
-		Update: &expensesvcv1.StreamExpenseIdsInGroupResponse_ExpenseIds_{
-			ExpenseIds: &expensesvcv1.StreamExpenseIdsInGroupResponse_ExpenseIds{
-				ExpenseIds: expenseIds,
+		Update: &expensesvcv1.StreamExpenseIdsInGroupResponse_Ids{
+			Ids: &expensesvcv1.StreamExpenseIdsInGroupResponse_ExpenseIds{
+				Ids: expenseIds,
 			},
 		},
 	}, nil

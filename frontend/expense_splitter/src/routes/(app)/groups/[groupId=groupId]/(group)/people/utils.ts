@@ -1,5 +1,5 @@
 import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
-import { get, type Writable } from "svelte/store";
+import { get, writable, type Writable } from "svelte/store";
 import type { Person } from "../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 import type { PersonService } from "../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 
@@ -7,14 +7,14 @@ export async function streamPerson(
 	personClient: PromiseClient<typeof PersonService>,
 	personID: string,
 	abortController: AbortController,
-    onPersonUpdate: (person: Person) => void
+    person: Writable<Person | undefined>
 ): Promise<boolean> {
 	try {
-		for await (const pRes of personClient.streamPerson({personId: personID}, {signal: abortController.signal})) {
+		for await (const pRes of personClient.streamPerson({id: personID}, {signal: abortController.signal})) {
 			if (pRes.update.case === 'stillAlive') {
 				continue;
 			}
-			onPersonUpdate(pRes.update.value!);
+            person.set(pRes.update.value);
 		}
     } catch (e) {
         if (e instanceof ConnectError) {
@@ -30,7 +30,7 @@ export async function streamPerson(
     }
     console.log(`Ended person ${personID} stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
-    return await streamPerson(personClient, personID, abortController, onPersonUpdate);
+    return await streamPerson(personClient, personID, abortController, person);
 }
 
 export async function streamPeople(
@@ -46,7 +46,7 @@ export async function streamPeople(
             if (cIDsRes.update.case === 'stillAlive') {
                 continue;
             }
-            const personIDs = cIDsRes.update.value!.personIds;
+            const personIDs = cIDsRes.update.value!.ids;
             let people = get(peopleStore);
             if (people === undefined) {
                 people = new Map();
@@ -66,12 +66,14 @@ export async function streamPeople(
                 people.set(pID, {
                     abortController: abortController
                 });
-                streamPerson(personClient, pID, abortController, (person) => {
+                const person: Writable<Person | undefined> = writable();
+                person.subscribe((e) => {
                     peopleStore.set(people?.set(pID, {
                         abortController: abortController,
-                        person: person
+                        person: e
                     }));
                 });
+                streamPerson(personClient, pID, abortController, person);
             }
             peopleStore.set(people);
         }

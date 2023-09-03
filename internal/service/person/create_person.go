@@ -65,7 +65,7 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 	}
 
 	return connect.NewResponse(&personsvcv1.CreatePersonResponse{
-		PersonId: personId,
+		Id: personId,
 	}), nil
 }
 
@@ -97,7 +97,7 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonCreated{
-			PersonId:       personId,
+			Id:             personId,
 			GroupId:        req.GetGroupId(),
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,

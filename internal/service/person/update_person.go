@@ -27,11 +27,11 @@ func (s *personServer) UpdatePerson(ctx context.Context, req *connect.Request[pe
 		logging.FromContext(ctx).With(
 			logging.String(
 				"personId",
-				req.Msg.GetPersonId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	person, err := updatePerson(ctx, s.natsClient, s.dbClient, req.Msg.GetPersonId(), req.Msg.GetUpdateFields())
+	person, err := updatePerson(ctx, s.natsClient, s.dbClient, req.Msg.GetId(), req.Msg.GetUpdateFields())
 	if err != nil {
 		if eris.Is(err, errUpdatePerson) {
 			return nil, errors.NewErrorWithDetails(
@@ -83,7 +83,7 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
-			PersonId: personId,
+			Id: personId,
 		})
 		if err != nil {
 			log.Error("failed marshalling person updated event", logging.Error(err))
