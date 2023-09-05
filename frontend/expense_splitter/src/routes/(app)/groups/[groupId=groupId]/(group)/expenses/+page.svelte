@@ -109,13 +109,13 @@
 		<th>Action</th>
 	</thead>
 	<tbody>
-		{#if $expenses}
+		{#if $expenses && $people}
 			{#each [...$expenses] as [pID, expense]}
 				{#if expense.expense}
 					<tr on:click={openExpense(pID)}>
 						<td>{pID}</td>
 						<td>{expense.expense.name}</td>
-						<td>{expense.expense.byId}</td>
+						<td>{$people.get(expense.expense.byId)?.person?.name}</td>
 						<td>{expense.expense.currencyId}</td>
 						<td>{expense.expense.timestamp?.toDate().toLocaleString()}</td>
 						<td><button on:click|stopPropagation={deleteExpense(pID)}>Delete</button></td>
@@ -124,26 +124,26 @@
 					<tr>Loading expense with ID {pID}...</tr>
 				{/if}
 			{/each}
+			<tr>
+				<td></td>
+				<td><input type="text" placeholder="Expense name" bind:value={newExpense.name}/></td>
+				<td>
+					{#if $people}
+						<select bind:value={newExpense.byId}>
+							{#each [...$people] as [pID, person]}
+								<option value={pID}>{person.person?.name}</option>
+							{/each}
+						</select>
+					{:else}
+						<span>Loading people...</span>
+					{/if}
+				</td>
+				<td><input type="text" placeholder="Currency" bind:value={newExpense.currencyId}/></td> <!-- TODO: dropdown -->
+				<td><DateInput min={new Date(1640995200000)} max={new Date()} bind:value={newExpense.timestamp} bind:valid={timestampValid}/></td>
+				<td><button on:click={createExpense}>Create expense</button></td>
+			</tr>
 		{:else}
 			<tr>Loading expenses...</tr>
 		{/if}
-		<tr>
-			<td></td>
-			<td><input type="text" placeholder="Expense name" bind:value={newExpense.name}/></td>
-			<td>
-				{#if $people}
-					<select bind:value={newExpense.byId}>
-						{#each [...$people] as [pID, person]}
-							<option value={pID}>{person.person?.name}</option>
-						{/each}
-					</select>
-				{:else}
-					<span>Loading people...</span>
-				{/if}
-			</td>
-			<td><input type="text" placeholder="Currency" bind:value={newExpense.currencyId}/></td> <!-- TODO: dropdown -->
-			<td><DateInput min={new Date(1640995200000)} max={new Date()} bind:value={newExpense.timestamp} bind:valid={timestampValid}/></td>
-			<td><button on:click={createExpense}>Create expense</button></td>
-		</tr>
 	</tbody>
 </table>
