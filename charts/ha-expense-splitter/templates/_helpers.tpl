@@ -333,41 +333,9 @@ processor-rolebinding
 
 
 
-{{- define "db-name" -}}
-{{ .Release.Name }}-db
-{{- end}}
-
-
-
-
-
 {{/* Accepts the name of the table as parameter */}}
 {{- define "table-name-resource" -}}
 {{ . }}-table
-{{- end}}
-
-{{- define "table-name-categories" -}}
-categories
-{{- end}}
-
-{{- define "table-name-people" -}}
-people
-{{- end}}
-
-{{- define "table-name-groups" -}}
-groups
-{{- end}}
-
-{{- define "table-name-resource-categories" -}}
-{{ include "table-name-resource" (include "table-name-categories" .) }}
-{{- end}}
-
-{{- define "table-name-resource-people" -}}
-{{ include "table-name-resource" (include "table-name-people" .) }}
-{{- end}}
-
-{{- define "table-name-resource-groups" -}}
-{{ include "table-name-resource" (include "table-name-groups" .) }}
 {{- end}}
 
 

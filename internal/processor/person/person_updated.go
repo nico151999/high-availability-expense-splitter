@@ -10,7 +10,7 @@ import (
 func (rpProcessor *personProcessor) personUpdated(ctx context.Context, req *personv1.PersonUpdated) error {
 	log := logging.FromContext(ctx)
 	log.Info("processing person.PersonUpdated event",
-		logging.String("personId", req.GetPersonId()))
+		logging.String("personId", req.GetId()))
 	// TODO: actually process message like sending a project updated notification and publish an event telling what was done (e.g. project updated notification sent)
 	return nil
 }

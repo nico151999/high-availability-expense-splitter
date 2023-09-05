@@ -22,14 +22,17 @@ SKIP_BREAKING_CHANGES_CHECK:=false
 # skips GOLANGCI-related tasks; useful during pipeline execution in dev mode to speed up development
 SKIP_GOLANGCI:=true
 REPO_ROOT_PATH:=$(shell pwd)
+EXPENSESPLITTER_FRONTEND_DEV_PORT=8080
 DOCUMENTATION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/documentation
 REFLECTION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/reflection
 GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
 PERSON_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/person
 CATEGORY_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/category
+EXPENSE_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expense
 GROUP_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/group
 PERSON_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/person
 CATEGORY_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/category
+EXPENSE_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expense
 OUT_DIR:=$(REPO_ROOT_PATH)/gen
 BIN_INSTALL_DIR:=$(OUT_DIR)/bin
 HELM_PLUGIN_INSTALL_DIR:=$(BIN_INSTALL_DIR)/plugins/helm
@@ -53,9 +56,11 @@ REFLECTION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to
 GROUP_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_SVC_DIR))
 PERSON_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
 CATEGORY_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
+EXPENSE_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_SVC_DIR))
 GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_PROCESSOR_DIR))
 PERSON_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_PROCESSOR_DIR))
 CATEGORY_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+EXPENSE_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_PROCESSOR_DIR))
 
 # prioritise executables in the repo's bin dir
 export PATH=$(BIN_INSTALL_DIR):$(shell echo $$PATH)
@@ -248,10 +253,12 @@ generate-dockerfile-links:
 	ln -sf Dockerfile ./cmd/service/group.Dockerfile
 	ln -sf Dockerfile ./cmd/service/person.Dockerfile
 	ln -sf Dockerfile ./cmd/service/category.Dockerfile
+	ln -sf Dockerfile ./cmd/service/expense.Dockerfile
 	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/group.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/person.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/category.Dockerfile
+	ln -sf Dockerfile ./cmd/processor/expense.Dockerfile
 
 # generates new certs for Linkerd communication and overwrites existing ones
 .PHONY: build
@@ -275,7 +282,9 @@ lint: install-buf generate-proto-with-node install-kubeconform install-helm gene
 ifeq (false,$(SKIP_BREAKING_CHANGES_CHECK))
 	$(BUF_INSTALL_LOCATION) breaking --against '.git#branch=main'
 endif
-	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary ./charts/ha-expense-splitter
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/ha-expense-splitter'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/linkerd-cert-config'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/stackgres-cluster'
 	go vet ./...
 ifeq (false,$(SKIP_GOLANGCI))
 	$(GOLANGCI_LINT_INSTALL_LOCATION) run --concurrency 1 --verbose
@@ -312,6 +321,14 @@ test: generate format lint generate-proto-with-node
 	go test ./... -coverprofile cover.out
 # TODO: also test TS
 
+.PHONY: run-expensesplitter-frontend
+run-expensesplitter-frontend: pnpm-install install-pnpm
+	$(PNPM_INSTALL_LOCATION) -C '$(REPO_ROOT_PATH)/frontend/expense_splitter' dev --host --port $(EXPENSESPLITTER_FRONTEND_DEV_PORT)
+
+.PHONY: build-expensesplitter-frontend
+build-expensesplitter-frontend: pnpm-install install-pnpm
+	$(PNPM_INSTALL_LOCATION) -C '$(REPO_ROOT_PATH)/frontend/expense_splitter' build
+
 # build documentation UI
 .PHONY: build-documentation
 build-documentation: generate-proto
@@ -337,6 +354,11 @@ build-person-service: generate-proto
 build-category-service: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
 
+# builds expense service
+.PHONY: build-expense-service
+build-expense-service: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_SVC_DIR))
+
 # builds group processor
 .PHONY: build-group-processor
 build-group-processor: generate-proto
@@ -351,6 +373,11 @@ build-person-processor: generate-proto
 .PHONY: build-category-processor
 build-category-processor: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+
+# builds expense processor
+.PHONY: build-expense-processor
+build-expense-processor: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_PROCESSOR_DIR))
 
 # starts the dev mode of skaffold
 .PHONY: skaffold-dev

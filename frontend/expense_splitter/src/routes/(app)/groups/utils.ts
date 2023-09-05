@@ -1,23 +1,20 @@
 import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
+import { get, writable, type Writable } from "svelte/store";
 import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
 import type { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
 
-// Streams a group specified by the passed group ID until it is aborted.
-// In case of a finalised stream (with or without error) a retry is performed after a delay.
-// If the stream is intentionally stopped the function returns true. If the stream is
-// stopped due to a no longer existing group the function returns false.
 export async function streamGroup(
 	groupClient: PromiseClient<typeof GroupService>,
 	groupID: string,
 	abortController: AbortController,
-    onGroupUpdate: (group: Group) => void
+    group: Writable<Group | undefined>
 ): Promise<boolean> {
 	try {
-		for await (const gRes of groupClient.streamGroup({groupId: groupID}, {signal: abortController.signal})) {
-			if (gRes.update.case === 'stillAlive') {
+		for await (const pRes of groupClient.streamGroup({id: groupID}, {signal: abortController.signal})) {
+			if (pRes.update.case === 'stillAlive') {
 				continue;
 			}
-			onGroupUpdate(gRes.update.value!);
+            group.set(pRes.update.value);
 		}
     } catch (e) {
         if (e instanceof ConnectError) {
@@ -33,5 +30,58 @@ export async function streamGroup(
     }
     console.log(`Ended group ${groupID} stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
-    return await streamGroup(groupClient, groupID, abortController, onGroupUpdate);
+    return await streamGroup(groupClient, groupID, abortController, group);
+}
+
+export async function streamGroups(
+    groupClient: PromiseClient<typeof GroupService>,
+    abortController: AbortController,
+    groupsStore: Writable<Map<string, {group?: Group, abortController: AbortController}> | undefined>
+) {
+    try {
+        for await (const cIDsRes of groupClient.streamGroupIds({}, {signal: abortController.signal})) {
+            if (cIDsRes.update.case === 'stillAlive') {
+                continue;
+            }
+            const groupIDs = cIDsRes.update.value!.ids;
+            let groups = get(groupsStore);
+            if (groups === undefined) {
+                groups = new Map();
+            }
+            for (const cID of groups.keys()) {
+                if (groupIDs.includes(cID)) {
+                    // remove element from items that are to be processed because it already exists
+                    groupIDs.splice(groupIDs.indexOf(cID), 1);
+                } else {
+                    // remove groups that are not present any more
+                    groups!.get(cID)!.abortController.abort();
+                    groups!.delete(cID);
+                }
+            }
+            for (const pID of groupIDs) {
+                const abortController = new AbortController();
+                groups.set(pID, {
+                    abortController: abortController
+                });
+                const group: Writable<Group | undefined> = writable();
+                group.subscribe((e) => {
+                    groupsStore.set(groups?.set(pID, {
+                        abortController: abortController,
+                        group: e
+                    }));
+                });
+                streamGroup(groupClient, pID, abortController, group);
+            }
+            groupsStore.set(groups);
+        }
+    } catch (e) {
+        if (e instanceof ConnectError && e.code === Code.Canceled) {
+            console.log('Intentionally aborted groups stream');
+            return;
+        }
+        console.error('An error occurred trying to stream groups', e);
+    }
+    console.log(`Ended groups stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await streamGroups(groupClient, abortController, groupsStore);
 }

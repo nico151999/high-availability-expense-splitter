@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package processor.expense.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// An event with metadata containing information about a project that was created
+message ExpenseCreated {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string group_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  optional string name = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (validate.rules).string = {max_len: 100}
+  ];
+  // the person the expense was payed by
+  string by_id = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  google.protobuf.Timestamp timestamp = 5 [(validate.rules).timestamp = {
+    required: true,
+    // gte the first of January 2022 00:00 GMT+0000
+    gte: {
+      seconds: 1640995200,
+      nanos: 0
+    }
+  }];
+  string currency_id = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  string requestor_email = 7 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.email = true
+  ];
+}
+
+// An event with metadata containing information about a project that was deleted
+message ExpenseDeleted {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+// An event with metadata containing information about a project that was updated
+message ExpenseUpdated {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}

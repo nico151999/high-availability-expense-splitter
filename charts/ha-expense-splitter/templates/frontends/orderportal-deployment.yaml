@@ -36,8 +36,7 @@ spec:
           # {{- end }}
           # TODO: only pass port in DEV mode here
           args:
-            - "--port" # this is for vite dev
-            - "{{ include "frontend-port" . }}"
+            - "EXPENSESPLITTER_FRONTEND_DEV_PORT={{ include "frontend-port" . }}" # this is for vite dev
           ports:
             - name: {{ include "frontend-name-port" (include "expenseSplitterFrontend-shortName" .) }}
               containerPort: {{ include "frontend-port" . }}

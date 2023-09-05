@@ -13,7 +13,8 @@ haExpenseSplitter:
   ingressClassName: nginx
   readOnlyRootFilesystem: true
   db:
-    name: postgres
+    resourceName: expense-splitter-db
+    name: expense_splitter
     host: expense-splitter-db-host
     port: "5432"
     adminUser:
@@ -21,10 +22,125 @@ haExpenseSplitter:
         name: expense-splitter-db-sec
         userKey: user
         passwordKey: password
+      # -- if you want to create a new secret you need to remove the credentials key
+      # credentials:
+      #   user: username
+      #   password: my-secure-password
     image:
       psql:
         repository: governmentpaas/psql
         tag: latest
+    tables:
+      category:
+        name: categories
+        schema:
+          columns:
+          - name: &categoryId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &categoryGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *categoryId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *categoryGroupId
+            isUnique: false
+      expense:
+        name: expenses
+        schema:
+          columns:
+          - name: &expenseId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &expenseGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: false
+          - name: &expenseById by_id
+            type: text
+            constraints:
+              notNull: true
+          - name: timestamp
+            type: timestamptz
+            constraints:
+              notNull: true
+          - name: &expenseCurrencyId currency_id
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *expenseId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *expenseGroupId
+            isUnique: false
+          - columns:
+            - *expenseById
+            isUnique: false
+          - columns:
+            - *expenseCurrencyId
+            isUnique: false
+      group:
+        name: groups
+        schema:
+          columns:
+          - name: &groupId id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          - name: &groupCurrencyId currency_id
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *groupId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *groupCurrencyId
+            isUnique: false
+      person:
+        name: people
+        schema:
+          columns:
+          - name: &personId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &personGroupId group_id
+            type: text
+            constraints:
+              notNull: true
+          - name: name
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *personId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *personGroupId
+            isUnique: false
   securityContext: &securityContext
     runAsUser: 1000
     runAsNonRoot: true
@@ -106,10 +222,6 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
-            - pathRegex: /service\.group\.v1\.GroupService/GetGroups$
-              methods:
-                - POST
-                - OPTIONS
             - pathRegex: /service\.group\.v1\.GroupService/ListGroupIds$
               methods:
                 - POST
@@ -151,6 +263,62 @@ haExpenseSplitter:
           repository: "my-registry/my-group/my-group-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
+      expense:
+        roles: [] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.expense\.v1\.ExpenseService/CreateExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/GetExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/ListExpenseIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/UpdateExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/DeleteExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/StreamExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expense\.v1\.ExpenseService/StreamExpenseIdsInGroup$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expense-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
       person:
         roles: [] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
@@ -163,10 +331,6 @@ haExpenseSplitter:
                 - POST
                 - OPTIONS
             - pathRegex: /service\.person\.v1\.PersonService/GetPerson$
-              methods:
-                - POST
-                - OPTIONS
-            - pathRegex: /service\.person\.v1\.PersonService/GetPersons$
               methods:
                 - POST
                 - OPTIONS
@@ -223,10 +387,6 @@ haExpenseSplitter:
                 - POST
                 - OPTIONS
             - pathRegex: /service\.category\.v1\.CategoryService/GetCategory$
-              methods:
-                - POST
-                - OPTIONS
-            - pathRegex: /service\.category\.v1\.CategoryService/GetCategorys$
               methods:
                 - POST
                 - OPTIONS
@@ -294,6 +454,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-group-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      expense:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expense-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []

@@ -39,7 +39,7 @@
                 groupId: data.groupId,
                 name: $newCategory.name
 			});
-			console.log('Created category', res.categoryId);
+			console.log('Created category', res.id);
 
             newCategory.set({name: ''});
 		} catch (e) {
@@ -50,7 +50,7 @@
 	function deleteCategory(categoryId: string) {
 		return async () => {
 			try {
-				await categoryClient.deleteCategory({categoryId: categoryId});
+				await categoryClient.deleteCategory({id: categoryId});
 				console.log('Deleted category');
 			} catch (e) {
 				console.error(`An error occurred trying to delete category ${categoryId} in group ${data.groupId}`, e);

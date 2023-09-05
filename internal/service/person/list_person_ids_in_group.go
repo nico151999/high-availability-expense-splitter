@@ -40,7 +40,7 @@ func (s *personServer) ListPersonIdsInGroup(ctx context.Context, req *connect.Re
 	}
 
 	return connect.NewResponse(&personsvcv1.ListPersonIdsInGroupResponse{
-		PersonIds: personIds,
+		Ids: personIds,
 	}), nil
 }
 

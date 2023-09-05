@@ -39,7 +39,7 @@
                 groupId: data.groupId,
                 name: $newPerson.name
 			});
-			console.log('Created person', res.personId);
+			console.log('Created person', res.id);
 
             newPerson.set({name: ''});
 		} catch (e) {
@@ -50,7 +50,7 @@
 	function deletePerson(personId: string) {
 		return async () => {
 			try {
-				await personClient.deletePerson({personId: personId});
+				await personClient.deletePerson({id: personId});
 				console.log('Deleted person');
 			} catch (e) {
 				console.error(`An error occurred trying to delete person ${personId} in group ${data.groupId}`, e);

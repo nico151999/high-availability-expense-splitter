@@ -40,7 +40,7 @@ func (s *groupServer) ListGroupIds(ctx context.Context, req *connect.Request[gro
 	}
 
 	return connect.NewResponse(&groupsvcv1.ListGroupIdsResponse{
-		GroupIds: groupIds,
+		Ids: groupIds,
 	}), nil
 }
 

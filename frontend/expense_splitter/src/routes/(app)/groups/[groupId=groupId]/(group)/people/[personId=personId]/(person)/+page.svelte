@@ -11,7 +11,7 @@
 	export let data: PageData;
 
 	const personClient = createPromiseClient(PersonService, data.grpcWebTransport);
-	let person: Person | undefined;
+	let person = writable(undefined as Person | undefined);
 	const abortController = new AbortController();
     let editMode = false;
 
@@ -24,19 +24,16 @@
 	});
 
 	onMount(async () => {
-		const res = await streamPerson(personClient, data.personId, abortController, (p) => {
-			person = p;
-		});
+		const res = await streamPerson(personClient, data.personId, abortController, person);
         if (!res) {
-            console.log('Navigating level up due to no longer existing person');
-            goto('./');
+            console.error('Person no longer exists');
         }
 	});
 
 	async function updatePerson() {
 		try {
 			const res = await personClient.updatePerson({
-				personId: data.personId,
+				id: data.personId,
 				updateFields: [
 					{
 						updateOption: {
@@ -54,11 +51,11 @@
 	}
 
     function startEdit() {
-        if (!person) {
+        if (!$person) {
             return;
         }
         editedPerson.set({
-            name: person.name
+            name: $person.name
         })
         editMode = true;
     }
@@ -75,7 +72,7 @@
 		<th>Action</th>
 	</thead>
 	<tbody>
-		{#if person}
+		{#if $person}
             {#if editMode}
                 <tr>
                     <td><input type="text" placeholder="Person name" bind:value={$editedPerson.name}/></td>
@@ -86,7 +83,7 @@
                 </tr>
             {:else}
                 <tr>
-                    <td>{person.name}</td>
+                    <td>{$person.name}</td>
                     <td><button on:click={startEdit}>Update person</button></td>
                 </tr>
             {/if}

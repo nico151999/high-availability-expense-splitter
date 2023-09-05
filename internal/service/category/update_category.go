@@ -27,11 +27,11 @@ func (s *categoryServer) UpdateCategory(ctx context.Context, req *connect.Reques
 		logging.FromContext(ctx).With(
 			logging.String(
 				"categoryId",
-				req.Msg.GetCategoryId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	category, err := updateCategory(ctx, s.natsClient, s.dbClient, req.Msg.GetCategoryId(), req.Msg.GetUpdateFields())
+	category, err := updateCategory(ctx, s.natsClient, s.dbClient, req.Msg.GetId(), req.Msg.GetUpdateFields())
 	if err != nil {
 		if eris.Is(err, errUpdateCategory) {
 			return nil, errors.NewErrorWithDetails(
@@ -83,7 +83,7 @@ func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
-			CategoryId: categoryId,
+			Id: categoryId,
 		})
 		if err != nil {
 			log.Error("failed marshalling category updated event", logging.Error(err))

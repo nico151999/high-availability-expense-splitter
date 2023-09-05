@@ -24,11 +24,11 @@ func (s *personServer) GetPerson(ctx context.Context, req *connect.Request[perso
 		logging.FromContext(ctx).With(
 			logging.String(
 				"personId",
-				req.Msg.GetPersonId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	person, err := getPerson(ctx, s.dbClient, req.Msg.GetPersonId())
+	person, err := getPerson(ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, errSelectPerson) {
 			return nil, errors.NewErrorWithDetails(

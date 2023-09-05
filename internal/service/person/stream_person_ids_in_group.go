@@ -92,9 +92,9 @@ func sendCurrentPersonIds(ctx context.Context, dbClient bun.IDB, groupId string)
 		return nil, errSelectPersonIds
 	}
 	return &personsvcv1.StreamPersonIdsInGroupResponse{
-		Update: &personsvcv1.StreamPersonIdsInGroupResponse_PersonIds_{
-			PersonIds: &personsvcv1.StreamPersonIdsInGroupResponse_PersonIds{
-				PersonIds: personIds,
+		Update: &personsvcv1.StreamPersonIdsInGroupResponse_Ids{
+			Ids: &personsvcv1.StreamPersonIdsInGroupResponse_PersonIds{
+				Ids: personIds,
 			},
 		},
 	}, nil

@@ -182,6 +182,9 @@ cluster:
   #managedSql:
   #  continueOnSGScriptError:
   #  continueOnError:
+  #  secretScripts:
+  #    "create-stackgres-user": |
+  #      CREATE ROLE stackgres-user PASSWORD 'secure-stackgres-password';
   #  scripts:
   #  - name: create-stackgres-user
   #    scriptFrom:

@@ -27,11 +27,11 @@ func (s *categoryServer) DeleteCategory(ctx context.Context, req *connect.Reques
 		logging.FromContext(ctx).With(
 			logging.String(
 				"categoryId",
-				req.Msg.GetCategoryId())))
+				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	if err := deleteCategory(ctx, s.natsClient, s.dbClient, req.Msg.GetCategoryId()); err != nil {
+	if err := deleteCategory(ctx, s.natsClient, s.dbClient, req.Msg.GetId()); err != nil {
 		if eris.Is(err, errDeleteCategory) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
@@ -72,7 +72,7 @@ func deleteCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
-			CategoryId: categoryId,
+			Id: categoryId,
 		})
 		if err != nil {
 			log.Error("failed marshalling category deleted event", logging.Error(err))

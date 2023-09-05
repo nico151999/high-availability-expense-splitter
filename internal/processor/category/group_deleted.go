@@ -15,12 +15,12 @@ import (
 )
 
 func (rpProcessor *categoryProcessor) groupDeleted(ctx context.Context, req *groupprocv1.GroupDeleted) error {
-	log := logging.FromContext(ctx).With(logging.String("groupId", req.GetGroupId()))
+	log := logging.FromContext(ctx).With(logging.String("groupId", req.GetId()))
 	log.Info("processing group.GroupDeleted event")
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		var categories []*categoryv1.Category
-		if err := tx.NewDelete().Model(&categories).Where("group_id = ?", req.GetGroupId()).Returning("id").Scan(ctx); err != nil {
+		if err := tx.NewDelete().Model(&categories).Where("group_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
 			log.Error("failed deleting categories related to deleted group", logging.Error(err))
 			return errDeleteCategories
 		}
@@ -30,13 +30,13 @@ func (rpProcessor *categoryProcessor) groupDeleted(ctx context.Context, req *gro
 			category := c
 			g.Go(func() error {
 				marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
-					CategoryId: category.Id,
+					Id: category.Id,
 				})
 				if err != nil {
 					log.Error("failed marshalling category deleted event", logging.Error(err))
 					return errMarshalCategoryDeleted
 				}
-				if err := rpProcessor.natsClient.Publish(environment.GetCategoryDeletedSubject(req.GetGroupId(), category.Id), marshalled); err != nil {
+				if err := rpProcessor.natsClient.Publish(environment.GetCategoryDeletedSubject(req.GetId(), category.Id), marshalled); err != nil {
 					log.Error("failed publishing category deleted event", logging.Error(err))
 					return errPublishCategoryDeleted
 				}

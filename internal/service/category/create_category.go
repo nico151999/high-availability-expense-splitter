@@ -65,7 +65,7 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 	}
 
 	return connect.NewResponse(&categorysvcv1.CreateCategoryResponse{
-		CategoryId: categoryId,
+		Id: categoryId,
 	}), nil
 }
 
@@ -97,7 +97,7 @@ func createCategory(ctx context.Context, nc *nats.Conn, db bun.IDB, req *categor
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryCreated{
-			CategoryId:     categoryId,
+			Id:             categoryId,
 			GroupId:        req.GetGroupId(),
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,

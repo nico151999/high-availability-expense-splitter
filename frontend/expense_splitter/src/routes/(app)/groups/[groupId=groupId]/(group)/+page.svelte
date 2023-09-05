@@ -11,12 +11,13 @@
 	export let data: PageData;
 
 	const groupClient = createPromiseClient(GroupService, data.grpcWebTransport);
-	let group: Group | undefined;
+	let group = writable(undefined as Group | undefined);
 	const abortController = new AbortController();
     let editMode = false;
 
 	const editedGroup = writable({
-		name: ''
+		name: '',
+		currencyId: ''
 	});
 
 	onDestroy(() => {
@@ -24,24 +25,27 @@
 	});
 
 	onMount(async () => {
-		const res = await streamGroup(groupClient, data.groupId, abortController, (g) => {
-			group = g;
-		});
+		const res = await streamGroup(groupClient, data.groupId, abortController, group);
         if (!res) {
-            console.log('Navigating level up due to no longer existing group');
-            goto('./');
+            console.error('Group no longer exists');
         }
 	});
 
 	async function updateGroup() {
 		try {
 			const res = await groupClient.updateGroup({
-				groupId: data.groupId,
+				id: data.groupId,
 				updateFields: [
 					{
 						updateOption: {
 							case: 'name',
 							value: $editedGroup.name
+						}
+					},
+					{
+						updateOption: {
+							case: 'currencyId',
+							value: $editedGroup.currencyId
 						}
 					}
 				]
@@ -66,11 +70,12 @@
 	}
 
     function startEdit() {
-        if (!group) {
+        if (!$group) {
             return;
         }
         editedGroup.set({
-            name: group.name
+            name: $group.name,
+			currencyId: $group.currencyId
         })
         editMode = true;
     }
@@ -84,13 +89,15 @@
 <table>
 	<thead>
 		<th>Name</th>
+		<th>Currency</th>
 		<th>Action</th>
 	</thead>
 	<tbody>
-		{#if group}
+		{#if $group}
             {#if editMode}
                 <tr>
                     <td><input type="text" placeholder="Group name" bind:value={$editedGroup.name}/></td>
+                    <td><input type="text" placeholder="Currency" bind:value={$editedGroup.currencyId}/></td>
                     <td>
                         <button on:click={updateGroup}>Update group</button>
                         <button on:click={stopEdit}>Cancel</button>
@@ -98,7 +105,8 @@
                 </tr>
             {:else}
                 <tr>
-                    <td>{group.name}</td>
+                    <td>{$group.name}</td>
+                    <td>{$group.currencyId}</td>
                     <td><button on:click={startEdit}>Update group</button></td>
                 </tr>
             {/if}

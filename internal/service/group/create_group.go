@@ -62,7 +62,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 	}
 
 	return connect.NewResponse(&groupsvcv1.CreateGroupResponse{
-		GroupId: groupId,
+		Id: groupId,
 	}), nil
 }
 
@@ -74,15 +74,16 @@ func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		if _, err := tx.NewInsert().Model(&groupv1.Group{
-			Id:   groupId,
-			Name: req.GetName(),
+			Id:         groupId,
+			Name:       req.GetName(),
+			CurrencyId: req.GetCurrencyId(),
 		}).Exec(ctx); err != nil {
 			log.Error("failed inserting group", logging.Error(err))
 			return errInsertGroup
 		}
 
 		marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
-			GroupId:        groupId,
+			Id:             groupId,
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,
 		})

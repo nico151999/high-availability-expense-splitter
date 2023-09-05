@@ -12,27 +12,20 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	natsserver "github.com/nats-io/nats-server/v2/server"
-	natstestserver "github.com/nats-io/nats-server/v2/test"
 	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1/personv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/internal/service/person"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqTesting "github.com/nico151999/high-availability-expense-splitter/pkg/mq/testing"
 	"github.com/uptrace/bun"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/test/bufconn"
 )
 
-func runNATSServerOnPort(port int) *natsserver.Server {
-	opts := natstestserver.DefaultTestOptions
-	opts.Port = port
-	return natstestserver.RunServer(&opts)
-}
-
 func SetupPersonTestClient(t *testing.T, ln *bufconn.Listener) personv1connect.PersonServiceClient {
-	catClient := personv1connect.NewPersonServiceClient(
+	pClient := personv1connect.NewPersonServiceClient(
 		&http.Client{
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -43,7 +36,7 @@ func SetupPersonTestClient(t *testing.T, ln *bufconn.Listener) personv1connect.P
 		"http://"+ln.Addr().String(),
 		connect.WithGRPC(),
 	)
-	return catClient
+	return pClient
 }
 
 // StartPersonTestServer starts a test person server and returns a listener as well as a function allowing it to be closed. The passed context has no effect on the server's lifecycle.
@@ -66,8 +59,7 @@ func StartPersonTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB) 
 		}
 	}
 
-	natsPort := 6222
-	s := runNATSServerOnPort(natsPort)
+	s, natsPort := mqTesting.RunMQServer(t)
 
 	personServer, err := person.NewPersonServerWithDBClient(ctx, dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {

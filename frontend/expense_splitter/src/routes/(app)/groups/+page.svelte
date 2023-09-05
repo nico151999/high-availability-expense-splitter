@@ -1,102 +1,57 @@
 <script lang="ts">
-	import { Code, ConnectError, createPromiseClient } from "@bufbuild/connect";
+	import { createPromiseClient } from "@bufbuild/connect";
 	import type { PageData } from "./$types";
 	import { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import { onDestroy, onMount } from "svelte";
-	import { writable } from "svelte/store";
+	import { writable, type Writable } from "svelte/store";
 	import { goto } from "$app/navigation";
-	import { streamGroup } from "./utils";
+	import { streamGroups } from "./utils";
 
 	export let data: PageData;
 
 	const groupClient = createPromiseClient(GroupService, data.grpcWebTransport);
-	let groups: Map<string, {group?: Group, abortController: AbortController}> | undefined;
+	let groups: Writable<
+		Map<string, {group?: Group, abortController: AbortController}> | undefined
+	> = writable();
 
 	const newGroup = writable({
 		name: '',
-		currency: '' // TODO: add to UI once a currency service is available
+		currencyId: '' // TODO: add to UI once a currency service is available
 	});
 
 	const abortController = new AbortController();
-	const currenciesAbortController = new AbortController();
 	onDestroy(() => {
 		abortController.abort();
-		currenciesAbortController.abort();
-		if (groups) {
-			for (const [_, group] of groups) {
+		if ($groups) {
+			for (const [_, group] of $groups) {
 				group.abortController.abort();
 			}
 		}
 	});
 
-	onMount(() => {
-		streamGroups();
-	});
+	onMount(
+		() => streamGroups(groupClient, abortController, groups)
+	);
 
 	async function createGroup() {
 		try {
 			const res = await groupClient.createGroup({
-				name: $newGroup.name
+				name: $newGroup.name,
+				currencyId: $newGroup.currencyId
 			});
-			console.log('Created group', res.groupId);
+			console.log('Created group', res.id);
 
-			newGroup.set({name: '', currency: ''});
+			newGroup.set({name: '', currencyId: ''});
 		} catch (e) {
 			console.error('An error occurred trying to create group', e);
 		}
 	}
 
-	async function streamGroups() {
-		try {
-			for await (const gIDsRes of groupClient.streamGroupIds({}, {signal: abortController.signal})) {
-				if (gIDsRes.update.case === 'stillAlive') {
-					continue;
-				}
-				const groupIDs = gIDsRes.update.value!.groupIds;
-				if (groups === undefined) {
-					groups = new Map();
-				}
-				for (const gID of groups.keys()) {
-					if (groupIDs.includes(gID)) {
-						// remove element from items that are to be processed because it already exists
-						groupIDs.splice(groupIDs.indexOf(gID), 1);
-					} else {
-						// remove groups that are not present any more
-						groups!.get(gID)!.abortController.abort();
-						groups!.delete(gID);
-					}
-				}
-				for (const gID of groupIDs) {
-					const abortController = new AbortController();
-					groups.set(gID, {
-						abortController: abortController
-					});
-					streamGroup(groupClient, gID, abortController, (group) => {
-						groups = groups?.set(gID, {
-							abortController: abortController,
-							group: group
-						});
-					});
-				}
-				groups = groups;
-			}
-		} catch (e) {
-            if (e instanceof ConnectError && e.code === Code.Canceled) {
-				console.log('Intentionally aborting groups stream');
-				return;
-            } else {
-				console.error('An error occurred trying to stream group IDs. Trying anew in 5 seconds.', e);
-			}
-		}
-		console.log('Ended groups stream');
-		setTimeout(() => streamGroups(), 5000);
-	}
-
 	function deleteGroup(groupId: string) {
 		return async () => {
 			try {
-				await groupClient.deleteGroup({groupId: groupId});
+				await groupClient.deleteGroup({id: groupId});
 				console.log(`Deleted group ${groupId}`);
 			} catch (e) {
 				console.error(`An error occurred trying to delete group ${groupId}`, e);
@@ -117,15 +72,17 @@
 	<thead>
 		<th>ID</th>
 		<th>Name</th>
+		<th>Default Currency</th>
 		<th>Action</th>
 	</thead>
 	<tbody>
-		{#if groups}
-			{#each [...groups] as [gID, group]}
+		{#if $groups}
+			{#each [...$groups] as [gID, group]}
 				{#if group.group}
 					<tr on:click={openGroup(gID)}>
 						<td>{gID}</td>
 						<td>{group.group.name}</td>
+						<td>{group.group.currencyId}</td>
 						<td><button on:click|stopPropagation={deleteGroup(gID)}>Delete</button></td>
 					</tr>
 				{:else}
@@ -138,6 +95,7 @@
 		<tr>
 			<td></td>
 			<td><input type="text" placeholder="Group name" bind:value={$newGroup.name}/></td>
+			<td><input type="text" placeholder="Group name" bind:value={$newGroup.currencyId}/></td> <!-- TODO: make selector -->
 			<td><button on:click={createGroup}>Create group</button></td>
 		</tr>
 	</tbody>

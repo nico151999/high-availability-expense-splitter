@@ -42,7 +42,7 @@ func TestGetPerson(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"name", "group_id"}).
 				FromCSVString(fmt.Sprintf("%s,%s", personName, groupId)))
 		resp, err := client.GetPerson(ctx, connect.NewRequest(&personsvcv1.GetPersonRequest{
-			PersonId: personId,
+			Id: personId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -57,7 +57,7 @@ func TestGetPerson(t *testing.T) {
 
 	t.Run("Fail getting Person due to empty ID", func(t *testing.T) {
 		resp, err := client.GetPerson(ctx, connect.NewRequest(&personsvcv1.GetPersonRequest{
-			PersonId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -69,7 +69,7 @@ func TestGetPerson(t *testing.T) {
 		personId := "person-543210987654321"
 		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "people" (.+) WHERE (.+)"id" = '%s'(.+)`, personId)).WillReturnError(sql.ErrNoRows)
 		resp, err := client.GetPerson(ctx, connect.NewRequest(&personsvcv1.GetPersonRequest{
-			PersonId: personId,
+			Id: personId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)

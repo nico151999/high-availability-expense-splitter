@@ -1,0 +1,449 @@
+syntax = "proto3";
+
+package service.expense.v1;
+
+import "common/expense/v1/expense.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service ExpenseService {
+  // Requests the creation of a expense with the provided specs
+  rpc CreateExpense(CreateExpenseRequest) returns (CreateExpenseResponse) {
+    option (google.api.http) = {post: "/v1/groups/{group_id}/expenses"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
+          value: {
+            description: "Returns specs describing the created expense";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.CreateExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets an expense
+  rpc GetExpense(GetExpenseRequest) returns (GetExpenseResponse) {
+    option (google.api.http) = {get: "/v1/expenses/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested expense";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.GetExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Deletes an expense
+  rpc DeleteExpense(DeleteExpenseRequest) returns (DeleteExpenseResponse) {
+    option (google.api.http) = {delete: "/v1/expenses/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Tells the expense was successfully deleted";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.DeleteExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Updates an expense
+  rpc UpdateExpense(UpdateExpenseRequest) returns (UpdateExpenseResponse) {
+    option (google.api.http) = {patch: "/v1/expenses/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the specs of the updated expense";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.UpdateExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all expense IDs in a group
+  rpc ListExpenseIdsInGroup(ListExpenseIdsInGroupRequest) returns (ListExpenseIdsInGroupResponse) {
+    option (google.api.http) = {get: "/v1/groups/{group_id}/expenses:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested expense IDs";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.ListExpenseIdsInGroupResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamExpenseIdsInGroup streams the list of all expense IDs
+  rpc StreamExpenseIdsInGroup(StreamExpenseIdsInGroupRequest) returns (stream StreamExpenseIdsInGroupResponse) {}
+  // StreamExpense streams the requested expense
+  rpc StreamExpense(StreamExpenseRequest) returns (stream StreamExpenseResponse) {}
+}
+
+message UpdateExpenseRequest {
+  message UpdateField {
+    oneof update_option {
+      option (validate.required) = true;
+      string name = 1 [(validate.rules).string = {
+        min_len: 1;
+        max_len: 100;
+      }];
+      string by_id = 2 [
+        (google.api.resource_reference) = {type: "common.person.v1/Person"},
+        (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+      ];
+      google.protobuf.Timestamp timestamp = 3 [(validate.rules).timestamp = {
+        required: true,
+        // gte the first of January 2022 00:00 GMT+0000
+        gte: {
+          seconds: 1640995200,
+          nanos: 0
+        }
+      }];
+      string currency_id = 4 [
+        (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+        (validate.rules).string = {pattern: "currency-[A-Za-z0-9]{15}$"}
+      ];
+    }
+  }
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  repeated UpdateField update_fields = 2 [
+    (validate.rules).repeated = {
+      min_items: 1;
+      max_items: 4;
+    },
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message UpdateExpenseResponse {
+  common.expense.v1.Expense expense = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message DeleteExpenseRequest {
+  // the ID of the expense
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteExpenseResponse {}
+
+message CreateExpenseRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  optional string name = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (validate.rules).string = {max_len: 100}
+  ];
+  string by_id = 3 [
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  google.protobuf.Timestamp timestamp = 4 [(validate.rules).timestamp = {
+    required: true,
+    // gte the first of January 2022 00:00 GMT+0000
+    gte: {
+      seconds: 1640995200,
+      nanos: 0
+    }
+  }];
+  string currency_id = 5 [
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message CreateExpenseResponse {
+  // the ID of the expense
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseRequest {
+  // the ID of the expense
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseResponse {
+  common.expense.v1.Expense expense = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message ListExpenseIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListExpenseIdsInGroupResponse {
+  repeated string ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseIdsInGroupResponse {
+  // the current list of expense IDs
+  message ExpenseIds {
+    repeated string ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    ExpenseIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+}
+
+message StreamExpenseRequest {
+  // the ID of the expense
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed expense
+    common.expense.v1.Expense expense = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}

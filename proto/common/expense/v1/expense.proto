@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package common.expense.v1;
+
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message Expense {
+  option (google.api.resource) = {type: "common.expense.v1/Expense"};
+  string id = 1 [
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string group_id = 2 [
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+  optional string name = 3 [(validate.rules).string = {max_len: 100}];
+  // the person the expense was payed by
+  string by_id = 4 [
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  google.protobuf.Timestamp timestamp = 5 [(validate.rules).timestamp = {
+    required: true,
+    // gte the first of January 2022 00:00 GMT+0000
+    gte: {
+      seconds: 1640995200,
+      nanos: 0
+    }
+  }];
+  string currency_id = 6 [
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}

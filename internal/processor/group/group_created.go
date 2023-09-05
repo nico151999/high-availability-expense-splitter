@@ -11,7 +11,7 @@ func (rpProcessor *groupProcessor) groupCreated(ctx context.Context, req *groupv
 	log := logging.FromContext(ctx)
 	log.Info("processing group.GroupCreated event",
 		logging.String("name", req.GetName()),
-		logging.String("groupId", req.GetGroupId()),
+		logging.String("groupId", req.GetId()),
 		logging.String("requestorEmail", req.GetRequestorEmail()))
 	// TODO: actually process message like sending a project created notification and publish an event telling what was done (e.g. project creation notification sent)
 	return nil

@@ -92,9 +92,9 @@ func sendCurrentCategoryIds(ctx context.Context, dbClient bun.IDB, groupId strin
 		return nil, errSelectCategoryIds
 	}
 	return &categorysvcv1.StreamCategoryIdsInGroupResponse{
-		Update: &categorysvcv1.StreamCategoryIdsInGroupResponse_CategoryIds_{
-			CategoryIds: &categorysvcv1.StreamCategoryIdsInGroupResponse_CategoryIds{
-				CategoryIds: categoryIds,
+		Update: &categorysvcv1.StreamCategoryIdsInGroupResponse_Ids{
+			Ids: &categorysvcv1.StreamCategoryIdsInGroupResponse_CategoryIds{
+				Ids: categoryIds,
 			},
 		},
 	}, nil

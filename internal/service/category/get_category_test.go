@@ -42,7 +42,7 @@ func TestGetCategory(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"name", "group_id"}).
 				FromCSVString(fmt.Sprintf("%s,%s", categoryName, groupId)))
 		resp, err := client.GetCategory(ctx, connect.NewRequest(&categorysvcv1.GetCategoryRequest{
-			CategoryId: categoryId,
+			Id: categoryId,
 		}))
 		if err != nil {
 			t.Fatalf("Request failed: %+v", err)
@@ -57,7 +57,7 @@ func TestGetCategory(t *testing.T) {
 
 	t.Run("Fail getting Category due to empty ID", func(t *testing.T) {
 		resp, err := client.GetCategory(ctx, connect.NewRequest(&categorysvcv1.GetCategoryRequest{
-			CategoryId: "",
+			Id: "",
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
@@ -69,7 +69,7 @@ func TestGetCategory(t *testing.T) {
 		categoryId := "category-543210987654321"
 		mock.ExpectQuery(fmt.Sprintf(`SELECT (.+) FROM "categories" (.+) WHERE (.+)"id" = '%s'(.+)`, categoryId)).WillReturnError(sql.ErrNoRows)
 		resp, err := client.GetCategory(ctx, connect.NewRequest(&categorysvcv1.GetCategoryRequest{
-			CategoryId: categoryId,
+			Id: categoryId,
 		}))
 		if err == nil {
 			t.Fatalf("Expected request to fail but received a response: %+v", resp)
