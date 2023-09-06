@@ -66,6 +66,7 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 	}
 
 	if err := dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		// TODO: check if group, person and currency exist
 		query := tx.NewUpdate()
 		for _, param := range params {
 			switch option := param.GetUpdateOption().(type) {

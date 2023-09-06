@@ -65,6 +65,7 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 	}
 
 	if err := dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		// TODO: check if group exists
 		query := tx.NewUpdate()
 		for _, param := range params {
 			switch param.GetUpdateOption().(type) {

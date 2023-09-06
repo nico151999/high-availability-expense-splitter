@@ -87,6 +87,7 @@ func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expenses
 			log.Error("failed getting group", logging.Error(err))
 			return errSelectGroup
 		}
+		// TODO: also check if person and currency exist
 
 		var name *string
 		if req != nil {
