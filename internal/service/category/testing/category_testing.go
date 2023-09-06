@@ -59,7 +59,7 @@ func StartCategoryTestServer(t *testing.T, ctx context.Context, dbClient bun.IDB
 		}
 	}
 
-	s, natsPort := mqTesting.RunMQServer(t)
+	s, natsPort := mqTesting.RunMQServer(-1)
 
 	categoryServer, err := category.NewCategoryServerWithDBClient(ctx, dbClient, fmt.Sprintf("nats://127.0.0.1:%d", natsPort))
 	if err != nil {
