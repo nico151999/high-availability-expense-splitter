@@ -95,6 +95,36 @@ haExpenseSplitter:
           - columns:
             - *expenseCurrencyId
             isUnique: false
+      expensestake:
+        name: expense_stakes
+        schema:
+          columns:
+          - name: &expensestakeId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &expensestakeExpenseId expense_id
+            type: text
+            constraints:
+              notNull: true
+          - name: for_id
+            type: text
+            constraints:
+              notNull: true
+          - name: value
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *expensestakeId
+          # no foreign keys since we do not want to rely on Postgres features
+          indexes:
+          - columns:
+            - *expenseGroupId
+            isUnique: false
+          - columns:
+            - *expensestakeExpenseId
+            isUnique: false
       group:
         name: groups
         schema:
@@ -208,7 +238,7 @@ haExpenseSplitter:
         tag: "latest"
     specs:
       group:
-        roles: [] # roles this service should have; those roles need to be defined in the templates
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         db: true # tells if it uses the database
         ingress:
@@ -264,7 +294,7 @@ haExpenseSplitter:
           tag: "latest"
         dependencies: [] # the services this service depends on
       expense:
-        roles: [] # roles this service should have; those roles need to be defined in the templates
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         db: true # tells if it uses the database
         ingress:
@@ -320,7 +350,7 @@ haExpenseSplitter:
           tag: "latest"
         dependencies: [] # the services this service depends on
       person:
-        roles: [] # roles this service should have; those roles need to be defined in the templates
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         db: true # tells if it uses the database
         ingress:
@@ -376,7 +406,7 @@ haExpenseSplitter:
           tag: "latest"
         dependencies: [] # the services this service depends on
       category:
-        roles: [] # roles this service should have; those roles need to be defined in the templates
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
         db: true # tells if it uses the database
         ingress:
@@ -429,6 +459,58 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-category-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
+      expensestake:
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/CreateExpenseStake$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/GetExpenseStake$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/ListExpenseStakeIdsOfExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/DeleteExpenseStake$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStake$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStakeIdsOfExpense$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expensestake-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
   processors:
@@ -529,6 +611,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-category-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      expensestake:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expensestake-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []
