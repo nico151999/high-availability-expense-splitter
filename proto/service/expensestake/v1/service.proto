@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package service.person.v1;
+package service.expensestake.v1;
 
-import "common/person/v1/person.proto";
+import "common/expensestake/v1/expensestake.proto";
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
@@ -12,18 +12,18 @@ import "google/rpc/error_details.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
 
-service PersonService {
-  // Requests the creation of a person with the provided specs
-  rpc CreatePerson(CreatePersonRequest) returns (CreatePersonResponse) {
-    option (google.api.http) = {post: "/v1/groups/{group_id}/people"};
+service ExpenseStakeService {
+  // Requests the creation of a expensestake with the provided specs
+  rpc CreateExpenseStake(CreateExpenseStakeRequest) returns (CreateExpenseStakeResponse) {
+    option (google.api.http) = {post: "/v1/groups/{expense_id}/expensestakes"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
           key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
           value: {
-            description: "Returns specs describing the created person";
+            description: "Returns specs describing the created expensestake";
             schema: {
-              json_schema: {ref: ".service.person.v1.CreatePersonResponse"};
+              json_schema: {ref: ".service.expensestake.v1.CreateExpenseStakeResponse"};
             };
           };
         },
@@ -57,17 +57,17 @@ service PersonService {
       ];
     };
   }
-  // Gets a person
-  rpc GetPerson(GetPersonRequest) returns (GetPersonResponse) {
-    option (google.api.http) = {get: "/v1/people/{id}"};
+  // Gets a expensestake
+  rpc GetExpenseStake(GetExpenseStakeRequest) returns (GetExpenseStakeResponse) {
+    option (google.api.http) = {get: "/v1/expensestakes/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
           key: "200";
           value: {
-            description: "Returns specs describing the requested person";
+            description: "Returns specs describing the requested expensestake";
             schema: {
-              json_schema: {ref: ".service.person.v1.GetPersonResponse"};
+              json_schema: {ref: ".service.expensestake.v1.GetExpenseStakeResponse"};
             };
           };
         },
@@ -110,17 +110,17 @@ service PersonService {
       ];
     };
   }
-  // Deletes a person
-  rpc DeletePerson(DeletePersonRequest) returns (DeletePersonResponse) {
-    option (google.api.http) = {delete: "/v1/people/{id}"};
+  // Deletes a expensestake
+  rpc DeleteExpenseStake(DeleteExpenseStakeRequest) returns (DeleteExpenseStakeResponse) {
+    option (google.api.http) = {delete: "/v1/expensestakes/{id}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
           key: "200";
           value: {
-            description: "Tells the person was successfully deleted";
+            description: "Tells the expensestake was successfully deleted";
             schema: {
-              json_schema: {ref: ".service.person.v1.DeletePersonResponse"};
+              json_schema: {ref: ".service.expensestake.v1.DeleteExpenseStakeResponse"};
             };
           };
         },
@@ -163,17 +163,17 @@ service PersonService {
       ];
     };
   }
-  // Updates a person
-  rpc UpdatePerson(UpdatePersonRequest) returns (UpdatePersonResponse) {
-    option (google.api.http) = {patch: "/v1/people/{id}"};
+  // Lists all expensestake IDs
+  rpc ListExpenseStakeIdsInExpense(ListExpenseStakeIdsInExpenseRequest) returns (ListExpenseStakeIdsInExpenseResponse) {
+    option (google.api.http) = {get: "/v1/groups/{expense_id}/expensestakes:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
           key: "200";
           value: {
-            description: "Returns the specs of the updated person";
+            description: "Returns the requested expensestake IDs";
             schema: {
-              json_schema: {ref: ".service.person.v1.UpdatePersonResponse"};
+              json_schema: {ref: ".service.expensestake.v1.ListExpenseStakeIdsInExpenseResponse"};
             };
           };
         },
@@ -216,202 +216,128 @@ service PersonService {
       ];
     };
   }
-  // Lists all person IDs
-  rpc ListPersonIdsInGroup(ListPersonIdsInGroupRequest) returns (ListPersonIdsInGroupResponse) {
-    option (google.api.http) = {get: "/v1/groups/{group_id}/people:id"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      responses: [
-        {
-          key: "200";
-          value: {
-            description: "Returns the requested person IDs";
-            schema: {
-              json_schema: {ref: ".service.person.v1.ListPersonIdsInGroupResponse"};
-            };
-          };
-        },
-        {
-          key: "400";
-          value: {
-            description: "Provides details telling the user about why the request was bad";
-            schema: {
-              json_schema: {ref: ".google.rpc.BadRequest"};
-            };
-          };
-        },
-        {
-          key: "401";
-          value: {
-            description: "Provides details telling the user he is unauthenticated";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        },
-        {
-          key: "403";
-          value: {
-            description: "Provides details telling the user he is unauthorized to perform the requested operation";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        },
-        {
-          key: "404";
-          value: {
-            description: "Tells that the resource could not be found";
-            schema: {
-              json_schema: {ref: ".google.rpc.ErrorInfo"};
-            };
-          };
-        }
-      ];
-    };
-  }
-  // StreamPersonIdsInGroup streams the list of all person IDs
-  rpc StreamPersonIdsInGroup(StreamPersonIdsInGroupRequest) returns (stream StreamPersonIdsInGroupResponse) {}
-  // StreamPerson streams the requested person
-  rpc StreamPerson(StreamPersonRequest) returns (stream StreamPersonResponse) {}
+  // StreamExpenseStakeIdsInExpense streams the list of all expensestake IDs
+  rpc StreamExpenseStakeIdsInExpense(StreamExpenseStakeIdsInExpenseRequest) returns (stream StreamExpenseStakeIdsInExpenseResponse) {}
+  // StreamExpenseStake streams the requested expensestake
+  rpc StreamExpenseStake(StreamExpenseStakeRequest) returns (stream StreamExpenseStakeResponse) {}
 }
 
-message UpdatePersonRequest {
-  message UpdateField {
-    oneof update_option {
-      option (validate.required) = true;
-      string name = 1 [(validate.rules).string = {
-        min_len: 1;
-        max_len: 100;
-      }];
-    }
-  }
+message DeleteExpenseStakeRequest {
+  // the ID of the expensestake
   string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteExpenseStakeResponse {}
+
+message CreateExpenseStakeRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string for_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.person.v1/Person"},
     (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
   ];
-  repeated UpdateField update_fields = 2 [
-    (validate.rules).repeated = {
-      min_items: 1;
-      max_items: 1;
-    },
-    (google.api.field_behavior) = REQUIRED
+  int32 main_value = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+  optional int32 fractional_value = 4 [
+    (google.api.field_behavior) = OPTIONAL,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
   ];
 }
 
-message UpdatePersonResponse {
-  common.person.v1.Person person = 1 [
+message CreateExpenseStakeResponse {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseStakeRequest {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseStakeResponse {
+  common.expensestake.v1.ExpenseStake expensestake = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).message.required = true
   ];
 }
 
-message DeletePersonRequest {
-  // the ID of the person
-  string id = 1 [
+message ListExpenseStakeIdsInExpenseRequest {
+  string expense_id = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.person.v1/Person"},
-    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
   ];
 }
 
-message DeletePersonResponse {}
-
-message CreatePersonRequest {
-  string group_id = 1 [
-    (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.group.v1/Group"},
-    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
-  ];
-  string name = 2 [
-    (google.api.field_behavior) = REQUIRED,
-    (validate.rules).string = {
-      min_len: 1;
-      max_len: 100;
-    }
-  ];
-}
-
-message CreatePersonResponse {
-  // the ID of the person
-  string id = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (google.api.resource_reference) = {type: "common.person.v1/Person"},
-    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
-  ];
-}
-
-message GetPersonRequest {
-  // the ID of the person
-  string id = 1 [
-    (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.person.v1/Person"},
-    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
-  ];
-}
-
-message GetPersonResponse {
-  common.person.v1.Person person = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (validate.rules).message.required = true
-  ];
-}
-
-message ListPersonIdsInGroupRequest {
-  string group_id = 1 [
-    (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.group.v1/Group"},
-    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
-  ];
-}
-
-message ListPersonIdsInGroupResponse {
+message ListExpenseStakeIdsInExpenseResponse {
   repeated string ids = 1 [
     (validate.rules).repeated.unique = true,
     (google.api.field_behavior) = OUTPUT_ONLY,
-    (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+    (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
   ];
 }
 
-message StreamPersonIdsInGroupRequest {
-  string group_id = 1 [
+message StreamExpenseStakeIdsInExpenseRequest {
+  string expense_id = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.group.v1/Group"},
-    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
   ];
 }
 
-message StreamPersonIdsInGroupResponse {
-  // the current list of person IDs
-  message PersonIds {
+message StreamExpenseStakeIdsInExpenseResponse {
+  // the current list of expensestake IDs
+  message ExpenseStakeIds {
     repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
-      (validate.rules).repeated.items.string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+      (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
     ];
   }
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    PersonIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+    ExpenseStakeIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
   }
 }
 
-message StreamPersonRequest {
-  // the ID of the person
+message StreamExpenseStakeRequest {
+  // the ID of the expensestake
   string id = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {type: "common.person.v1/Person"},
-    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
   ];
 }
 
-message StreamPersonResponse {
+message StreamExpenseStakeResponse {
   oneof update {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
-    // the current version of the subscribed person
-    common.person.v1.Person person = 2 [
+    // the current version of the subscribed expensestake
+    common.expensestake.v1.ExpenseStake expensestake = 2 [
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).message.required = true
     ];

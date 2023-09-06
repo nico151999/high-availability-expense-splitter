@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package common.expensestake.v1;
+
+import "google/api/resource.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message ExpenseStake {
+  option (google.api.resource) = {type: "common.expensestake.v1/ExpenseStake"};
+  string id = 1 [
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string expense_id = 2 [
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  // the person this stake of the expense was payed for
+  string for_id = 3 [
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  int32 main_value = 4 [
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+  optional int32 fractional_value = 5 [
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+}

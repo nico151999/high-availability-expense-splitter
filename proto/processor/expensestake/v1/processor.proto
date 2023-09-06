@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package processor.expensestake.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "validate/validate.proto";
+
+// An event with metadata containing information about a project that was created
+message ExpenseStakeCreated {
+  string id = 1 [
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+  string expense_id = 2 [
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  // the person this stake of the expense was payed for
+  string for_id = 3 [
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  int32 main_value = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+  optional int32 fractional_value = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+  string requestor_email = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.email = true
+  ];
+}
+
+// An event with metadata containing information about a project that was deleted
+message ExpenseStakeDeleted {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+// An event with metadata containing information about a project that was updated
+message ExpenseStakeUpdated {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}

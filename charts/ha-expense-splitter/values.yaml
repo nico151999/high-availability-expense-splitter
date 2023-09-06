@@ -111,10 +111,14 @@ haExpenseSplitter:
             type: text
             constraints:
               notNull: true
-          - name: value
-            type: text
+          - name: main_value
+            type: integer
             constraints:
               notNull: true
+          - name: fractional_value
+            type: smallint
+            constraints:
+              notNull: false
           primaryKey:
           - *expensestakeId
           # no foreign keys since we do not want to rely on Postgres features
