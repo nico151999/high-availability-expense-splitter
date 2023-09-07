@@ -56,6 +56,8 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, &resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -73,6 +75,7 @@ func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		// TODO: check if currency exists
 		if _, err := tx.NewInsert().Model(&groupv1.Group{
 			Id:         groupId,
 			Name:       req.GetName(),

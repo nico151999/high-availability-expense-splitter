@@ -15,10 +15,6 @@ var _ expensestakev1connect.ExpenseStakeServiceHandler = (*expensestakeServer)(n
 
 var errSelectExpenseStake = eris.New("failed selecting expense stake")
 var errNoExpenseStakeWithId = eris.New("there is no expense stake with that ID")
-var errNoExpenseWithId = eris.New("there is no group with that ID")
-var errSelectExpense = eris.New("failed selecting group")
-var errNoPersonWithId = eris.New("there is no person with that ID")
-var errSelectPerson = eris.New("failed selecting person")
 var errInsertExpenseStake = eris.New("failed inserting expense stake")
 var errMarshalExpenseStakeCreated = eris.New("failed marshalling expense stake created event")
 var errPublishExpenseStakeCreated = eris.New("failed publishing expense stake created event")

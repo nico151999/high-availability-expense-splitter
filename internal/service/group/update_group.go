@@ -11,6 +11,7 @@ import (
 	groupprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
@@ -48,6 +49,8 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 			return nil, connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the group ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, &resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -72,6 +75,7 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 				group.Name = param.GetName()
 				query.Column("name")
 			case *groupsvcv1.UpdateGroupRequest_UpdateField_CurrencyId:
+				// TODO: check if currency exists
 				group.CurrencyId = param.GetCurrencyId()
 				query.Column("currency_id")
 			}

@@ -33,8 +33,7 @@ func (s *expensestakeServer) CreateExpenseStake(ctx context.Context, req *connec
 				req.Msg.GetExpenseId()),
 			logging.String(
 				"forId",
-				req.Msg.GetForId(),
-			),
+				req.Msg.GetForId()),
 		),
 	)
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -64,8 +63,8 @@ func (s *expensestakeServer) CreateExpenseStake(ctx context.Context, req *connec
 						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
-		} else if eris.Is(err, errNoExpenseWithId) {
-			return nil, connect.NewError(connect.CodeNotFound, eris.New("the group ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, &resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -83,26 +82,12 @@ func createExpenseStake(ctx context.Context, nc *nats.Conn, db bun.IDB, req *exp
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		expense := expensev1.Expense{
-			Id: req.GetExpenseId(),
+		expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, tx, req.GetExpenseId())
+		if err != nil {
+			return err
 		}
-		if err := tx.NewSelect().Model(&expense).WherePK().Limit(1).Scan(ctx); err != nil {
-			if eris.Is(err, sql.ErrNoRows) {
-				log.Debug("expense not found", logging.Error(err))
-				return errNoExpenseWithId
-			}
-			log.Error("failed getting expense", logging.Error(err))
-			return errSelectExpense
-		}
-		if err := tx.NewSelect().Model(&personv1.Person{
-			Id: req.GetForId(),
-		}).WherePK().Limit(1).Scan(ctx); err != nil {
-			if eris.Is(err, sql.ErrNoRows) {
-				log.Debug("person not found", logging.Error(err))
-				return errNoPersonWithId
-			}
-			log.Error("failed getting person", logging.Error(err))
-			return errSelectPerson
+		if _, err := util.CheckResourceExists[*personv1.Person](ctx, tx, req.GetForId()); err != nil {
+			return err
 		}
 
 		var fractionalValue *int32
