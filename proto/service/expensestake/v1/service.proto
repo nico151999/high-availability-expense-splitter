@@ -277,7 +277,7 @@ message GetExpenseStakeRequest {
 }
 
 message GetExpenseStakeResponse {
-  common.expensestake.v1.ExpenseStake expensestake = 1 [
+  common.expensestake.v1.ExpenseStake expense_stake = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (validate.rules).message.required = true
   ];
@@ -337,7 +337,7 @@ message StreamExpenseStakeResponse {
     option (validate.required) = true;
     google.protobuf.Empty still_alive = 1;
     // the current version of the subscribed expensestake
-    common.expensestake.v1.ExpenseStake expensestake = 2 [
+    common.expensestake.v1.ExpenseStake expense_stake = 2 [
       (google.api.field_behavior) = OUTPUT_ONLY,
       (validate.rules).message.required = true
     ];

@@ -1,12 +1,12 @@
-package expense
+package expensestake
 
 import (
 	"context"
 	"time"
 
 	"connectrpc.com/connect"
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
-	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
+	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
+	expensestakesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensestake/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -16,17 +16,17 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[expensesvcv1.GetExpenseRequest]) (*connect.Response[expensesvcv1.GetExpenseResponse], error) {
+func (s *expensestakeServer) GetExpenseStake(ctx context.Context, req *connect.Request[expensestakesvcv1.GetExpenseStakeRequest]) (*connect.Response[expensestakesvcv1.GetExpenseStakeResponse], error) {
 	ctx = logging.IntoContext(
 		ctx,
 		logging.FromContext(ctx).With(
 			logging.String(
-				"expenseId",
+				"expensestakeId",
 				req.Msg.GetId())))
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, s.dbClient, req.Msg.GetId())
+	expensestake, err := util.CheckResourceExists[*expensestakev1.ExpenseStake](ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, util.ErrSelectResource) {
 			return nil, errors.NewErrorWithDetails(
@@ -46,7 +46,7 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 		}
 	}
 
-	return connect.NewResponse(&expensesvcv1.GetExpenseResponse{
-		Expense: expense,
+	return connect.NewResponse(&expensestakesvcv1.GetExpenseStakeResponse{
+		ExpenseStake: expensestake,
 	}), nil
 }

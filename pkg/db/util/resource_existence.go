@@ -21,25 +21,16 @@ type ResourceNotFoundError struct {
 	ResourceId   string
 }
 
-func (e *ResourceNotFoundError) Error() string {
+func (e ResourceNotFoundError) Error() string {
 	return fmt.Sprintf("could not find %s resource with ID %s", e.ResourceName, e.ResourceId)
-}
-
-var _ error = (*ResourceNotFoundError)(nil)
-
-type SelectResourceError struct {
-	ResourceName string
-	ResourceId   string
-}
-
-func (e *SelectResourceError) Error() string {
-	return fmt.Sprintf("could not select %s resource with ID %s", e.ResourceName, e.ResourceId)
 }
 
 type protoWithId interface {
 	proto.Message
 	GetId() string
 }
+
+var ErrSelectResource = eris.New("could not select resource")
 
 func CheckResourceExists[T protoWithId](ctx context.Context, db bun.IDB, id string) (T, error) {
 	var model T
@@ -62,17 +53,15 @@ func CheckResourceExists[T protoWithId](ctx context.Context, db bun.IDB, id stri
 	)
 	if err := db.NewSelect().Model(model).WherePK().Limit(1).Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("resource not found", logging.Error(err))
-			return model, &ResourceNotFoundError{
+			msg := "resource not found"
+			log.Debug(msg, logging.Error(err))
+			return model, ResourceNotFoundError{
 				ResourceName: modelName,
 				ResourceId:   id,
 			}
 		}
 		log.Error("failed getting person", logging.Error(err))
-		return model, &SelectResourceError{
-			ResourceName: modelName,
-			ResourceId:   id,
-		}
+		return model, ErrSelectResource
 	}
 	return model, nil
 }

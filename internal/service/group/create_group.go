@@ -56,7 +56,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
-		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, &resErr) {
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, resErr) {
 			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
