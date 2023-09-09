@@ -254,15 +254,17 @@ endif
 .PHONY: generate-dockerfile-links
 generate-dockerfile-links:
 	ln -sf Dockerfile ./cmd/service/documentation.Dockerfile
+	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
 	ln -sf Dockerfile ./cmd/service/group.Dockerfile
 	ln -sf Dockerfile ./cmd/service/person.Dockerfile
 	ln -sf Dockerfile ./cmd/service/category.Dockerfile
 	ln -sf Dockerfile ./cmd/service/expense.Dockerfile
-	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
+	ln -sf Dockerfile ./cmd/service/expensestake.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/group.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/person.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/category.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/expense.Dockerfile
+	ln -sf Dockerfile ./cmd/processor/expensestake.Dockerfile
 
 # generates new certs for Linkerd communication and overwrites existing ones
 .PHONY: build

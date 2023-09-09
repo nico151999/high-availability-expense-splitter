@@ -20,11 +20,8 @@ var errMarshalExpenseStakeCreated = eris.New("failed marshalling expense stake c
 var errPublishExpenseStakeCreated = eris.New("failed publishing expense stake created event")
 var errMarshalExpenseStakeDeleted = eris.New("failed marshalling expense stake deleted event")
 var errPublishExpenseStakeDeleted = eris.New("failed publishing expense stake deleted event")
-var errMarshalExpenseStakeUpdated = eris.New("failed marshalling expense stake updated event")
-var errPublishExpenseStakeUpdated = eris.New("failed publishing expense stake updated event")
 var errSelectExpenseStakeIds = eris.New("failed selecting expense stake IDs")
 var errDeleteExpenseStake = eris.New("failed deleting expense stake")
-var errUpdateExpenseStake = eris.New("failed updating expense stake")
 
 type expensestakeServer struct {
 	dbClient   bun.IDB

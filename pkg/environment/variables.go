@@ -25,9 +25,9 @@ func GetExpenseServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "EXPENSE_SERVER_PORT")
 }
 
-// GetExpenseStakeServerPort returns the port the expense service will run on
-func GetExpenseStakeServerPort(ctx context.Context) uint16 {
-	return MustLookupUint16(ctx, "EXPENSE_STAKE_SERVER_PORT")
+// GetExpensestakeServerPort returns the port the expense service will run on
+func GetExpensestakeServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "EXPENSESTAKE_SERVER_PORT")
 }
 
 func GetDbUser(ctx context.Context) string {

@@ -21,7 +21,7 @@ func main() {
 	ctx := logging.IntoContext(context.Background(), log)
 
 	// ensure mandatory environment variables are set
-	environment.GetExpenseStakeServerPort(ctx)
+	environment.GetExpensestakeServerPort(ctx)
 	environment.GetNatsServerHost(ctx)
 	environment.GetNatsServerPort(ctx)
 	environment.GetDbUser(ctx)
@@ -62,7 +62,7 @@ func main() {
 	}
 	defer svc.Close()
 
-	serverAddress := fmt.Sprintf(":%d", environment.GetExpenseStakeServerPort(ctx))
+	serverAddress := fmt.Sprintf(":%d", environment.GetExpensestakeServerPort(ctx))
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()

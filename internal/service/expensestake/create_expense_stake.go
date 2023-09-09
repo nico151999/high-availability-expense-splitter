@@ -7,11 +7,11 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
 	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
 	expensestakeprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expensestake/v1"
 	expensestakesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensestake/v1"
+	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -82,7 +82,7 @@ func createExpenseStake(ctx context.Context, nc *nats.Conn, db bun.IDB, req *exp
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, tx, req.GetExpenseId())
+		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, req.GetExpenseId())
 		if err != nil {
 			return err
 		}

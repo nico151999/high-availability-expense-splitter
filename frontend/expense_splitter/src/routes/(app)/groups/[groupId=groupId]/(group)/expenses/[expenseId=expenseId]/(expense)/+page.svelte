@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
 	import { writable, type Writable } from "svelte/store";
@@ -12,6 +11,7 @@
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPeople } from "../../../people/utils";
+	import Expensestakes from "./expensestakes.svelte";
 
 	export let data: PageData;
 
@@ -37,11 +37,6 @@
 	onDestroy(() => {
 		abortController.abort();
 		peopleAbortController.abort();
-		if ($people) {
-			for (const [_, person] of $people) {
-				person.abortController.abort();
-			}
-		}
 	});
 
 	onMount(async () => {
@@ -162,3 +157,6 @@
 		{/if}
 	</tbody>
 </table>
+{#if $expense}
+	<Expensestakes expense={$expense} transport={data.grpcWebTransport} people={people}></Expensestakes>
+{/if}

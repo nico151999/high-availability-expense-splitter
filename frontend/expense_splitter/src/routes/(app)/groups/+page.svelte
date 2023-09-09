@@ -23,11 +23,6 @@
 	const abortController = new AbortController();
 	onDestroy(() => {
 		abortController.abort();
-		if ($groups) {
-			for (const [_, group] of $groups) {
-				group.abortController.abort();
-			}
-		}
 	});
 
 	onMount(

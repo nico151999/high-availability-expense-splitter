@@ -83,6 +83,14 @@ export async function streamCategories(
             return;
         }
         console.error('An error occurred trying to stream categories', e);
+    } finally {
+        const categories = get(categoriesStore);
+        if (categories) {
+            for (let [_, category] of categories) {
+                category.abortController.abort();
+            }
+        }
+        categories?.clear();
     }
     console.log(`Ended categories stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

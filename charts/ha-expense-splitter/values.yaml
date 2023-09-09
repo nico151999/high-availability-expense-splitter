@@ -480,7 +480,7 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
-            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/ListExpenseStakeIdsOfExpense$
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/ListExpenseStakeIdsInExpense$
               methods:
                 - POST
                 - OPTIONS
@@ -492,7 +492,7 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
-            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStakeIdsOfExpense$
+            - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStakeIdsInExpense$
               methods:
                 - POST
                 - OPTIONS

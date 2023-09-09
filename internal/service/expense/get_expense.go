@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
+	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -26,7 +26,7 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, s.dbClient, req.Msg.GetId())
+	expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, util.ErrSelectResource) {
 			return nil, errors.NewErrorWithDetails(

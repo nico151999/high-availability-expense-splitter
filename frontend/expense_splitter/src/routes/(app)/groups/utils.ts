@@ -80,6 +80,14 @@ export async function streamGroups(
             return;
         }
         console.error('An error occurred trying to stream groups', e);
+    } finally {
+        const groups = get(groupsStore);
+        if (groups) {
+            for (let [_, group] of groups) {
+                group.abortController.abort();
+            }
+        }
+        groups?.clear();
     }
     console.log(`Ended groups stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

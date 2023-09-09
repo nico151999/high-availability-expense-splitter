@@ -37,17 +37,7 @@
 
 	onDestroy(() => {
 		abortController.abort();
-		if ($expenses) {
-			for (const [_, expense] of $expenses) {
-				expense.abortController.abort();
-			}
-		}
 		peopleAbortController.abort();
-		if ($people) {
-			for (const [_, person] of $people) {
-				person.abortController.abort();
-			}
-		}
 	});
 
 	onMount(() => {
@@ -128,15 +118,11 @@
 				<td></td>
 				<td><input type="text" placeholder="Expense name" bind:value={newExpense.name}/></td>
 				<td>
-					{#if $people}
-						<select bind:value={newExpense.byId}>
-							{#each [...$people] as [pID, person]}
-								<option value={pID}>{person.person?.name}</option>
-							{/each}
-						</select>
-					{:else}
-						<span>Loading people...</span>
-					{/if}
+					<select bind:value={newExpense.byId}>
+						{#each [...$people] as [pID, person]}
+							<option value={pID}>{person.person?.name}</option>
+						{/each}
+					</select>
 				</td>
 				<td><input type="text" placeholder="Currency" bind:value={newExpense.currencyId}/></td> <!-- TODO: dropdown -->
 				<td><DateInput min={new Date(1640995200000)} max={new Date()} bind:value={newExpense.timestamp} bind:valid={timestampValid}/></td>

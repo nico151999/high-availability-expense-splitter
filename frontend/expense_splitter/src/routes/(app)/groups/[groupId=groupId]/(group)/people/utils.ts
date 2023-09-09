@@ -83,6 +83,14 @@ export async function streamPeople(
             return;
         }
         console.error('An error occurred trying to stream people', e);
+    } finally {
+        const people = get(peopleStore);
+        if (people) {
+            for (let [_, person] of people) {
+                person.abortController.abort();
+            }
+        }
+        people?.clear();
     }
     console.log(`Ended people stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

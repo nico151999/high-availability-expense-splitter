@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
 	expenseprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expense/v1"
 	expensestakeprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expensestake/v1"
+	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -21,7 +21,7 @@ func (rpProcessor *expensestakeProcessor) expenseDeleted(ctx context.Context, re
 	log.Info("processing expense.ExpenseDeleted event")
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, tx, req.GetId())
+		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, req.GetId())
 		if err != nil {
 			return err
 		}

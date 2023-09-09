@@ -83,6 +83,14 @@ export async function streamExpenses(
             return;
         }
         console.error('An error occurred trying to stream expenses', e);
+    } finally {
+        const expenses = get(expensesStore);
+        if (expenses) {
+            for (let [_, expense] of expenses) {
+                expense.abortController.abort();
+            }
+        }
+        expenses?.clear();
     }
     console.log(`Ended expenses stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

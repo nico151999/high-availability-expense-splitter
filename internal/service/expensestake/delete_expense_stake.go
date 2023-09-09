@@ -7,10 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
 	expensestakeprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expensestake/v1"
 	expensestakesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensestake/v1"
+	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -72,7 +72,7 @@ func deleteExpenseStake(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, ex
 			log.Error("failed deleting expense stake", logging.Error(err))
 			return errDeleteExpenseStake
 		}
-		expense, err := util.CheckResourceExists[*expensev1.Expense](ctx, tx, expensestake.GetExpenseId())
+		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, expensestake.GetExpenseId())
 		if err != nil {
 			return err
 		}
