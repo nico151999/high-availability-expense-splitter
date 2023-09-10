@@ -73,10 +73,11 @@ func deleteExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 			log.Error("failed deleting expense", logging.Error(err))
 			return errDeleteExpense
 		}
-		expense = expenseModel.IntoExpense()
+		expense = expenseModel.IntoProtoExpense()
 
 		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseDeleted{
-			Id: expenseId,
+			Id:      expenseId,
+			GroupId: expense.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling expense deleted event", logging.Error(err))

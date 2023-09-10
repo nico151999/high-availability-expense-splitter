@@ -15,8 +15,6 @@ var _ categoryv1connect.CategoryServiceHandler = (*categoryServer)(nil)
 
 var errSelectCategory = eris.New("failed selecting category")
 var errNoCategoryWithId = eris.New("there is no category with that ID")
-var errNoGroupWithId = eris.New("there is no group with that ID")
-var errSelectGroup = eris.New("failed selecting group")
 var errInsertCategory = eris.New("failed inserting category")
 var errMarshalCategoryCreated = eris.New("failed marshalling category created event")
 var errPublishCategoryCreated = eris.New("failed publishing category created event")

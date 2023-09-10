@@ -9,6 +9,7 @@ import (
 	"github.com/nats-io/nats.go"
 	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
+	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
 	expenseprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expense/v1"
 	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
 	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
@@ -58,8 +59,8 @@ func (s *expenseServer) CreateExpense(ctx context.Context, req *connect.Request[
 						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
-		} else if eris.Is(err, errNoGroupWithId) {
-			return nil, connect.NewError(connect.CodeNotFound, eris.New("the group ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -77,16 +78,13 @@ func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expenses
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		if err := tx.NewSelect().Model(&groupv1.Group{
-			Id: req.GetGroupId(),
-		}).WherePK().Limit(1).Scan(ctx); err != nil {
-			if eris.Is(err, sql.ErrNoRows) {
-				log.Debug("group not found", logging.Error(err))
-				return errNoGroupWithId
-			}
-			log.Error("failed getting group", logging.Error(err))
-			return errSelectGroup
+		if _, err := util.CheckResourceExists[*groupv1.Group](ctx, tx, req.GetGroupId()); err != nil {
+			return err
 		}
+		if _, err := util.CheckResourceExists[*personv1.Person](ctx, tx, req.GetById()); err != nil {
+			return err
+		}
+		// TODO: also check if currency exists
 
 		var name *string
 		if req != nil {

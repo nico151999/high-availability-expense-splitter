@@ -22,11 +22,6 @@
 	const abortController = new AbortController();
 	onDestroy(() => {
 		abortController.abort();
-		if ($people) {
-			for (const [_, person] of $people) {
-				person.abortController.abort();
-			}
-		}
 	});
 
 	onMount(

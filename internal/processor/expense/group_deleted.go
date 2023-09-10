@@ -19,7 +19,7 @@ func (rpProcessor *expenseProcessor) groupDeleted(ctx context.Context, req *grou
 	log.Info("processing group.GroupDeleted event")
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		var expenseModels []*model.ExpenseModel
+		var expenseModels []*model.Expense
 		if err := tx.NewDelete().Model(&expenseModels).Where("group_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
 			log.Error("failed deleting expenses related to deleted group", logging.Error(err))
 			return errDeleteExpenses
@@ -30,13 +30,13 @@ func (rpProcessor *expenseProcessor) groupDeleted(ctx context.Context, req *grou
 			expense := e
 			g.Go(func() error {
 				marshalled, err := proto.Marshal(&expenseprocv1.ExpenseDeleted{
-					Id: expense.Id,
+					Id: expense.GetId(),
 				})
 				if err != nil {
 					log.Error("failed marshalling expense deleted event", logging.Error(err))
 					return errMarshalExpenseDeleted
 				}
-				if err := rpProcessor.natsClient.Publish(environment.GetExpenseDeletedSubject(req.GetId(), expense.Id), marshalled); err != nil {
+				if err := rpProcessor.natsClient.Publish(environment.GetExpenseDeletedSubject(req.GetId(), expense.GetId()), marshalled); err != nil {
 					log.Error("failed publishing expense deleted event", logging.Error(err))
 					return errPublishExpenseDeleted
 				}

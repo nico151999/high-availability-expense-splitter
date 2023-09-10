@@ -25,6 +25,11 @@ func GetExpenseServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "EXPENSE_SERVER_PORT")
 }
 
+// GetExpensestakeServerPort returns the port the expense service will run on
+func GetExpensestakeServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "EXPENSESTAKE_SERVER_PORT")
+}
+
 func GetDbUser(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_USER")
 }
@@ -231,6 +236,36 @@ func GetExpenseSubject(groupId string, expenseId string) string {
 // GetExpensesSubject returns the name of the subject events of all expenses are published on
 func GetExpensesSubject(groupId string) string {
 	return fmt.Sprintf("%s.expense", GetGroupSubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseStakeCreatedSubject returns the name of the subject events are published on when a expense stake was created
+func GetExpenseStakeCreatedSubject(groupId string, expenseId string, stakeId string) string {
+	return fmt.Sprintf("%s.created", GetExpenseStakeSubject(groupId, expenseId, stakeId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseStakeDeletedSubject returns the name of the subject events are published on when a expense stake was deleted
+func GetExpenseStakeDeletedSubject(groupId string, expenseId string, stakeId string) string {
+	return fmt.Sprintf("%s.deleted", GetExpenseStakeSubject(groupId, expenseId, stakeId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseStakeUpdatedSubject returns the name of the subject events are published on when a expense stake was updated
+func GetExpenseStakeUpdatedSubject(groupId string, expenseId string, stakeId string) string {
+	return fmt.Sprintf("%s.updated", GetExpenseStakeSubject(groupId, expenseId, stakeId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseStakeSubject returns the name of the subject events of a single expense stake are published on
+func GetExpenseStakeSubject(groupId string, expenseId string, stakeId string) string {
+	return fmt.Sprintf("%s.%s", GetExpenseStakesSubject(groupId, expenseId), stakeId)
+}
+
+// TODO: as env variable
+// GetExpenseStakesSubject returns the name of the subject events of all expense stakes are published on
+func GetExpenseStakesSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.expensestake", GetExpenseSubject(groupId, expenseId))
 }
 
 // TODO: as env variable

@@ -135,6 +135,23 @@ build:
         buildArgs:
           SERVICE_NAME: "expense"
           SVC_OUT_DIR_PARAM: "EXPENSE_SVC_OUT_DIR"
+    - image: &expensestakeSvcImage ghcr.io/nico151999/ha-expense-splitter-expensestake-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expensestake dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/expensestake/g;w ./cmd/service/expensestake.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/expensestake.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/expensestake.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "expensestake"
+          SVC_OUT_DIR_PARAM: "EXPENSE_STAKE_SVC_OUT_DIR"
 
     # Processors for handling events effecting their respective resource
     - image: &groupProcessorImage ghcr.io/nico151999/ha-expense-splitter-group-processor
@@ -205,6 +222,23 @@ build:
         buildArgs:
           PROCESSOR_NAME: "expense"
           PROCESSOR_OUT_DIR_PARAM: "EXPENSE_PROCESSOR_OUT_DIR"
+    - image: &expensestakeProcessorImage ghcr.io/nico151999/ha-expense-splitter-expensestake-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expensestake dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/expensestake/g;w ./cmd/processor/expensestake.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/expensestake.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/expensestake.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "expensestake"
+          PROCESSOR_OUT_DIR_PARAM: "EXPENSE_STAKE_PROCESSOR_OUT_DIR"
 deploy:
   statusCheckDeadlineSeconds: 1200
   helm:
@@ -623,6 +657,12 @@ deploy:
                   image:
                     repository: *expenseSvcImage
                     tag: *expenseSvcImage
+                expensestake:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expensestakeSvcImage
+                    tag: *expensestakeSvcImage
             processors:
               specs:
                 group:
@@ -649,6 +689,12 @@ deploy:
                   image:
                     repository: *expenseProcessorImage
                     tag: *expenseProcessorImage
+                expensestake:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expensestakeProcessorImage
+                    tag: *expensestakeProcessorImage
 profiles:
   # NOTE: try to order profiles from last to first array element when removing; e.g. remove helm chart 2 before removing helm chart 1 to guarantee array index consistency
   - name: DEV

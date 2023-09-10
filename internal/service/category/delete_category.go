@@ -72,7 +72,8 @@ func deleteCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
-			Id: categoryId,
+			Id:      categoryId,
+			GroupId: category.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling category deleted event", logging.Error(err))

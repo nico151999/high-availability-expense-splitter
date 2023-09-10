@@ -389,7 +389,7 @@ message GetExpenseResponse {
 
 message ListExpenseIdsInGroupRequest {
   string group_id = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
@@ -405,7 +405,7 @@ message ListExpenseIdsInGroupResponse {
 
 message StreamExpenseIdsInGroupRequest {
   string group_id = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.group.v1/Group"},
     (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];

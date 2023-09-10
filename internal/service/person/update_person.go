@@ -11,6 +11,7 @@ import (
 	personprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/person/v1"
 	personsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
@@ -48,6 +49,8 @@ func (s *personServer) UpdatePerson(ctx context.Context, req *connect.Request[pe
 			return nil, connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the person ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -83,7 +86,8 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
-			Id: personId,
+			Id:      personId,
+			GroupId: person.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling person updated event", logging.Error(err))

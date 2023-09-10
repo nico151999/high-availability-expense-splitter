@@ -22,11 +22,6 @@
 	const abortController = new AbortController();
 	onDestroy(() => {
 		abortController.abort();
-		if ($categories) {
-			for (const [_, category] of $categories) {
-				category.abortController.abort();
-			}
-		}
 	});
 
 	onMount(

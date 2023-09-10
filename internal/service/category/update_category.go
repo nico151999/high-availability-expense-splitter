@@ -11,6 +11,7 @@ import (
 	categoryprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/category/v1"
 	categorysvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/category/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
@@ -48,6 +49,8 @@ func (s *categoryServer) UpdateCategory(ctx context.Context, req *connect.Reques
 			return nil, connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the category ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, &resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -83,7 +86,8 @@ func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
-			Id: categoryId,
+			Id:      categoryId,
+			GroupId: category.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling category updated event", logging.Error(err))

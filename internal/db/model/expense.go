@@ -1,29 +1,32 @@
 package model
 
 import (
-	"time"
-
 	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
-	"github.com/uptrace/bun"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type ExpenseModel struct {
-	bun.BaseModel `bun:"table:expenses"`
-	*expensev1.Expense
-
-	Timestamp time.Time
+type Expense struct {
+	expensev1.Expense
+	Timestamp *Timestamp
 }
 
-func NewExpense(em *expensev1.Expense) *ExpenseModel {
-	return &ExpenseModel{
-		Expense:   em,
-		Timestamp: em.GetTimestamp().AsTime(),
+func NewExpense(expense *expensev1.Expense) *Expense {
+	var name *string
+	if expense != nil {
+		name = expense.Name
+	}
+	return &Expense{
+		Expense: expensev1.Expense{
+			Id:         expense.GetId(),
+			GroupId:    expense.GetGroupId(),
+			Name:       name,
+			ById:       expense.GetById(),
+			CurrencyId: expense.GetCurrencyId(),
+		},
+		Timestamp: NewTimestamp(expense.GetTimestamp()),
 	}
 }
 
-func (em *ExpenseModel) IntoExpense() *expensev1.Expense {
-	e := em.Expense
-	e.Timestamp = timestamppb.New(em.Timestamp)
-	return e
+func (e *Expense) IntoProtoExpense() *expensev1.Expense {
+	e.Expense.Timestamp = e.Timestamp.IntoProtoTimestamp()
+	return &e.Expense
 }

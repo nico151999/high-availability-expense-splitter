@@ -72,7 +72,8 @@ func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
-			Id: personId,
+			Id:      personId,
+			GroupId: person.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling person deleted event", logging.Error(err))

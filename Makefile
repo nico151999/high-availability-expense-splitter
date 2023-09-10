@@ -28,10 +28,12 @@ REFLECTION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/reflection
 GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
 PERSON_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/person
 CATEGORY_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/category
+EXPENSE_STAKE_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expensestake
 EXPENSE_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expense
 GROUP_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/group
 PERSON_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/person
 CATEGORY_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/category
+EXPENSE_STAKE_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expensestake
 EXPENSE_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expense
 OUT_DIR:=$(REPO_ROOT_PATH)/gen
 BIN_INSTALL_DIR:=$(OUT_DIR)/bin
@@ -56,10 +58,12 @@ REFLECTION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to
 GROUP_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_SVC_DIR))
 PERSON_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
 CATEGORY_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
+EXPENSE_STAKE_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_SVC_DIR))
 EXPENSE_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_SVC_DIR))
 GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_PROCESSOR_DIR))
 PERSON_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_PROCESSOR_DIR))
 CATEGORY_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+EXPENSE_STAKE_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_PROCESSOR_DIR))
 EXPENSE_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_PROCESSOR_DIR))
 
 # prioritise executables in the repo's bin dir
@@ -250,15 +254,17 @@ endif
 .PHONY: generate-dockerfile-links
 generate-dockerfile-links:
 	ln -sf Dockerfile ./cmd/service/documentation.Dockerfile
+	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
 	ln -sf Dockerfile ./cmd/service/group.Dockerfile
 	ln -sf Dockerfile ./cmd/service/person.Dockerfile
 	ln -sf Dockerfile ./cmd/service/category.Dockerfile
 	ln -sf Dockerfile ./cmd/service/expense.Dockerfile
-	ln -sf Dockerfile ./cmd/service/reflection.Dockerfile
+	ln -sf Dockerfile ./cmd/service/expensestake.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/group.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/person.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/category.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/expense.Dockerfile
+	ln -sf Dockerfile ./cmd/processor/expensestake.Dockerfile
 
 # generates new certs for Linkerd communication and overwrites existing ones
 .PHONY: build
@@ -354,6 +360,11 @@ build-person-service: generate-proto
 build-category-service: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
 
+# builds expense stake service
+.PHONY: build-expensestake-service
+build-expensestake-service: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_STAKE_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_SVC_DIR))
+
 # builds expense service
 .PHONY: build-expense-service
 build-expense-service: generate-proto
@@ -373,6 +384,11 @@ build-person-processor: generate-proto
 .PHONY: build-category-processor
 build-category-processor: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+
+# builds expense stake processor
+.PHONY: build-expensestake-processor
+build-expensestake-processor: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_STAKE_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_PROCESSOR_DIR))
 
 # builds expense processor
 .PHONY: build-expense-processor

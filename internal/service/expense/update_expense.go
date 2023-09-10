@@ -8,10 +8,12 @@ import (
 	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
 	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
+	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
 	expenseprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expense/v1"
 	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
 	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
@@ -49,6 +51,8 @@ func (s *expenseServer) UpdateExpense(ctx context.Context, req *connect.Request[
 			return nil, connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the expense ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
@@ -73,12 +77,16 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 				expense.Name = &option.Name
 				query.Column("name")
 			case *expensesvcv1.UpdateExpenseRequest_UpdateField_ById:
+				if _, err := util.CheckResourceExists[*personv1.Person](ctx, tx, option.ById); err != nil {
+					return err
+				}
 				expense.ById = option.ById
 				query.Column("by_id")
 			case *expensesvcv1.UpdateExpenseRequest_UpdateField_Timestamp:
 				expense.Timestamp = option.Timestamp
 				query.Column("timestamp")
 			case *expensesvcv1.UpdateExpenseRequest_UpdateField_CurrencyId:
+				// TODO: check if currency exists
 				expense.CurrencyId = option.CurrencyId
 				query.Column("currency_id")
 			}
@@ -92,10 +100,11 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 			log.Error("failed updating expense", logging.Error(err))
 			return errUpdateExpense
 		}
-		expense = expenseModel.IntoExpense()
+		expense = expenseModel.IntoProtoExpense()
 
 		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseUpdated{
-			Id: expenseId,
+			Id:      expenseId,
+			GroupId: expense.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling expense updated event", logging.Error(err))

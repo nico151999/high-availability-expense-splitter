@@ -2,19 +2,16 @@ package expense
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"connectrpc.com/connect"
-	expensev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expense/v1"
 	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
 	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
-	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -29,9 +26,9 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := getExpense(ctx, s.dbClient, req.Msg.GetId())
+	expense, err := util.CheckResourceExists[*model.Expense](ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
-		if eris.Is(err, errSelectExpense) {
+		if eris.Is(err, util.ErrSelectResource) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -42,35 +39,14 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 						Domain: environment.GetGlobalDomain(ctx),
 					},
 				})
-		} else if eris.Is(err, errNoExpenseWithId) {
-			return nil, connect.NewError(
-				connect.CodeNotFound,
-				eris.New("the expense ID does not exist"))
+		} else if resErr := new(util.ResourceNotFoundError); eris.As(err, resErr) {
+			return nil, connect.NewError(connect.CodeNotFound, eris.Errorf("the %s with ID %s does not exist", resErr.ResourceName, resErr.ResourceId))
 		} else {
 			return nil, connect.NewError(connect.CodeInternal, eris.New("an unexpected error occurred"))
 		}
 	}
 
 	return connect.NewResponse(&expensesvcv1.GetExpenseResponse{
-		Expense: expense,
+		Expense: expense.IntoProtoExpense(),
 	}), nil
-}
-
-func getExpense(ctx context.Context, dbClient bun.IDB, expenseId string) (*expensev1.Expense, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
-	expense := &expensev1.Expense{
-		Id: expenseId,
-	}
-	expenseModel := model.NewExpense(expense)
-	if err := dbClient.NewSelect().Model(expenseModel).WherePK().Limit(1).Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("expense not found", logging.Error(err))
-			return nil, errNoExpenseWithId
-		}
-		log.Error("failed getting expense", logging.Error(err))
-		return nil, errSelectExpense
-	}
-	expense = expenseModel.IntoExpense()
-
-	return expense, nil
 }

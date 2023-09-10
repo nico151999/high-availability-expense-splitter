@@ -1,0 +1,345 @@
+syntax = "proto3";
+
+package service.expensestake.v1;
+
+import "common/expensestake/v1/expensestake.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service ExpenseStakeService {
+  // Requests the creation of a expensestake with the provided specs
+  rpc CreateExpenseStake(CreateExpenseStakeRequest) returns (CreateExpenseStakeResponse) {
+    option (google.api.http) = {post: "/v1/groups/{expense_id}/expensestakes"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
+          value: {
+            description: "Returns specs describing the created expensestake";
+            schema: {
+              json_schema: {ref: ".service.expensestake.v1.CreateExpenseStakeResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets a expensestake
+  rpc GetExpenseStake(GetExpenseStakeRequest) returns (GetExpenseStakeResponse) {
+    option (google.api.http) = {get: "/v1/expensestakes/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested expensestake";
+            schema: {
+              json_schema: {ref: ".service.expensestake.v1.GetExpenseStakeResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Deletes a expensestake
+  rpc DeleteExpenseStake(DeleteExpenseStakeRequest) returns (DeleteExpenseStakeResponse) {
+    option (google.api.http) = {delete: "/v1/expensestakes/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Tells the expensestake was successfully deleted";
+            schema: {
+              json_schema: {ref: ".service.expensestake.v1.DeleteExpenseStakeResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all expensestake IDs
+  rpc ListExpenseStakeIdsInExpense(ListExpenseStakeIdsInExpenseRequest) returns (ListExpenseStakeIdsInExpenseResponse) {
+    option (google.api.http) = {get: "/v1/groups/{expense_id}/expensestakes:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested expensestake IDs";
+            schema: {
+              json_schema: {ref: ".service.expensestake.v1.ListExpenseStakeIdsInExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamExpenseStakeIdsInExpense streams the list of all expensestake IDs
+  rpc StreamExpenseStakeIdsInExpense(StreamExpenseStakeIdsInExpenseRequest) returns (stream StreamExpenseStakeIdsInExpenseResponse) {}
+  // StreamExpenseStake streams the requested expensestake
+  rpc StreamExpenseStake(StreamExpenseStakeRequest) returns (stream StreamExpenseStakeResponse) {}
+}
+
+message DeleteExpenseStakeRequest {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteExpenseStakeResponse {}
+
+message CreateExpenseStakeRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string for_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.person.v1/Person"},
+    (validate.rules).string = {pattern: "^person-[A-Za-z0-9]{15}$"}
+  ];
+  int32 main_value = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+  optional int32 fractional_value = 4 [
+    (google.api.field_behavior) = OPTIONAL,
+    (validate.rules).int32 = {
+      gte: 0;
+    }
+  ];
+}
+
+message CreateExpenseStakeResponse {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseStakeRequest {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetExpenseStakeResponse {
+  common.expensestake.v1.ExpenseStake expense_stake = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message ListExpenseStakeIdsInExpenseRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListExpenseStakeIdsInExpenseResponse {
+  repeated string ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseStakeIdsInExpenseRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseStakeIdsInExpenseResponse {
+  // the current list of expensestake IDs
+  message ExpenseStakeIds {
+    repeated string ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    ExpenseStakeIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+}
+
+message StreamExpenseStakeRequest {
+  // the ID of the expensestake
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expensestake.v1/ExpenseStake"},
+    (validate.rules).string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseStakeResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed expensestake
+    common.expensestake.v1.ExpenseStake expense_stake = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}
