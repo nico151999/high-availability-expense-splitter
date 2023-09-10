@@ -72,13 +72,15 @@ func deleteExpenseStake(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, ex
 			log.Error("failed deleting expense stake", logging.Error(err))
 			return errDeleteExpenseStake
 		}
-		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, expensestake.GetExpenseId())
+		expense, err := util.CheckResourceExists[*model.Expense](ctx, tx, expensestake.GetExpenseId())
 		if err != nil {
 			return err
 		}
 
 		marshalled, err := proto.Marshal(&expensestakeprocv1.ExpenseStakeDeleted{
-			Id: expensestakeId,
+			Id:        expensestakeId,
+			ExpenseId: expense.GetId(),
+			GroupId:   expense.GetGroupId(),
 		})
 		if err != nil {
 			log.Error("failed marshalling expense stake deleted event", logging.Error(err))

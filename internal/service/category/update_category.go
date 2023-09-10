@@ -86,7 +86,8 @@ func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 		}
 
 		marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
-			Id: categoryId,
+			Id:      categoryId,
+			GroupId: category.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling category updated event", logging.Error(err))

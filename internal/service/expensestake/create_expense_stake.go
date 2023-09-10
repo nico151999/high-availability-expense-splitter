@@ -82,7 +82,7 @@ func createExpenseStake(ctx context.Context, nc *nats.Conn, db bun.IDB, req *exp
 	requestorEmail := "ab@c.de" // TODO: take user email from context
 
 	if err := db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, req.GetExpenseId())
+		expense, err := util.CheckResourceExists[*model.Expense](ctx, tx, req.GetExpenseId())
 		if err != nil {
 			return err
 		}

@@ -86,7 +86,8 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 		}
 
 		marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
-			Id: personId,
+			Id:      personId,
+			GroupId: person.GroupId,
 		})
 		if err != nil {
 			log.Error("failed marshalling person updated event", logging.Error(err))

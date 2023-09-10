@@ -7,8 +7,6 @@ import (
 	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
 	expenseprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expense/v1"
 	expensestakeprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/expensestake/v1"
-	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/uptrace/bun"
@@ -21,10 +19,6 @@ func (rpProcessor *expensestakeProcessor) expenseDeleted(ctx context.Context, re
 	log.Info("processing expense.ExpenseDeleted event")
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-		expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, tx, req.GetId())
-		if err != nil {
-			return err
-		}
 		var expensestakes []*expensestakev1.ExpenseStake
 		if err := tx.NewDelete().Model(&expensestakes).Where("expense_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
 			log.Error("failed deleting expense stakes related to deleted expense", logging.Error(err))
@@ -42,7 +36,7 @@ func (rpProcessor *expensestakeProcessor) expenseDeleted(ctx context.Context, re
 					log.Error("failed marshalling expensestake deleted event", logging.Error(err))
 					return errMarshalExpenseStakeDeleted
 				}
-				if err := rpProcessor.natsClient.Publish(environment.GetExpenseStakeDeletedSubject(expense.GetGroupId(), req.GetId(), expensestake.Id), marshalled); err != nil {
+				if err := rpProcessor.natsClient.Publish(environment.GetExpenseStakeDeletedSubject(req.GetGroupId(), req.GetId(), expensestake.Id), marshalled); err != nil {
 					log.Error("failed publishing expensestake deleted event", logging.Error(err))
 					return errPublishExpenseStakeDeleted
 				}

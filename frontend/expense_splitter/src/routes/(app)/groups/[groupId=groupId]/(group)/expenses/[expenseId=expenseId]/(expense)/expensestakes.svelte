@@ -63,10 +63,22 @@
 	}
 
     function marshalValue(expensestake: ExpenseStake): string {
-        return `${expensestake.mainValue}.`;
+		let fractionalValue: string;
+		if (expensestake.fractionalValue) {
+			fractionalValue = expensestake.fractionalValue.toString();
+			if (fractionalValue.length === 1) {
+				fractionalValue = `0${fractionalValue}`;
+			}
+		} else {
+			fractionalValue = '00';
+		}
+        return `${expensestake.mainValue}.${fractionalValue}`;
     }
 
     function unmarshalValue(value: string): [number, number] {
+		if (!/^\d+(\.\d{2})?$/.test(value)) {
+			throw 'Value input is wrongly formatted';
+		}
         const valueParts = value.split(".");
         if (valueParts.length > 2) {
             throw 'Value input has to many parts';
@@ -86,6 +98,30 @@
         }
         return [mainValue, fractionalValue];
     }
+
+	function summariseStakes(expensestakes: Map<string, {
+		expensestake?: ExpenseStake | undefined;
+		abortController: AbortController;
+	}>): string {
+		const mainValues: number[] = [];
+		const fractionalValues: number[] = [];
+		for (let [id, stake] of expensestakes) {
+			const expensestake = stake.expensestake
+			if (expensestake) {
+				mainValues.push(expensestake.mainValue);
+				if (expensestake.fractionalValue) {
+					fractionalValues.push(expensestake.fractionalValue);
+				}
+			} else {
+				return 'Loading expense stakes...';
+			}
+		}
+		let mainSummary = mainValues.reduce((partialSum, a) => partialSum + a, 0);
+		const fractionalSummary = fractionalValues.reduce((partialSum, a) => partialSum + a, 0)
+		mainSummary += Math.floor(fractionalSummary / 100);
+		const fractionalRemainder = fractionalSummary % 100;
+		return `${mainSummary}.${fractionalRemainder}`;
+	}
 </script>
 
 <h2>Your expense stakes in expense {expense.id}</h2>
@@ -111,6 +147,12 @@
 					<tr>Loading expense with ID {eID}...</tr>
 				{/if}
 			{/each}
+			<tr>
+				<td></td>
+				<td></td>
+				<td>{summariseStakes($expensestakes)}</td>
+				<td></td>
+			</tr>
 			<tr>
 				<td></td>
 				<td>

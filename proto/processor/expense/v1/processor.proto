@@ -55,6 +55,11 @@ message ExpenseDeleted {
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
   ];
+  string group_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
 }
 
 // An event with metadata containing information about a project that was updated
@@ -63,5 +68,10 @@ message ExpenseUpdated {
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
     (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string group_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
   ];
 }

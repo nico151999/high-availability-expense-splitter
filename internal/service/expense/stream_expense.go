@@ -102,7 +102,7 @@ func (s *expenseServer) StreamExpense(ctx context.Context, req *connect.Request[
 func sendCurrentExpense(ctx context.Context, dbClient bun.IDB, expenseId string) (*expensesvcv1.StreamExpenseResponse, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
-	var expenseModel model.ExpenseModel
+	var expenseModel model.Expense
 	if err := dbClient.NewSelect().Model(&expenseModel).Where("id = ?", expenseId).Limit(1).Scan(ctx); err != nil {
 		if eris.Is(err, sql.ErrNoRows) {
 			log.Debug("expense not found", logging.Error(err))
@@ -113,7 +113,7 @@ func sendCurrentExpense(ctx context.Context, dbClient bun.IDB, expenseId string)
 	}
 	return &expensesvcv1.StreamExpenseResponse{
 		Update: &expensesvcv1.StreamExpenseResponse_Expense{
-			Expense: expenseModel.IntoExpense(),
+			Expense: expenseModel.IntoProtoExpense(),
 		},
 	}, nil
 }

@@ -26,7 +26,7 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	expense, err := util.CheckResourceExists[*model.ExpenseModel](ctx, s.dbClient, req.Msg.GetId())
+	expense, err := util.CheckResourceExists[*model.Expense](ctx, s.dbClient, req.Msg.GetId())
 	if err != nil {
 		if eris.Is(err, util.ErrSelectResource) {
 			return nil, errors.NewErrorWithDetails(
@@ -47,6 +47,6 @@ func (s *expenseServer) GetExpense(ctx context.Context, req *connect.Request[exp
 	}
 
 	return connect.NewResponse(&expensesvcv1.GetExpenseResponse{
-		Expense: expense,
+		Expense: expense.IntoProtoExpense(),
 	}), nil
 }
