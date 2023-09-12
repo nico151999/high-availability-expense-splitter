@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package common.currency.v1;
+
+import "google/api/resource.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message Currency {
+  option (google.api.resource) = {type: "common.currency.v1/Currency"};
+  string id = 1 [
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string acronym = 2 [(validate.rules).string = {
+    len: 3;
+  }];
+}

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package processor.currency.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "validate/validate.proto";
+
+// An event with metadata containing information about a project that was created
+message CurrencyCreated {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  string acronym = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string = {
+      len: 3;
+    }
+  ];
+  string requestor_email = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (validate.rules).string.email = true
+  ];
+}
+
+// An event with metadata containing information about a project that was deleted
+message CurrencyDeleted {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+// An event with metadata containing information about a project that was updated
+message CurrencyUpdated {
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
