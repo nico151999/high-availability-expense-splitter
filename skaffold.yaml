@@ -101,6 +101,23 @@ build:
         buildArgs:
           SERVICE_NAME: "person"
           SVC_OUT_DIR_PARAM: "PERSON_SVC_OUT_DIR"
+    - image: &currencySvcImage ghcr.io/nico151999/ha-expense-splitter-currency-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated currency dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/currency/g;w ./cmd/service/currency.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/currency.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/currency.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "currency"
+          SVC_OUT_DIR_PARAM: "CURRENCY_SVC_OUT_DIR"
     - image: &categorySvcImage ghcr.io/nico151999/ha-expense-splitter-category-service
       context: ./
       hooks:
@@ -188,6 +205,23 @@ build:
         buildArgs:
           PROCESSOR_NAME: "person"
           PROCESSOR_OUT_DIR_PARAM: "PERSON_PROCESSOR_OUT_DIR"
+    - image: &currencyProcessorImage ghcr.io/nico151999/ha-expense-splitter-currency-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated currency dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/currency/g;w ./cmd/processor/currency.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/currency.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/currency.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "currency"
+          PROCESSOR_OUT_DIR_PARAM: "CURRENCY_PROCESSOR_OUT_DIR"
     - image: &categoryProcessorImage ghcr.io/nico151999/ha-expense-splitter-category-processor
       context: ./
       hooks:
@@ -645,6 +679,12 @@ deploy:
                   image:
                     repository: *personSvcImage
                     tag: *personSvcImage
+                currency:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *currencySvcImage
+                    tag: *currencySvcImage
                 category:
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
@@ -677,6 +717,12 @@ deploy:
                   image:
                     repository: *personProcessorImage
                     tag: *personProcessorImage
+                currency:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *currencyProcessorImage
+                    tag: *currencyProcessorImage
                 category:
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
