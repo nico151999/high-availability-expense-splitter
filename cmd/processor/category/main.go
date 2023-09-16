@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/nico151999/high-availability-expense-splitter/internal/processor/category"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -37,18 +36,11 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	// TODO: generally switch to context-based processing
-	if cancel, err := rpProcessor.Process(ctx); err != nil {
-		log.Panic("failed processing category-related events", logging.Error(err))
-	} else {
-		defer func() {
-			ctx, c := context.WithTimeout(ctx, 5*time.Second)
-			defer c()
-			if err := cancel(ctx); err != nil {
-				log.Panic("failed canceling category processing", logging.Error(err))
-			}
-		}()
-	}
+	go func() {
+		if err := rpProcessor.Process(ctx); err != nil {
+			log.Panic("failed processing category-related events", logging.Error(err))
+		}
+	}()
 
 	log.Info("Processing category-related events...")
 	<-ctx.Done()

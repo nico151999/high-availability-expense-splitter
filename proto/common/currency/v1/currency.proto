@@ -13,6 +13,11 @@ message Currency {
     (tagger.tags) = "bun:\",pk\""
   ];
   string acronym = 2 [(validate.rules).string = {
-    len: 3;
+    min_len: 1;
+    max_len: 10;
+  }];
+  string name = 3 [(validate.rules).string = {
+    min_len: 1;
+    max_len: 100;
   }];
 }

@@ -30,6 +30,11 @@ func GetExpensestakeServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "EXPENSESTAKE_SERVER_PORT")
 }
 
+// GetCurrencyServerPort returns the port the expense service will run on
+func GetCurrencyServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "CURRENCY_SERVER_PORT")
+}
+
 func GetDbUser(ctx context.Context) string {
 	return MustLookupString(ctx, "DB_USER")
 }
@@ -266,6 +271,36 @@ func GetExpenseStakeSubject(groupId string, expenseId string, stakeId string) st
 // GetExpenseStakesSubject returns the name of the subject events of all expense stakes are published on
 func GetExpenseStakesSubject(groupId string, expenseId string) string {
 	return fmt.Sprintf("%s.expensestake", GetExpenseSubject(groupId, expenseId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCurrencyCreatedSubject returns the name of the subject events are published on when a group was created
+func GetCurrencyCreatedSubject(groupId string) string {
+	return fmt.Sprintf("%s.created", GetCurrencySubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCurrencyDeletedSubject returns the name of the subject events are published on when a group was deleted
+func GetCurrencyDeletedSubject(groupId string) string {
+	return fmt.Sprintf("%s.deleted", GetCurrencySubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCurrencyUpdatedSubject returns the name of the subject events are published on when a group was updated
+func GetCurrencyUpdatedSubject(groupId string) string {
+	return fmt.Sprintf("%s.updated", GetCurrencySubject(groupId))
+}
+
+// TODO: as env variable with %s parameter
+// GetCurrencySubject returns the name of the subject events of a single group are published on
+func GetCurrencySubject(groupId string) string {
+	return fmt.Sprintf("%s.%s", GetCurrenciesSubject(), groupId)
+}
+
+// TODO: as env variable
+// GetCurrenciesSubject returns the name of the subject events of all groups are published on
+func GetCurrenciesSubject() string {
+	return "group"
 }
 
 // TODO: as env variable

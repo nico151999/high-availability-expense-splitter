@@ -69,7 +69,7 @@ service CurrencyService {
   }
   // Gets an exchange rate for a certain date
   rpc GetExchangeRate(GetExchangeRateRequest) returns (GetExchangeRateResponse) {
-    option (google.api.http) = {get: "/v1/currencies/{source_currency_id}/exchangeRates/{destination_currency_id}/date/{date}"};
+    option (google.api.http) = {get: "/v1/currencies/{source_currency_id}/exchangeRates/{destination_currency_id}/timestamp/{timestamp}"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {

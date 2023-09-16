@@ -66,6 +66,10 @@ haExpenseSplitter:
             type: text
             constraints:
               notNull: true
+          - name: &currencyName name
+            type: text
+            constraints:
+              notNull: true
           primaryKey:
           - *currencyId
           indexes:

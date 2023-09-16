@@ -2,9 +2,11 @@ package group
 
 import (
 	"context"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 )
@@ -25,14 +27,17 @@ func NewGroupProcessor(natsUrl string) (*groupProcessor, error) {
 }
 
 // Process starts the processing of subscriptions and returns a cancel function allowing for cancelation
-func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx context.Context) error, error) {
+func (rpProcessor *groupProcessor) Process(ctx context.Context) error {
+	log := logging.FromContext(ctx).Named("Process")
+	ctx = logging.IntoContext(ctx, log)
+
 	var gcSub *nats.Subscription
 	{
 		eventSubject := environment.GetGroupCreatedSubject("*")
 		var err error
 		gcSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupCreated)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	var gdSub *nats.Subscription
@@ -41,7 +46,7 @@ func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx contex
 		var err error
 		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	var guSub *nats.Subscription
@@ -50,8 +55,16 @@ func (rpProcessor *groupProcessor) Process(ctx context.Context) (func(ctx contex
 		var err error
 		guSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupUpdated)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	return processor.GetUnsubscribeSubscriptionsFunc(gcSub, gdSub, guSub), nil
+
+	<-ctx.Done()
+	log.Info("the context is done")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := processor.UnsubscribeSubscriptions(ctx, gcSub, gdSub, guSub); err != nil {
+		return eris.Wrap(err, "failed finalising group processor")
+	}
+	return nil
 }

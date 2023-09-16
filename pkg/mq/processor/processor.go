@@ -47,18 +47,16 @@ func GetSubjectProcessor[E proto.Message](
 	return sub, nil
 }
 
-func GetUnsubscribeSubscriptionsFunc(subs ...*nats.Subscription) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		errGr, _ := errgroup.WithContext(ctx)
-		for _, sub := range subs {
-			s := sub
-			errGr.Go(func() error {
-				if err := s.Unsubscribe(); err != nil {
-					return eris.Wrapf(err, "failed to unsubscribe subscription on %s event", s.Subject)
-				}
-				return nil
-			})
-		}
-		return errGr.Wait()
+func UnsubscribeSubscriptions(ctx context.Context, subs ...*nats.Subscription) error {
+	errGr, _ := errgroup.WithContext(ctx)
+	for _, sub := range subs {
+		s := sub
+		errGr.Go(func() error {
+			if err := s.Unsubscribe(); err != nil {
+				return eris.Wrapf(err, "failed to unsubscribe subscription on %s event", s.Subject)
+			}
+			return nil
+		})
 	}
+	return errGr.Wait()
 }

@@ -6,22 +6,22 @@ import (
 	"os"
 	"os/signal"
 
-	categoryv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/category/v1"
-	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/category/v1/categoryv1connect"
-	"github.com/nico151999/high-availability-expense-splitter/internal/service/category"
+	currencyv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/currency/v1"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/currency/v1/currencyv1connect"
+	"github.com/nico151999/high-availability-expense-splitter/internal/service/currency"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 )
 
-const serviceName = "categoryService"
+const serviceName = "currencyService"
 
 func main() {
 	log := logging.GetLogger().Named(serviceName)
 	ctx := logging.IntoContext(context.Background(), log)
 
 	// ensure mandatory environment variables are set
-	environment.GetCategoryServerPort(ctx)
+	environment.GetCurrencyServerPort(ctx)
 	environment.GetNatsServerHost(ctx)
 	environment.GetNatsServerPort(ctx)
 	environment.GetDbUser(ctx)
@@ -39,13 +39,13 @@ func main() {
 	environment.GetMessageSubscriptionErrorReason(ctx)
 	environment.GetSendCurrentResourceErrorReason(ctx)
 	environment.GetSendStreamAliveErrorReason(ctx)
-	environment.GetCategoriesSubject("foo")
-	environment.GetCategorySubject("foo", "bar")
-	environment.GetCategoryCreatedSubject("foo", "bar")
-	environment.GetCategoryDeletedSubject("foo", "bar")
-	environment.GetCategoryUpdatedSubject("foo", "bar")
+	environment.GetCurrenciesSubject()
+	environment.GetCurrencySubject("foo")
+	environment.GetCurrencyCreatedSubject("foo")
+	environment.GetCurrencyDeletedSubject("foo")
+	environment.GetCurrencyUpdatedSubject("foo")
 
-	svc, err := category.NewCategoryServer(
+	svc, err := currency.NewCurrencyServer(
 		ctx,
 		fmt.Sprintf("%s:%d",
 			environment.GetNatsServerHost(ctx),
@@ -56,35 +56,30 @@ func main() {
 		environment.GetDbName(ctx))
 	if err != nil {
 		log.Panic(
-			"failed creating new category server",
+			"failed creating new currency server",
 			logging.Error(err),
 		)
 	}
 	defer svc.Close()
 
-	serverAddress := fmt.Sprintf(":%d", environment.GetCategoryServerPort(ctx))
+	serverAddress := fmt.Sprintf(":%d", environment.GetCurrencyServerPort(ctx))
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	go func() {
-		err := server.ListenAndServe[categoryv1connect.CategoryServiceHandler](
-			ctx,
-			serverAddress,
-			svc,
-			categoryv1.RegisterCategoryServiceHandler,
-			categoryv1connect.NewCategoryServiceHandler,
-			serviceName,
-			fmt.Sprintf("%s:%d",
-				environment.GetTraceCollectorHost(ctx),
-				environment.GetTraceCollectorPort(ctx)))
-		if err != nil {
-			log.Panic(
-				"failed running server",
-				logging.Error(err))
-		}
-	}()
-
-	log.Info("running server")
-	<-ctx.Done()
+	err = server.ListenAndServe[currencyv1connect.CurrencyServiceHandler](
+		ctx,
+		serverAddress,
+		svc,
+		currencyv1.RegisterCurrencyServiceHandler,
+		currencyv1connect.NewCurrencyServiceHandler,
+		serviceName,
+		fmt.Sprintf("%s:%d",
+			environment.GetTraceCollectorHost(ctx),
+			environment.GetTraceCollectorPort(ctx)))
+	if err != nil {
+		log.Panic(
+			"failed running server",
+			logging.Error(err))
+	}
 }

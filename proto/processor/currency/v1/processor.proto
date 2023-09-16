@@ -16,13 +16,14 @@ message CurrencyCreated {
   string acronym = 2 [
     (google.api.field_behavior) = REQUIRED,
     (validate.rules).string = {
-      len: 3;
+      min_len: 1;
+      max_len: 10;
     }
   ];
-  string requestor_email = 4 [
-    (google.api.field_behavior) = REQUIRED,
-    (validate.rules).string.email = true
-  ];
+  string name = 3 [(validate.rules).string = {
+    min_len: 1;
+    max_len: 100;
+  }];
 }
 
 // An event with metadata containing information about a project that was deleted
