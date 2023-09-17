@@ -275,14 +275,14 @@ func GetExpenseStakesSubject(groupId string, expenseId string) string {
 
 // TODO: as env variable with %s parameter
 // GetCurrencyCreatedSubject returns the name of the subject events are published on when a group was created
-func GetCurrencyCreatedSubject(groupId string) string {
-	return fmt.Sprintf("%s.created", GetCurrencySubject(groupId))
+func GetCurrencyCreatedSubject(currencyId string) string {
+	return fmt.Sprintf("%s.created", GetCurrencySubject(currencyId))
 }
 
 // TODO: as env variable with %s parameter
 // GetCurrencyDeletedSubject returns the name of the subject events are published on when a group was deleted
-func GetCurrencyDeletedSubject(groupId string) string {
-	return fmt.Sprintf("%s.deleted", GetCurrencySubject(groupId))
+func GetCurrencyDeletedSubject(currencyId string) string {
+	return fmt.Sprintf("%s.deleted", GetCurrencySubject(currencyId))
 }
 
 // TODO: as env variable with %s parameter
@@ -293,8 +293,8 @@ func GetCurrencyUpdatedSubject(groupId string) string {
 
 // TODO: as env variable with %s parameter
 // GetCurrencySubject returns the name of the subject events of a single group are published on
-func GetCurrencySubject(groupId string) string {
-	return fmt.Sprintf("%s.%s", GetCurrenciesSubject(), groupId)
+func GetCurrencySubject(currencyId string) string {
+	return fmt.Sprintf("%s.%s", GetCurrenciesSubject(), currencyId)
 }
 
 // TODO: as env variable

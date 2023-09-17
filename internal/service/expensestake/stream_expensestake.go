@@ -2,7 +2,6 @@ package expensestake
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 	expensestakev1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/expensestake/v1"
 	expensestakesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensestake/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -43,21 +42,10 @@ func (s *expensestakeServer) StreamExpenseStake(ctx context.Context, req *connec
 			return connect.NewError(
 				connect.CodeDataLoss,
 				eris.New("the expense stake does no longer exist"))
-		} else if eris.Is(err, service.ErrResourceNotFound) {
+		} else if eris.As(err, &util.ResourceNotFoundError{}) {
 			return connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the expense stake does not exist"))
-		} else if eris.Is(err, errSelectExpenseStake) {
-			return errors.NewErrorWithDetails(
-				ctx,
-				connect.CodeInternal,
-				"failed interacting with database",
-				[]protoreflect.ProtoMessage{
-					&errdetails.ErrorInfo{
-						Reason: environment.GetDBSelectErrorReason(ctx),
-						Domain: environment.GetGlobalDomain(ctx),
-					},
-				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -100,20 +88,13 @@ func (s *expensestakeServer) StreamExpenseStake(ctx context.Context, req *connec
 }
 
 func sendCurrentExpenseStake(ctx context.Context, dbClient bun.IDB, expensestakeId string) (*expensestakesvcv1.StreamExpenseStakeResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
-
-	var expensestake expensestakev1.ExpenseStake
-	if err := dbClient.NewSelect().Model(&expensestake).Where("id = ?", expensestakeId).Limit(1).Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("expense stake not found", logging.Error(err))
-			return nil, service.ErrResourceNotFound
-		}
-		log.Error("failed getting expense stake", logging.Error(err))
-		return nil, errSelectExpenseStake
+	expensestake, err := util.CheckResourceExists[*expensestakev1.ExpenseStake](ctx, dbClient, expensestakeId)
+	if err != nil {
+		return nil, err
 	}
 	return &expensestakesvcv1.StreamExpenseStakeResponse{
 		Update: &expensestakesvcv1.StreamExpenseStakeResponse_ExpenseStake{
-			ExpenseStake: &expensestake,
+			ExpenseStake: expensestake,
 		},
 	}, nil
 }

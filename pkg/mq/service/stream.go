@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/nats-io/nats.go"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
@@ -18,7 +19,6 @@ const tickerPeriod = time.Minute
 var ErrSubscribeResource = eris.New("failed subscribing resource")
 var ErrSendStreamAliveMessage = eris.New("failed sending stream alive message")
 var ErrSendCurrentResourceMessage = eris.New("failed sending current resource message to client")
-var ErrResourceNotFound = eris.New("the resource was not found")
 var ErrResourceNoLongerFound = eris.New("the resource was no longer found")
 
 func StreamResource[T any](
@@ -54,7 +54,7 @@ loop:
 		select {
 		case <-resChan:
 			if err := sendCurrentResource(ctx, srv, retrieveCurrentResource); err != nil {
-				if eris.Is(err, ErrResourceNotFound) {
+				if eris.As(err, &util.ResourceNotFoundError{}) {
 					return eris.Wrap(ErrResourceNoLongerFound, err.Error())
 				}
 				return err

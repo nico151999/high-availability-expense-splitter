@@ -5,16 +5,14 @@ package currency
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"io"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
 	currencyv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/currency/v1"
 	currencyprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/currency/v1"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
+	curClient "github.com/nico151999/high-availability-expense-splitter/pkg/currency/client"
+	dbClient "github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -25,8 +23,9 @@ import (
 )
 
 type currencyProcessor struct {
-	natsClient *nats.Conn
-	dbClient   bun.IDB
+	natsClient     *nats.Conn
+	dbClient       bun.IDB
+	currencyClient curClient.Client
 }
 
 const tickerPeriod = time.Hour
@@ -43,8 +42,9 @@ func NewCurrencyProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*currency
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}
 	return &currencyProcessor{
-		natsClient: nc,
-		dbClient:   client.NewPostgresDBClient(dbUser, dbPass, dbAddr, db),
+		natsClient:     nc,
+		dbClient:       dbClient.NewPostgresDBClient(dbUser, dbPass, dbAddr, db),
+		currencyClient: curClient.NewCurrencyClient(),
 	}, nil
 }
 
@@ -110,41 +110,16 @@ loop:
 func (rpProcessor *currencyProcessor) updateCurrencies(ctx context.Context) error {
 	log := logging.FromContext(ctx)
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest(http.MethodGet, "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.min.json", nil)
+	currencies, err := rpProcessor.currencyClient.FetchCurrencies(ctx)
 	if err != nil {
-		msg := "could not create request to fetch currencies"
-		log.Error(msg)
-		return eris.Wrap(err, msg)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		msg := "could not perform request to fetch currencies"
-		log.Error(msg)
-		return eris.Wrap(err, msg)
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		msg := "could not read response body after fetching currencies"
-		log.Error(msg)
-		return eris.Wrap(err, msg)
-	}
-
-	var currencies map[string]string
-	if err := json.Unmarshal(body, &currencies); err != nil {
-		msg := "could not unmarshal response body after fetching currencies"
-		log.Error(msg)
-		return eris.Wrap(err, msg)
+		return err
 	}
 
 	for acronym, name := range currencies {
 		acronym = strings.ToUpper(acronym)
 		log := log.With(logging.String("currency", acronym))
 
-		err = rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+		err := rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 			if err := tx.NewSelect().Model((*currencyv1.Currency)(nil)).Where("acronym = ?", acronym).Limit(1).Scan(ctx); err == nil {
 				log.Debug("currency already exists in database")
 			} else {

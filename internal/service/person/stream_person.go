@@ -2,7 +2,6 @@ package person
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 	personv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/person/v1"
 	personsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -43,21 +42,10 @@ func (s *personServer) StreamPerson(ctx context.Context, req *connect.Request[pe
 			return connect.NewError(
 				connect.CodeDataLoss,
 				eris.New("the person does no longer exist"))
-		} else if eris.Is(err, service.ErrResourceNotFound) {
+		} else if eris.As(err, &util.ResourceNotFoundError{}) {
 			return connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the person does not exist"))
-		} else if eris.Is(err, errSelectPerson) {
-			return errors.NewErrorWithDetails(
-				ctx,
-				connect.CodeInternal,
-				"failed interacting with database",
-				[]protoreflect.ProtoMessage{
-					&errdetails.ErrorInfo{
-						Reason: environment.GetDBSelectErrorReason(ctx),
-						Domain: environment.GetGlobalDomain(ctx),
-					},
-				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -100,20 +88,13 @@ func (s *personServer) StreamPerson(ctx context.Context, req *connect.Request[pe
 }
 
 func sendCurrentPerson(ctx context.Context, dbClient bun.IDB, personId string) (*personsvcv1.StreamPersonResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
-
-	var person personv1.Person
-	if err := dbClient.NewSelect().Model(&person).Where("id = ?", personId).Limit(1).Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("person not found", logging.Error(err))
-			return nil, service.ErrResourceNotFound
-		}
-		log.Error("failed getting person", logging.Error(err))
-		return nil, errSelectPerson
+	person, err := util.CheckResourceExists[*personv1.Person](ctx, dbClient, personId)
+	if err != nil {
+		return nil, err
 	}
 	return &personsvcv1.StreamPersonResponse{
 		Update: &personsvcv1.StreamPersonResponse_Person{
-			Person: &person,
+			Person: person,
 		},
 	}, nil
 }

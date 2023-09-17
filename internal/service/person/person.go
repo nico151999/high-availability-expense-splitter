@@ -13,7 +13,6 @@ import (
 
 var _ personv1connect.PersonServiceHandler = (*personServer)(nil)
 
-var errSelectPerson = eris.New("failed selecting person")
 var errNoPersonWithId = eris.New("there is no person with that ID")
 var errInsertPerson = eris.New("failed inserting person")
 var errMarshalPersonCreated = eris.New("failed marshalling person created event")

@@ -269,10 +269,14 @@ message StreamExchangeRateRequest {
 }
 
 message StreamExchangeRateResponse {
-  double rate = 1 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (validate.rules).double = {gte: 0.0}
-  ];
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    double rate = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).double = {gte: 0.0}
+    ];
+  }
 }
 
 message StreamCurrenciesRequest {}

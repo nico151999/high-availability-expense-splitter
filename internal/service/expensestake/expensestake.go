@@ -13,7 +13,6 @@ import (
 
 var _ expensestakev1connect.ExpenseStakeServiceHandler = (*expensestakeServer)(nil)
 
-var errSelectExpenseStake = eris.New("failed selecting expense stake")
 var errNoExpenseStakeWithId = eris.New("there is no expense stake with that ID")
 var errInsertExpenseStake = eris.New("failed inserting expense stake")
 var errMarshalExpenseStakeCreated = eris.New("failed marshalling expense stake created event")

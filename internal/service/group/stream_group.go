@@ -2,7 +2,6 @@ package group
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 	groupv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/group/v1"
 	groupsvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -42,21 +41,10 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 			return connect.NewError(
 				connect.CodeDataLoss,
 				eris.New("the group does no longer exist"))
-		} else if eris.Is(err, service.ErrResourceNotFound) {
+		} else if eris.As(err, &util.ResourceNotFoundError{}) {
 			return connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the group does not exist"))
-		} else if eris.Is(err, errSelectGroup) {
-			return errors.NewErrorWithDetails(
-				ctx,
-				connect.CodeInternal,
-				"failed interacting with database",
-				[]protoreflect.ProtoMessage{
-					&errdetails.ErrorInfo{
-						Reason: environment.GetDBSelectErrorReason(ctx),
-						Domain: environment.GetGlobalDomain(ctx),
-					},
-				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -99,20 +87,13 @@ func (s *groupServer) StreamGroup(ctx context.Context, req *connect.Request[grou
 }
 
 func sendCurrentGroup(ctx context.Context, dbClient bun.IDB, groupId string) (*groupsvcv1.StreamGroupResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
-
-	var group groupv1.Group
-	if err := dbClient.NewSelect().Model(&group).Where("id = ?", groupId).Limit(1).Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("group not found", logging.Error(err))
-			return nil, service.ErrResourceNotFound
-		}
-		log.Error("failed getting group", logging.Error(err))
-		return nil, errSelectGroup
+	group, err := util.CheckResourceExists[*groupv1.Group](ctx, dbClient, groupId)
+	if err != nil {
+		return nil, err
 	}
 	return &groupsvcv1.StreamGroupResponse{
 		Update: &groupsvcv1.StreamGroupResponse_Group{
-			Group: &group,
+			Group: group,
 		},
 	}, nil
 }
