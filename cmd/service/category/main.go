@@ -67,19 +67,24 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	err = server.ListenAndServe[categoryv1connect.CategoryServiceHandler](
-		ctx,
-		serverAddress,
-		svc,
-		categoryv1.RegisterCategoryServiceHandler,
-		categoryv1connect.NewCategoryServiceHandler,
-		serviceName,
-		fmt.Sprintf("%s:%d",
-			environment.GetTraceCollectorHost(ctx),
-			environment.GetTraceCollectorPort(ctx)))
-	if err != nil {
-		log.Panic(
-			"failed running server",
-			logging.Error(err))
-	}
+	go func() {
+		err := server.ListenAndServe[categoryv1connect.CategoryServiceHandler](
+			ctx,
+			serverAddress,
+			svc,
+			categoryv1.RegisterCategoryServiceHandler,
+			categoryv1connect.NewCategoryServiceHandler,
+			serviceName,
+			fmt.Sprintf("%s:%d",
+				environment.GetTraceCollectorHost(ctx),
+				environment.GetTraceCollectorPort(ctx)))
+		if err != nil {
+			log.Panic(
+				"failed running server",
+				logging.Error(err))
+		}
+	}()
+
+	log.Info("running server")
+	<-ctx.Done()
 }

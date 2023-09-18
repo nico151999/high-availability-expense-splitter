@@ -54,6 +54,28 @@ haExpenseSplitter:
           - columns:
             - *categoryGroupId
             isUnique: false
+      currency:
+        name: currencies
+        schema:
+          columns:
+          - name: &currencyId id
+            type: text
+            constraints:
+              notNull: true
+          - name: &currencyAcronym acronym
+            type: text
+            constraints:
+              notNull: true
+          - name: &currencyName name
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *currencyId
+          indexes:
+          - columns:
+            - *currencyAcronym
+            isUnique: true
       expense:
         name: expenses
         schema:
@@ -123,9 +145,6 @@ haExpenseSplitter:
           - *expensestakeId
           # no foreign keys since we do not want to rely on Postgres features
           indexes:
-          - columns:
-            - *expenseGroupId
-            isUnique: false
           - columns:
             - *expensestakeExpenseId
             isUnique: false
@@ -409,6 +428,58 @@ haExpenseSplitter:
           repository: "my-registry/my-group/my-person-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
+      currency:
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.currency\.v1\.CurrencyService/GetCurrency$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.currency\.v1\.CurrencyService/GetExchangeRate$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.currency\.v1\.CurrencyService/ListCurrencies$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.currency\.v1\.CurrencyService/StreamCurrency$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.currency\.v1\.CurrencyService/StreamExchangeRate$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.currency\.v1\.CurrencyService/StreamCurrencies$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-currency-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
       category:
         roles: [service] # roles this service should have; those roles need to be defined in the templates
         clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
@@ -590,6 +661,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-person-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      currency:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-currency-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []

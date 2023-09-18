@@ -2,6 +2,9 @@ import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
 import { get, writable, type Writable } from "svelte/store";
 import type { Expense } from "../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 import type { ExpenseService } from "../../../../../../../../../gen/lib/ts/service/expense/v1/service_connect";
+import type { ExpenseStakeService } from "../../../../../../../../../gen/lib/ts/service/expensestake/v1/service_connect";
+import type { ExpenseStake } from "../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
+import type { CurrencyService } from "../../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
 
 export async function streamExpense(
 	expenseClient: PromiseClient<typeof ExpenseService>,
@@ -90,9 +93,161 @@ export async function streamExpenses(
                 expense.abortController.abort();
             }
         }
-        expenses?.clear();
+        expensesStore.set(undefined);
     }
     console.log(`Ended expenses stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     await streamExpenses(expenseClient, groupId, abortController, expensesStore);
+}
+
+export async function streamExpenseStake(
+	expensestakeClient: PromiseClient<typeof ExpenseStakeService>,
+	expensestakeID: string,
+	abortController: AbortController,
+    expensestake: Writable<ExpenseStake | undefined>
+): Promise<boolean> {
+	try {
+		for await (const pRes of expensestakeClient.streamExpenseStake({id: expensestakeID}, {signal: abortController.signal})) {
+			if (pRes.update.case === 'stillAlive') {
+				continue;
+			}
+            expensestake.set(pRes.update.value);
+		}
+    } catch (e) {
+        if (e instanceof ConnectError) {
+            if (e.code === Code.Canceled) {
+                console.log(`Intentionally aborted expensestake ${expensestakeID} stream`);
+                return true;
+            } else if (e.code === Code.DataLoss) {
+                console.log(`ExpenseStake with ID ${expensestakeID} no longer exists`);
+                return false;
+            }
+        }
+        console.error('An error occurred trying to stream expensestake.', e);
+    }
+    console.log(`Ended expensestake ${expensestakeID} stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    return await streamExpenseStake(expensestakeClient, expensestakeID, abortController, expensestake);
+}
+
+export async function streamExpenseStakes(
+    expensestakeClient: PromiseClient<typeof ExpenseStakeService>,
+    expenseId: string,
+    abortController: AbortController,
+    expensestakesStore: Writable<Map<string, {expensestake?: ExpenseStake, abortController: AbortController}> | undefined>
+) {
+    try {
+        for await (const cIDsRes of expensestakeClient.streamExpenseStakeIdsInExpense({
+            expenseId: expenseId
+        }, {signal: abortController.signal})) {
+            if (cIDsRes.update.case === 'stillAlive') {
+                continue;
+            }
+            const expensestakeIDs = cIDsRes.update.value!.ids;
+            let expensestakes = get(expensestakesStore);
+            if (expensestakes === undefined) {
+                expensestakes = new Map();
+            }
+            for (const cID of expensestakes.keys()) {
+                if (expensestakeIDs.includes(cID)) {
+                    // remove element from items that are to be processed newly because it already exists
+                    expensestakeIDs.splice(expensestakeIDs.indexOf(cID), 1);
+                } else {
+                    // remove expensestakes that are not present any more
+                    expensestakes!.get(cID)!.abortController.abort();
+                    expensestakes!.delete(cID);
+                }
+            }
+            for (const pID of expensestakeIDs) {
+                const abortController = new AbortController();
+                expensestakes.set(pID, {
+                    abortController: abortController
+                });
+                const expensestake: Writable<ExpenseStake | undefined> = writable();
+                expensestake.subscribe((e) => {
+                    expensestakesStore.set(expensestakes?.set(pID, {
+                        abortController: abortController,
+                        expensestake: e
+                    }));
+                });
+                streamExpenseStake(expensestakeClient, pID, abortController, expensestake);
+            }
+            expensestakesStore.set(expensestakes);
+        }
+    } catch (e) {
+        if (e instanceof ConnectError && e.code === Code.Canceled) {
+            console.log('Intentionally aborted expensestakes stream');
+            return;
+        }
+        console.error('An error occurred trying to stream expensestakes', e);
+    } finally {
+        const expensestakes = get(expensestakesStore);
+        if (expensestakes) {
+            for (let [_, expensestake] of expensestakes) {
+                expensestake.abortController.abort();
+            }
+        }
+        expensestakesStore.set(undefined);
+    }
+    console.log(`Ended expensestakes stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await streamExpenseStakes(expensestakeClient, expenseId, abortController, expensestakesStore);
+}
+
+export async function streamExchangeRate(
+	currencyClient: PromiseClient<typeof CurrencyService>,
+	srcCurrencyID: string,
+	destCurrencyID: string,
+	abortController: AbortController,
+    exchangeRate: Writable<number | undefined>
+): Promise<boolean> {
+	try {
+		for await (const erRes of currencyClient.streamExchangeRate({
+            sourceCurrencyId: srcCurrencyID,
+            destinationCurrencyId: destCurrencyID
+        }, {signal: abortController.signal})) {
+			if (erRes.update.case === 'stillAlive') {
+				continue;
+			}
+            exchangeRate.set(erRes.update.value);
+		}
+    } catch (e) {
+        if (e instanceof ConnectError) {
+            if (e.code === Code.Canceled) {
+                console.log(`Intentionally aborted exchange rate stream with source currency ${srcCurrencyID} and destination currency ${destCurrencyID}`);
+                return true;
+            } else if (e.code === Code.DataLoss) {
+                console.log(`A currency of exchange rate with source currency ${srcCurrencyID} and destination currency ${destCurrencyID} no longer exists`);
+                return false;
+            }
+        }
+        console.error('An error occurred trying to stream exchange rate.', e);
+    }
+    console.log(`Ended exchange rate stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    return await streamExchangeRate(currencyClient, srcCurrencyID, destCurrencyID, abortController, exchangeRate);
+}
+
+export function summariseStakes(expensestakes: ExpenseStake[]): string {
+    const mainValues: number[] = [];
+    const fractionalValues: number[] = [];
+    for (let stake of expensestakes) {
+        mainValues.push(stake.mainValue);
+        if (stake.fractionalValue) {
+            fractionalValues.push(stake.fractionalValue);
+        }
+    }
+    let mainSummary = mainValues.reduce((partialSum, a) => partialSum + a, 0);
+    const fractionalSummary = fractionalValues.reduce((partialSum, a) => partialSum + a, 0)
+    mainSummary += Math.floor(fractionalSummary / 100);
+    const fractionalRemainder = fractionalSummary % 100;
+    return `${mainSummary}.${fractionalRemainder}`;
+}
+
+export function stakeSumInCurrency(
+    exchangeRate: number,
+    stakeSum: string
+): number {
+    const sum = parseFloat(stakeSum);
+    return sum * exchangeRate;
 }

@@ -2,7 +2,6 @@ package expense
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,9 +9,9 @@ import (
 	expensesvcv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1"
 	"github.com/nico151999/high-availability-expense-splitter/internal/db/model"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -43,21 +42,10 @@ func (s *expenseServer) StreamExpense(ctx context.Context, req *connect.Request[
 			return connect.NewError(
 				connect.CodeDataLoss,
 				eris.New("the expense does no longer exist"))
-		} else if eris.Is(err, service.ErrResourceNotFound) {
+		} else if eris.As(err, &util.ResourceNotFoundError{}) {
 			return connect.NewError(
 				connect.CodeNotFound,
 				eris.New("the expense does not exist"))
-		} else if eris.Is(err, errSelectExpense) {
-			return errors.NewErrorWithDetails(
-				ctx,
-				connect.CodeInternal,
-				"failed interacting with database",
-				[]protoreflect.ProtoMessage{
-					&errdetails.ErrorInfo{
-						Reason: environment.GetDBSelectErrorReason(ctx),
-						Domain: environment.GetGlobalDomain(ctx),
-					},
-				})
 		} else if eris.Is(err, service.ErrSubscribeResource) {
 			return errors.NewErrorWithDetails(
 				ctx,
@@ -100,16 +88,9 @@ func (s *expenseServer) StreamExpense(ctx context.Context, req *connect.Request[
 }
 
 func sendCurrentExpense(ctx context.Context, dbClient bun.IDB, expenseId string) (*expensesvcv1.StreamExpenseResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
-
-	var expenseModel model.Expense
-	if err := dbClient.NewSelect().Model(&expenseModel).Where("id = ?", expenseId).Limit(1).Scan(ctx); err != nil {
-		if eris.Is(err, sql.ErrNoRows) {
-			log.Debug("expense not found", logging.Error(err))
-			return nil, service.ErrResourceNotFound
-		}
-		log.Error("failed getting expense", logging.Error(err))
-		return nil, errSelectExpense
+	expenseModel, err := util.CheckResourceExists[*model.Expense](ctx, dbClient, expenseId)
+	if err != nil {
+		return nil, err
 	}
 	return &expensesvcv1.StreamExpenseResponse{
 		Update: &expensesvcv1.StreamExpenseResponse_Expense{

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/nico151999/high-availability-expense-splitter/internal/processor/group"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
@@ -33,18 +32,11 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	// TODO: generally switch to context-based processing
-	if cancel, err := rpProcessor.Process(ctx); err != nil {
-		log.Panic("failed processing group-related events", logging.Error(err))
-	} else {
-		defer func() {
-			ctx, c := context.WithTimeout(ctx, 5*time.Second)
-			defer c()
-			if err := cancel(ctx); err != nil {
-				log.Panic("failed canceling group processing", logging.Error(err))
-			}
-		}()
-	}
+	go func() {
+		if err := rpProcessor.Process(ctx); err != nil {
+			log.Panic("failed processing group-related events", logging.Error(err))
+		}
+	}()
 
 	log.Info("Processing group-related events...")
 	<-ctx.Done()

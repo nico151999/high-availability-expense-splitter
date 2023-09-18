@@ -13,7 +13,6 @@ import (
 
 var _ expensev1connect.ExpenseServiceHandler = (*expenseServer)(nil)
 
-var errSelectExpense = eris.New("failed selecting expense")
 var errNoExpenseWithId = eris.New("there is no expense with that ID")
 var errInsertExpense = eris.New("failed inserting expense")
 var errMarshalExpenseCreated = eris.New("failed marshalling expense created event")

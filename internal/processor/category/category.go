@@ -2,10 +2,12 @@ package category
 
 import (
 	"context"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
+	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -33,14 +35,17 @@ func NewCategoryProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*category
 }
 
 // Process starts the processing of subscriptions and returns a cancel function allowing for cancelation
-func (rpProcessor *categoryProcessor) Process(ctx context.Context) (func(ctx context.Context) error, error) {
+func (rpProcessor *categoryProcessor) Process(ctx context.Context) error {
+	log := logging.FromContext(ctx).Named("Process")
+	ctx = logging.IntoContext(ctx, log)
+
 	var ccSub *nats.Subscription
 	{
 		eventSubject := environment.GetCategoryCreatedSubject("*", "*")
 		var err error
 		ccSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryCreated)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	var cdSub *nats.Subscription
@@ -49,7 +54,7 @@ func (rpProcessor *categoryProcessor) Process(ctx context.Context) (func(ctx con
 		var err error
 		cdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryDeleted)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	var cuSub *nats.Subscription
@@ -58,7 +63,7 @@ func (rpProcessor *categoryProcessor) Process(ctx context.Context) (func(ctx con
 		var err error
 		cuSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryUpdated)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
 	var gdSub *nats.Subscription
@@ -67,8 +72,16 @@ func (rpProcessor *categoryProcessor) Process(ctx context.Context) (func(ctx con
 		var err error
 		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
 		if err != nil {
-			return nil, eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
+			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	return processor.GetUnsubscribeSubscriptionsFunc(ccSub, cdSub, cuSub, gdSub), nil
+
+	<-ctx.Done()
+	log.Info("the context is done")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := processor.UnsubscribeSubscriptions(ctx, ccSub, cdSub, cuSub, gdSub); err != nil {
+		return eris.Wrap(err, "failed finalising category processor")
+	}
+	return nil
 }

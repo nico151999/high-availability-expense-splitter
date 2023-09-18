@@ -90,7 +90,7 @@ export async function streamPeople(
                 person.abortController.abort();
             }
         }
-        people?.clear();
+        peopleStore.set(undefined);
     }
     console.log(`Ended people stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

@@ -90,7 +90,7 @@ export async function streamCategories(
                 category.abortController.abort();
             }
         }
-        categories?.clear();
+        categoriesStore.set(undefined);
     }
     console.log(`Ended categories stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));

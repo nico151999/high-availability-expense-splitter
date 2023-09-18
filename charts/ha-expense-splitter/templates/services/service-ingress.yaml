@@ -4,7 +4,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: "{{ include "service-name-ingress" $serviceName }}"
+  name: "{{ include "service-name-ingress" "services" }}"
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     nginx.ingress.kubernetes.io/server-snippet: "grpc_read_timeout 86400s; grpc_send_timeout 86400s;"

@@ -13,7 +13,6 @@ import (
 
 var _ groupv1connect.GroupServiceHandler = (*groupServer)(nil)
 
-var errSelectGroup = eris.New("failed selecting group")
 var errNoGroupWithId = eris.New("there is no group with that ID")
 var errInsertGroup = eris.New("failed inserting group")
 var errMarshalGroupCreated = eris.New("failed marshalling group created event")

@@ -1,0 +1,301 @@
+syntax = "proto3";
+
+package service.currency.v1;
+
+import "common/currency/v1/currency.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service CurrencyService {
+  // Gets a currency
+  rpc GetCurrency(GetCurrencyRequest) returns (GetCurrencyResponse) {
+    option (google.api.http) = {get: "/v1/currencies/{id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested currency";
+            schema: {
+              json_schema: {ref: ".service.currency.v1.GetCurrencyResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Gets an exchange rate for a certain date
+  rpc GetExchangeRate(GetExchangeRateRequest) returns (GetExchangeRateResponse) {
+    option (google.api.http) = {get: "/v1/currencies/{source_currency_id}/exchangeRates/{destination_currency_id}/timestamp/{timestamp}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns specs describing the requested exchange rate between two currencies";
+            schema: {
+              json_schema: {ref: ".service.currency.v1.GetExchangeRateResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all currencies
+  rpc ListCurrencies(ListCurrenciesRequest) returns (ListCurrenciesResponse) {
+    option (google.api.http) = {get: "/v1/currencies"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested currencies";
+            schema: {
+              json_schema: {ref: ".service.expense.v1.ListCurrenciesResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamCurrency streams the requested currency until it no longer exists
+  rpc StreamCurrency(StreamCurrencyRequest) returns (stream StreamCurrencyResponse) {}
+  // StreamExchangeRate streams the latest exchange rate for the requested currencies
+  rpc StreamExchangeRate(StreamExchangeRateRequest) returns (stream StreamExchangeRateResponse) {}
+  // StreamCurrencies streams the requested currencies
+  rpc StreamCurrencies(StreamCurrenciesRequest) returns (stream StreamCurrenciesResponse) {}
+}
+
+message GetCurrencyRequest {
+  // the ID of the currency
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message GetCurrencyResponse {
+  common.currency.v1.Currency currency = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).message.required = true
+  ];
+}
+
+message GetExchangeRateRequest {
+  string source_currency_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  string destination_currency_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  google.protobuf.Timestamp timestamp = 3 [(validate.rules).timestamp = {
+    required: true,
+    // gte the first of January 2022 00:00 GMT+0000
+    gte: {
+      seconds: 1640995200,
+      nanos: 0
+    }
+  }];
+}
+
+message GetExchangeRateResponse {
+  double rate = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).double = {gte: 0.0}
+  ];
+}
+
+message ListCurrenciesRequest {}
+
+message ListCurrenciesResponse {
+  repeated common.currency.v1.Currency currencies = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.message.required = true
+  ];
+}
+
+message StreamCurrencyRequest {
+  // the ID of the currency
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamCurrencyResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current version of the subscribed currency
+    common.currency.v1.Currency currency = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}
+
+message StreamExchangeRateRequest {
+  string source_currency_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+  string destination_currency_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.currency.v1/Currency"},
+    (validate.rules).string = {pattern: "^currency-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExchangeRateResponse {
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    double rate = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).double = {gte: 0.0}
+    ];
+  }
+}
+
+message StreamCurrenciesRequest {}
+
+message StreamCurrenciesResponse {
+  // the current list of currencies
+  message Currencies {
+    repeated common.currency.v1.Currency currencies = 1 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.message.required = true
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    // the current list of currencies
+    Currencies currencies = 2 [
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).message.required = true
+    ];
+  }
+}

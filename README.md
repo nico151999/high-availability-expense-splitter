@@ -38,3 +38,4 @@ Some elemental features that are intended to be implemented in the near future i
 - export OTEL to trace collector deployed with Jaeger
 - cleanup frontend Dockerfile
 - auth (probably via Ory Stack in combination with Stackgres for persistence)
+- caching layer for requests against external APIs (e.g. currency API)
