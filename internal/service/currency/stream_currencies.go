@@ -86,7 +86,7 @@ func sendCurrentCurrencies(ctx context.Context, dbClient bun.IDB) (*currencysvcv
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var currencies []*currencyv1.Currency
-	if err := dbClient.NewSelect().Model(&currencies).Scan(ctx); err != nil {
+	if err := dbClient.NewSelect().Model(&currencies).Order("acronym ASC").Scan(ctx); err != nil {
 		log.Error("failed getting currencies", logging.Error(err))
 		// TODO: determine reason why currencies couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectCurrencies

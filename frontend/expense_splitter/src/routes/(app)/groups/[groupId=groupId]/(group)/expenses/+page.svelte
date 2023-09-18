@@ -58,7 +58,7 @@
 
 	let exchangeRatesPerExpense: Map<string, number> = new Map();
 
-	let expensesSummary = 0;
+	let expensesSummary: number|undefined;
 
 	let timestampValid: boolean | undefined;
 	const newExpense = {
@@ -202,23 +202,25 @@
 		}
 	}
 
-	function summariseExpenses(): number {
+	function summariseExpenses(): number|undefined {
 		let totalStakeSum = 0;
 		for (let [expenseId, es] of expensestakesPerExpense) {
 			const expensestakes = get(es.expensestakes);
 			if (!expensestakes) {
-				continue;
+				return;
 			}
 			const stakes: ExpenseStake[] = [];
 			for (let [_, stake] of expensestakes) {
 				if (stake.expensestake) {
 					stakes.push(stake.expensestake);
+				} else {
+					return;
 				}
 			}
 			const stakeSum = summariseStakes(stakes);
 			const exchangeRate = exchangeRatesPerExpense.get(expenseId);
 			if (!exchangeRate) {
-				continue;
+				return;
 			}
 			totalStakeSum += stakeSumInCurrency(exchangeRate, stakeSum);
 		}
@@ -235,10 +237,10 @@
 
 {#if $group}
 	<h2>Your expenses in group {$group?.name}</h2>
-	{#if $currencies}
+	{#if $currencies && expensesSummary}
 		<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
 	{:else}
-		<span>Loading main currency...</span>
+		<span>Loading total value...</span>
 	{/if}
 {:else}
 	<span>Loading group...</span>
@@ -265,7 +267,7 @@
 						<td>
 							{#if $currencies}
 								{@const currency = $currencies.get(e.currencyId)}
-								<span>{currency?.name} - {currency?.acronym}</span>
+								<span>{currency?.acronym} - {currency?.name}</span>
 							{:else}
 								<span>Loading currencies...</span>
 							{/if}
@@ -291,7 +293,7 @@
 					{#if $currencies}
 						<select bind:value={newExpense.currencyId}>
 							{#each [...$currencies] as [cID, currency]}
-								<option value={cID}>{currency.name} - {currency.acronym}</option>
+								<option value={cID}>{currency.acronym} - {currency.name}</option>
 							{/each}
 						</select>
 					{:else}

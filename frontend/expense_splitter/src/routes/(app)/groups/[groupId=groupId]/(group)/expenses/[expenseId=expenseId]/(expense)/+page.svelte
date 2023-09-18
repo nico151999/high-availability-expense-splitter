@@ -174,7 +174,7 @@
 						{#if $currencies}
 							<select bind:value={editedExpense.currencyId}>
 								{#each [...$currencies] as [cID, currency]}
-									<option value={cID}>{currency.name} - {currency.acronym}</option>
+									<option value={cID}>{currency.acronym} - {currency.name}</option>
 								{/each}
 							</select>
 						{:else}
@@ -200,7 +200,7 @@
 					<td>
 						{#if $currencies}
 							{@const currency = $currencies.get($expense.currencyId)}
-							<span>{currency?.name} - {currency?.acronym}</span>
+							<span>{currency?.acronym} - {currency?.name}</span>
 						{:else}
 							<span>Loading currencies...</span>
 						{/if}

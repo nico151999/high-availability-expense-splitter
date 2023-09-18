@@ -47,7 +47,7 @@ func (s *expensestakeServer) ListExpenseStakeIdsInExpense(ctx context.Context, r
 func listExpenseStakeIds(ctx context.Context, dbClient bun.IDB, expenseId string) ([]string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var expensestakeIds []string
-	if err := dbClient.NewSelect().Model((*expensestakev1.ExpenseStake)(nil)).Where("expense_id = ?", expenseId).Column("id").Scan(ctx, &expensestakeIds); err != nil {
+	if err := dbClient.NewSelect().Model((*expensestakev1.ExpenseStake)(nil)).Where("expense_id = ?", expenseId).Column("id").Order("for_id ASC").Scan(ctx, &expensestakeIds); err != nil {
 		log.Error("failed getting expense stake IDs", logging.Error(err))
 		// TODO: determine reason why expensestake ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectExpenseStakeIds

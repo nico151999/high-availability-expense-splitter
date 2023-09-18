@@ -89,7 +89,7 @@
 						<td>
 							{#if $currencies}
 								{@const currency = $currencies.get(group.group.currencyId)}
-								<span>{currency?.name} - {currency?.acronym}</span>
+								<span>{currency?.acronym} - {currency?.name}</span>
 							{:else}
 								<span>Loading currencies...</span>
 							{/if}
@@ -110,7 +110,7 @@
 				{#if $currencies}
 					<select bind:value={newGroup.currencyId}>
 						{#each [...$currencies] as [cID, currency]}
-							<option value={cID}>{currency.name} - {currency.acronym}</option>
+							<option value={cID}>{currency.acronym} - {currency.name}</option>
 						{/each}
 					</select>
 				{:else}

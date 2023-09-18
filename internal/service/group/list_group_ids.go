@@ -47,7 +47,7 @@ func (s *groupServer) ListGroupIds(ctx context.Context, req *connect.Request[gro
 func listGroupIds(ctx context.Context, dbClient bun.IDB) ([]string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var groupIds []string
-	if err := dbClient.NewSelect().Model((*groupv1.Group)(nil)).Column("id").Scan(ctx, &groupIds); err != nil {
+	if err := dbClient.NewSelect().Model((*groupv1.Group)(nil)).Column("id").Order("name ASC").Scan(ctx, &groupIds); err != nil {
 		log.Error("failed getting group IDs", logging.Error(err))
 		// TODO: determine reason why group ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectGroupIds

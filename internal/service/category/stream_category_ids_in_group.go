@@ -86,7 +86,7 @@ func sendCurrentCategoryIds(ctx context.Context, dbClient bun.IDB, groupId strin
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var categoryIds []string
-	if err := dbClient.NewSelect().Model((*categoryv1.Category)(nil)).Where("group_id = ?", groupId).Column("id").Scan(ctx, &categoryIds); err != nil {
+	if err := dbClient.NewSelect().Model((*categoryv1.Category)(nil)).Where("group_id = ?", groupId).Column("id").Order("name ASC").Scan(ctx, &categoryIds); err != nil {
 		log.Error("failed getting category IDs", logging.Error(err))
 		// TODO: determine reason why category IDs couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectCategoryIds

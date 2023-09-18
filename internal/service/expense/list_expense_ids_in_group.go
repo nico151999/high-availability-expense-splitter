@@ -47,7 +47,7 @@ func (s *expenseServer) ListExpenseIdsInGroup(ctx context.Context, req *connect.
 func listExpenseIds(ctx context.Context, dbClient bun.IDB, groupId string) ([]string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	var expenseIds []string
-	if err := dbClient.NewSelect().Model((*model.Expense)(nil)).Where("group_id = ?", groupId).Column("id").Scan(ctx, &expenseIds); err != nil {
+	if err := dbClient.NewSelect().Model((*model.Expense)(nil)).Where("group_id = ?", groupId).Column("id").Order("timestamp DESC").Scan(ctx, &expenseIds); err != nil {
 		log.Error("failed getting expense IDs", logging.Error(err))
 		// TODO: determine reason why expense ID couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectExpenseIds

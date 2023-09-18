@@ -86,7 +86,7 @@ func sendCurrentPersonIds(ctx context.Context, dbClient bun.IDB, groupId string)
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	var personIds []string
-	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Where("group_id = ?", groupId).Column("id").Scan(ctx, &personIds); err != nil {
+	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Where("group_id = ?", groupId).Column("id").Order("name ASC").Scan(ctx, &personIds); err != nil {
 		log.Error("failed getting person IDs", logging.Error(err))
 		// TODO: determine reason why person IDs couldn't be fetched and return error-specific ErrVariable; e.g. use unit testing with dummy return values to determine potential return values unless there is something in the bun documentation
 		return nil, errSelectPersonIds
