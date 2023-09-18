@@ -81,6 +81,12 @@ func (rpProcessor *currencyProcessor) Process(ctx context.Context) error {
 		}
 	}
 
+	if err := rpProcessor.updateCurrencies(ctx); err != nil {
+		log.Error("could not update currencies initially", logging.Error(err))
+	} else {
+		log.Info("successfully updated currencies initially")
+	}
+
 	ticker := time.NewTicker(tickerPeriod)
 	defer ticker.Stop()
 

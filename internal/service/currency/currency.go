@@ -46,8 +46,9 @@ func NewCurrencyServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsSe
 		return nil, eris.Wrap(err, msg)
 	}
 	return &currencyServer{
-		dbClient:   dbClient,
-		natsClient: nc,
+		dbClient:       dbClient,
+		natsClient:     nc,
+		currencyClient: curClient.NewCurrencyClient(),
 	}, nil
 }
 

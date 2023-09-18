@@ -5,14 +5,15 @@
 	import { createPromiseClient, type Transport } from "@bufbuild/connect";
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { onDestroy, onMount } from "svelte";
-	import { streamExpenseStakes } from "./utils";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
+	import { streamExpenseStakes, summariseStakes } from "../../utils";
 
     export let expense: Expense;
     export let transport: Transport;
     export let people: Writable<
 		Map<string, {person?: Person, abortController: AbortController}> | undefined
 	>;
+	export let stakeSum = '0';
 
 	const newExpenseStake = {
 		forId: '',
@@ -31,6 +32,18 @@
 
     onMount(async () => {
         streamExpenseStakes(expensestakeClient, expense.id, abortController, expensestakes);
+		expensestakes.subscribe((expensestakes) => {
+			if (!expensestakes) {
+				return;
+			}
+			const stakes: ExpenseStake[] = [];
+			for (let stake of expensestakes.values()) {
+				if (stake.expensestake) {
+					stakes.push(stake.expensestake);
+				}
+			}
+			stakeSum = summariseStakes(stakes);
+		});
     });
 
     async function createExpenseStake() {
@@ -98,30 +111,6 @@
         }
         return [mainValue, fractionalValue];
     }
-
-	function summariseStakes(expensestakes: Map<string, {
-		expensestake?: ExpenseStake | undefined;
-		abortController: AbortController;
-	}>): string {
-		const mainValues: number[] = [];
-		const fractionalValues: number[] = [];
-		for (let [id, stake] of expensestakes) {
-			const expensestake = stake.expensestake
-			if (expensestake) {
-				mainValues.push(expensestake.mainValue);
-				if (expensestake.fractionalValue) {
-					fractionalValues.push(expensestake.fractionalValue);
-				}
-			} else {
-				return 'Loading expense stakes...';
-			}
-		}
-		let mainSummary = mainValues.reduce((partialSum, a) => partialSum + a, 0);
-		const fractionalSummary = fractionalValues.reduce((partialSum, a) => partialSum + a, 0)
-		mainSummary += Math.floor(fractionalSummary / 100);
-		const fractionalRemainder = fractionalSummary % 100;
-		return `${mainSummary}.${fractionalRemainder}`;
-	}
 </script>
 
 <h2>Your expense stakes in expense {expense.id}</h2>
@@ -147,12 +136,6 @@
 					<tr>Loading expense with ID {eID}...</tr>
 				{/if}
 			{/each}
-			<tr>
-				<td></td>
-				<td></td>
-				<td>{summariseStakes($expensestakes)}</td>
-				<td></td>
-			</tr>
 			<tr>
 				<td></td>
 				<td>

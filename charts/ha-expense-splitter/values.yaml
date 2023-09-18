@@ -146,9 +146,6 @@ haExpenseSplitter:
           # no foreign keys since we do not want to rely on Postgres features
           indexes:
           - columns:
-            - *expenseGroupId
-            isUnique: false
-          - columns:
             - *expensestakeExpenseId
             isUnique: false
       group:

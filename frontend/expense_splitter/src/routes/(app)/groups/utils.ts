@@ -2,6 +2,8 @@ import { Code, ConnectError, type PromiseClient } from "@bufbuild/connect";
 import { get, writable, type Writable } from "svelte/store";
 import type { Group } from "../../../../../../gen/lib/ts/common/group/v1/group_pb";
 import type { GroupService } from "../../../../../../gen/lib/ts/service/group/v1/service_connect";
+import type { CurrencyService } from "../../../../../../gen/lib/ts/service/currency/v1/service_connect";
+import type { Currency } from "../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
 
 export async function streamGroup(
 	groupClient: PromiseClient<typeof GroupService>,
@@ -87,9 +89,39 @@ export async function streamGroups(
                 group.abortController.abort();
             }
         }
-        groups?.clear();
+        groupsStore.set(undefined);
     }
     console.log(`Ended groups stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     await streamGroups(groupClient, abortController, groupsStore);
+}
+
+export async function streamCurrencies(
+    currencyClient: PromiseClient<typeof CurrencyService>,
+    abortController: AbortController,
+    currenciesStore: Writable<Map<string, Currency> | undefined>
+) {
+    try {
+        for await (const cIDsRes of currencyClient.streamCurrencies({}, {signal: abortController.signal})) {
+            if (cIDsRes.update.case === 'stillAlive') {
+                continue;
+            }
+            const currencies = new Map<string, Currency>();
+            for (let currency of cIDsRes.update.value!.currencies) {
+                currencies.set(currency.id, currency);
+            }
+            currenciesStore.set(currencies);
+        }
+    } catch (e) {
+        if (e instanceof ConnectError && e.code === Code.Canceled) {
+            console.log('Intentionally aborted currencies stream');
+            return;
+        }
+        console.error('An error occurred trying to stream currencies', e);
+    } finally {
+        currenciesStore.set(undefined);
+    }
+    console.log(`Ended currencies stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await streamCurrencies(currencyClient, abortController, currenciesStore);
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -63,6 +64,12 @@ func (c *client) FetchCurrencies(ctx context.Context) (map[string]string, error)
 		return nil, eris.Wrap(err, msg)
 	}
 
+	for acronym, name := range currencies {
+		if name == "" {
+			delete(currencies, acronym)
+		}
+	}
+
 	return currencies, nil
 }
 
@@ -75,7 +82,13 @@ func (c *client) GetLatestExchangeRate(ctx context.Context, src string, dest str
 }
 
 func (c *client) getExchangeRate(ctx context.Context, src string, dest string, date string) (float64, error) {
-	log := logging.FromContext(ctx)
+	src = strings.ToLower(src)
+	dest = strings.ToLower(dest)
+	log := logging.FromContext(ctx).With(
+		logging.String("srcAcronym", src),
+		logging.String("destAcronym", dest),
+		logging.String("date", date),
+	)
 
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -98,7 +111,7 @@ func (c *client) getExchangeRate(ctx context.Context, src string, dest string, d
 		return 0, eris.Wrap(err, msg)
 	}
 	if res.StatusCode == http.StatusNotFound {
-		log.Error("could not find currency exchange")
+		log.Error("could not find currency exchange rate")
 		return 0, ErrCurrencyExchangeRateNotFound
 	}
 
