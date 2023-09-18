@@ -241,7 +241,7 @@ export function summariseStakes(expensestakes: ExpenseStake[]): string {
     const fractionalSummary = fractionalValues.reduce((partialSum, a) => partialSum + a, 0)
     mainSummary += Math.floor(fractionalSummary / 100);
     const fractionalRemainder = fractionalSummary % 100;
-    return `${mainSummary}.${fractionalRemainder}`;
+    return marshalMainAndFractionalValues(mainSummary, fractionalRemainder);
 }
 
 export function stakeSumInCurrency(
@@ -250,4 +250,21 @@ export function stakeSumInCurrency(
 ): number {
     const sum = parseFloat(stakeSum);
     return sum * exchangeRate;
+}
+
+export function marshalExpenseStakeValue(expensestake: ExpenseStake): string {
+    return marshalMainAndFractionalValues(expensestake.mainValue, expensestake.fractionalValue)
+}
+
+function marshalMainAndFractionalValues(main: number, fractional?: number): string {
+    let fractionalValue: string;
+    if (fractional) {
+        fractionalValue = fractional.toString();
+        if (fractionalValue.length === 1) {
+            fractionalValue = `0${fractionalValue}`;
+        }
+    } else {
+        fractionalValue = '00';
+    }
+    return `${main}.${fractionalValue}`;
 }

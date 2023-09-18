@@ -232,12 +232,16 @@
 	}
 </script>
 
-<h2>Your expenses in group {data.groupId}</h2>
 
-{#if $currencies && $group}
-	<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
+{#if $group}
+	<h2>Your expenses in group {$group?.name}</h2>
+	{#if $currencies}
+		<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
+	{:else}
+		<span>Loading main currency...</span>
+	{/if}
 {:else}
-	<span>Loading main currency...</span>
+	<span>Loading group...</span>
 {/if}
 
 <table>

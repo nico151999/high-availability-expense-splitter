@@ -6,7 +6,7 @@
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { onDestroy, onMount } from "svelte";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
-	import { streamExpenseStakes, summariseStakes } from "../../utils";
+	import { streamExpenseStakes, summariseStakes, marshalExpenseStakeValue } from "../../utils";
 
     export let expense: Expense;
     export let transport: Transport;
@@ -14,10 +14,12 @@
 		Map<string, {person?: Person, abortController: AbortController}> | undefined
 	>;
 	export let stakeSum = '0';
+	export let fractionalDisabled = false;
 
 	const newExpenseStake = {
 		forId: '',
-		value: '',
+		mainValue: 0,
+		fractionalValue: undefined as number|undefined
 	};
 
     const expensestakeClient = createPromiseClient(ExpenseStakeService, transport);
@@ -48,17 +50,17 @@
 
     async function createExpenseStake() {
 		try {
-            const [mainValue, fractionalValue] = unmarshalValue(newExpenseStake.value);
 			const res = await expensestakeClient.createExpenseStake({
                 expenseId: expense.id,
 				forId: newExpenseStake.forId,
-				mainValue: mainValue,
-				fractionalValue: fractionalValue,
+				mainValue: newExpenseStake.mainValue,
+				fractionalValue: newExpenseStake.fractionalValue,
 			});
 			console.log('Created expense stake', res.id);
 
 			newExpenseStake.forId = '';
-			newExpenseStake.value = '';
+			newExpenseStake.mainValue = 0;
+			newExpenseStake.fractionalValue = undefined
 		} catch (e) {
 			console.error(`An error occurred trying to create expensestake in expense ${expense.id}`, e);
 		}
@@ -74,43 +76,6 @@
 			}
 		}
 	}
-
-    function marshalValue(expensestake: ExpenseStake): string {
-		let fractionalValue: string;
-		if (expensestake.fractionalValue) {
-			fractionalValue = expensestake.fractionalValue.toString();
-			if (fractionalValue.length === 1) {
-				fractionalValue = `0${fractionalValue}`;
-			}
-		} else {
-			fractionalValue = '00';
-		}
-        return `${expensestake.mainValue}.${fractionalValue}`;
-    }
-
-    function unmarshalValue(value: string): [number, number] {
-		if (!/^\d+(\.\d{2})?$/.test(value)) {
-			throw 'Value input is wrongly formatted';
-		}
-        const valueParts = value.split(".");
-        if (valueParts.length > 2) {
-            throw 'Value input has to many parts';
-        }
-        const mainValue = parseInt(valueParts[0]);
-        if (!mainValue) {
-            throw 'Main value input is invalid';
-        }
-        let fractionalValue: number;
-        if (valueParts.length == 2) {
-            fractionalValue = parseInt(valueParts[1]);
-            if (!fractionalValue) {
-                throw 'Fractional value input is invalid';
-            }
-        } else {
-            fractionalValue = 0;
-        }
-        return [mainValue, fractionalValue];
-    }
 </script>
 
 <h2>Your expense stakes in expense {expense.id}</h2>
@@ -129,7 +94,7 @@
 					<tr>
 						<td>{eID}</td>
 						<td>{$people.get(expensestake.expensestake.forId)?.person?.name}</td>
-						<td>{marshalValue(expensestake.expensestake)}</td>
+						<td>{marshalExpenseStakeValue(expensestake.expensestake)}</td>
 						<td><button on:click|stopPropagation={deleteExpenseStake(eID)}>Delete</button></td>
 					</tr>
 				{:else}
@@ -145,7 +110,10 @@
                         {/each}
                     </select>
 				</td>
-				<td><input type="text" placeholder="Value" bind:value={newExpenseStake.value}/></td>
+				<td>
+					<input type="number" placeholder="Main value" min="0" step="1" bind:value={newExpenseStake.mainValue}/>
+					<input disabled="{fractionalDisabled}" min="0" max="99" step="1" type="number" placeholder="Fractional value" bind:value={newExpenseStake.fractionalValue}/>
+				</td>
 				<td><button on:click={createExpenseStake}>Create expense stake</button></td>
 			</tr>
 		{:else}
