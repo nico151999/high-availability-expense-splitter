@@ -237,7 +237,7 @@
 
 {#if $group}
 	<h2>Your expenses in group {$group?.name}</h2>
-	{#if $currencies && expensesSummary}
+	{#if $currencies && expensesSummary !== undefined}
 		<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
 	{:else}
 		<span>Loading total value...</span>
