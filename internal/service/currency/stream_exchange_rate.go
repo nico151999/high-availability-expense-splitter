@@ -62,7 +62,7 @@ func (s *currencyServer) StreamExchangeRate(
 	err := streamCurrentExchangeRate(
 		ctx,
 		srv,
-		s.natsClient,
+		s.natsClient.Conn,
 		s.dbClient,
 		s.currencyClient,
 		req.Msg.GetSourceCurrencyId(),

@@ -18,7 +18,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -57,7 +56,7 @@ func (s *expenseServer) DeleteExpense(ctx context.Context, req *connect.Request[
 	return connect.NewResponse(&expensesvcv1.DeleteExpenseResponse{}), nil
 }
 
-func deleteExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expenseId string) error {
+func deleteExpense(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, expenseId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -75,15 +74,10 @@ func deleteExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 		}
 		expense = expenseModel.IntoProtoExpense()
 
-		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseDeleted{
+		if err := nc.Publish(environment.GetExpenseDeletedSubject(expense.GroupId, expenseId), &expenseprocv1.ExpenseDeleted{
 			Id:      expenseId,
 			GroupId: expense.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling expense deleted event", logging.Error(err))
-			return errMarshalExpenseDeleted
-		}
-		if err := nc.Publish(environment.GetExpenseDeletedSubject(expense.GroupId, expenseId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing expense deleted event", logging.Error(err))
 			return errPublishExpenseDeleted
 		}

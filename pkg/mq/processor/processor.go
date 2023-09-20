@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -15,24 +14,17 @@ import (
 func GetSubjectProcessor[E proto.Message](
 	ctx context.Context,
 	subjectName string,
-	natsClient *nats.Conn,
+	natsClient *nats.EncodedConn,
 	processor func(ctx context.Context, event E) error,
 ) (*nats.Subscription, error) {
 	log := logging.FromContext(ctx).With(logging.String("subject", subjectName))
-	sub, err := natsClient.Subscribe(subjectName, func(msg *nats.Msg) {
+	sub, err := natsClient.Subscribe(subjectName, func(msg E) {
 		// if err := msg.InProgress(); err != nil {
 		// 	log.Errorw("failed to inform NATS that a message is in progress", logging.Error(err))
 		// 	return
 		// }
-		var event E
-		event = reflect.New(reflect.TypeOf(event).Elem()).Interface().(E)
-
-		if err := proto.Unmarshal(msg.Data, event); err != nil {
-			log.Error("failed to unmarshal data of a message", logging.Error(err))
-			return
-		}
 		log.Debug("processing event")
-		if err := processor(ctx, event); err != nil {
+		if err := processor(ctx, msg); err != nil {
 			log.Error("failed to process a message", logging.Error(err))
 			return
 		}

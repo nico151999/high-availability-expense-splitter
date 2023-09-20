@@ -7,6 +7,7 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 )
@@ -15,11 +16,8 @@ var _ groupv1connect.GroupServiceHandler = (*groupServer)(nil)
 
 var errNoGroupWithId = eris.New("there is no group with that ID")
 var errInsertGroup = eris.New("failed inserting group")
-var errMarshalGroupCreated = eris.New("failed marshalling group created event")
 var errPublishGroupCreated = eris.New("failed publishing group created event")
-var errMarshalGroupDeleted = eris.New("failed marshalling group deleted event")
 var errPublishGroupDeleted = eris.New("failed publishing group deleted event")
-var errMarshalGroupUpdated = eris.New("failed marshalling group updated event")
 var errPublishGroupUpdated = eris.New("failed publishing group updated event")
 var errSelectGroupIds = eris.New("failed selecting group IDs")
 var errDeleteGroup = eris.New("failed deleting group")
@@ -27,7 +25,7 @@ var errUpdateGroup = eris.New("failed updating group")
 
 type groupServer struct {
 	dbClient   bun.IDB
-	natsClient *nats.Conn
+	natsClient *nats.EncodedConn
 	// TODO: add clients to servers this server will communicate with
 }
 
@@ -44,9 +42,9 @@ func NewGroupServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db 
 // NewGroupServerWithDBClient creates a new instance of group server. The context has no effect on the server's lifecycle.
 func NewGroupServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*groupServer, error) {
 	log := logging.FromContext(ctx).NewNamed("NewGroupServerWithDBClient")
-	nc, err := nats.Connect(natsServer)
+	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
-		msg := "failed connecting to NATS server"
+		msg := "failed creating NATS client"
 		log.Error(msg, logging.Error(err))
 		return nil, eris.Wrap(err, msg)
 	}

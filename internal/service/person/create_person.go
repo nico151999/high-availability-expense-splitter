@@ -19,7 +19,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -35,7 +34,7 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 
 	personId, err := createPerson(ctx, s.natsClient, s.dbClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalPersonCreated) || eris.Is(err, errPublishPersonCreated) {
+		if eris.Is(err, errPublishPersonCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -69,7 +68,7 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 	}), nil
 }
 
-func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvcv1.CreatePersonRequest) (string, error) {
+func createPerson(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *personsvcv1.CreatePersonRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	personId := util.GenerateIdWithPrefix("person")
@@ -89,17 +88,12 @@ func createPerson(ctx context.Context, nc *nats.Conn, db bun.IDB, req *personsvc
 			return errInsertPerson
 		}
 
-		marshalled, err := proto.Marshal(&personprocv1.PersonCreated{
+		if err := nc.Publish(environment.GetPersonCreatedSubject(req.GetGroupId(), personId), &personprocv1.PersonCreated{
 			Id:             personId,
 			GroupId:        req.GetGroupId(),
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,
-		})
-		if err != nil {
-			log.Error("failed marshalling person created event", logging.Error(err))
-			return errMarshalPersonCreated
-		}
-		if err := nc.Publish(environment.GetPersonCreatedSubject(req.GetGroupId(), personId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing person created event", logging.Error(err))
 			return errPublishPersonCreated
 		}

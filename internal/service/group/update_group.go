@@ -18,7 +18,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -61,7 +60,7 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 	}), nil
 }
 
-func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
+func updateGroup(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	group := groupv1.Group{
 		Id: groupId,
@@ -89,14 +88,9 @@ func updateGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 			return errUpdateGroup
 		}
 
-		marshalled, err := proto.Marshal(&groupprocv1.GroupUpdated{
+		if err := nc.Publish(environment.GetGroupUpdatedSubject(groupId), &groupprocv1.GroupUpdated{
 			Id: groupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling group updated event", logging.Error(err))
-			return errMarshalGroupUpdated
-		}
-		if err := nc.Publish(environment.GetGroupUpdatedSubject(groupId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing group updated event", logging.Error(err))
 			return errPublishGroupUpdated
 		}

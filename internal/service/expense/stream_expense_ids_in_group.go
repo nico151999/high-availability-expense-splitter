@@ -27,7 +27,7 @@ func (s *expenseServer) StreamExpenseIdsInGroup(ctx context.Context, req *connec
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetExpenseSubject(req.Msg.GetGroupId(), "*")), func(ctx context.Context) (*expensesvcv1.StreamExpenseIdsInGroupResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, fmt.Sprintf("%s.*", environment.GetExpenseSubject(req.Msg.GetGroupId(), "*")), func(ctx context.Context) (*expensesvcv1.StreamExpenseIdsInGroupResponse, error) {
 		return sendCurrentExpenseIds(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamExpenseIdsAlive); err != nil {
 		if eris.Is(err, errSelectExpenseIds) {

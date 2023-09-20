@@ -17,7 +17,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -55,7 +54,7 @@ func (s *groupServer) DeleteGroup(ctx context.Context, req *connect.Request[grou
 	return connect.NewResponse(&groupsvcv1.DeleteGroupResponse{}), nil
 }
 
-func deleteGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId string) error {
+func deleteGroup(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, groupId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -71,14 +70,9 @@ func deleteGroup(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, groupId s
 			return errDeleteGroup
 		}
 
-		marshalled, err := proto.Marshal(&groupprocv1.GroupDeleted{
+		if err := nc.Publish(environment.GetGroupDeletedSubject(groupId), &groupprocv1.GroupDeleted{
 			Id: groupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling group deleted event", logging.Error(err))
-			return errMarshalGroupDeleted
-		}
-		if err := nc.Publish(environment.GetGroupDeletedSubject(groupId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing group deleted event", logging.Error(err))
 			return errPublishGroupDeleted
 		}

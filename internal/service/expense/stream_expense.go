@@ -35,7 +35,7 @@ func (s *expenseServer) StreamExpense(ctx context.Context, req *connect.Request[
 	defer cancel()
 
 	streamSubject := fmt.Sprintf("%s.*", environment.GetExpenseSubject("*", req.Msg.GetId()))
-	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*expensesvcv1.StreamExpenseResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, streamSubject, func(ctx context.Context) (*expensesvcv1.StreamExpenseResponse, error) {
 		return sendCurrentExpense(ctx, s.dbClient, req.Msg.GetId())
 	}, srv, &streamExpenseAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {

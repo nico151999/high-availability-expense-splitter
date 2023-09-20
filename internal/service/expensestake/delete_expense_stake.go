@@ -19,7 +19,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -57,7 +56,7 @@ func (s *expensestakeServer) DeleteExpenseStake(ctx context.Context, req *connec
 	return connect.NewResponse(&expensestakesvcv1.DeleteExpenseStakeResponse{}), nil
 }
 
-func deleteExpenseStake(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expensestakeId string) error {
+func deleteExpenseStake(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, expensestakeId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -77,16 +76,11 @@ func deleteExpenseStake(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, ex
 			return err
 		}
 
-		marshalled, err := proto.Marshal(&expensestakeprocv1.ExpenseStakeDeleted{
+		if err := nc.Publish(environment.GetExpenseStakeDeletedSubject(expense.GetGroupId(), expense.GetId(), expensestakeId), &expensestakeprocv1.ExpenseStakeDeleted{
 			Id:        expensestakeId,
 			ExpenseId: expense.GetId(),
 			GroupId:   expense.GetGroupId(),
-		})
-		if err != nil {
-			log.Error("failed marshalling expense stake deleted event", logging.Error(err))
-			return errMarshalExpenseStakeDeleted
-		}
-		if err := nc.Publish(environment.GetExpenseStakeDeletedSubject(expense.GetGroupId(), expense.GetId(), expensestakeId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing expense stake deleted event", logging.Error(err))
 			return errPublishExpenseStakeDeleted
 		}

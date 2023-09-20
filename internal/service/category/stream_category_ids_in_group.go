@@ -27,7 +27,7 @@ func (s *categoryServer) StreamCategoryIdsInGroup(ctx context.Context, req *conn
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetCategorySubject(req.Msg.GetGroupId(), "*")), func(ctx context.Context) (*categorysvcv1.StreamCategoryIdsInGroupResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, fmt.Sprintf("%s.*", environment.GetCategorySubject(req.Msg.GetGroupId(), "*")), func(ctx context.Context) (*categorysvcv1.StreamCategoryIdsInGroupResponse, error) {
 		return sendCurrentCategoryIds(ctx, s.dbClient, req.Msg.GetGroupId())
 	}, srv, &streamCategoryIdsAlive); err != nil {
 		if eris.Is(err, errSelectCategoryIds) {

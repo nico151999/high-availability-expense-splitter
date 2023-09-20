@@ -17,7 +17,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -55,7 +54,7 @@ func (s *categoryServer) DeleteCategory(ctx context.Context, req *connect.Reques
 	return connect.NewResponse(&categorysvcv1.DeleteCategoryResponse{}), nil
 }
 
-func deleteCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, categoryId string) error {
+func deleteCategory(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, categoryId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -71,15 +70,10 @@ func deleteCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 			return errDeleteCategory
 		}
 
-		marshalled, err := proto.Marshal(&categoryprocv1.CategoryDeleted{
+		if err := nc.Publish(environment.GetCategoryDeletedSubject(category.GroupId, categoryId), &categoryprocv1.CategoryDeleted{
 			Id:      categoryId,
 			GroupId: category.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling category deleted event", logging.Error(err))
-			return errMarshalCategoryDeleted
-		}
-		if err := nc.Publish(environment.GetCategoryDeletedSubject(category.GroupId, categoryId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing category deleted event", logging.Error(err))
 			return errPublishCategoryDeleted
 		}
