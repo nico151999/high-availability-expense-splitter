@@ -18,7 +18,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -61,7 +60,7 @@ func (s *personServer) UpdatePerson(ctx context.Context, req *connect.Request[pe
 	}), nil
 }
 
-func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId string, params []*personsvcv1.UpdatePersonRequest_UpdateField) (*personv1.Person, error) {
+func updatePerson(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, personId string, params []*personsvcv1.UpdatePersonRequest_UpdateField) (*personv1.Person, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	person := personv1.Person{
 		Id: personId,
@@ -85,15 +84,10 @@ func updatePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 			return errUpdatePerson
 		}
 
-		marshalled, err := proto.Marshal(&personprocv1.PersonUpdated{
+		if err := nc.Publish(environment.GetPersonUpdatedSubject(person.GroupId, personId), &personprocv1.PersonUpdated{
 			Id:      personId,
 			GroupId: person.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling person updated event", logging.Error(err))
-			return errMarshalPersonUpdated
-		}
-		if err := nc.Publish(environment.GetPersonUpdatedSubject(person.GroupId, personId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing person updated event", logging.Error(err))
 			return errPublishPersonUpdated
 		}

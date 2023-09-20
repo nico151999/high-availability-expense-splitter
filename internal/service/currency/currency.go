@@ -8,6 +8,7 @@ import (
 	curClient "github.com/nico151999/high-availability-expense-splitter/pkg/currency/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 )
@@ -22,7 +23,7 @@ var errCurrencyNoLongerFound = eris.New("the currency does no longer exist")
 
 type currencyServer struct {
 	dbClient       bun.IDB
-	natsClient     *nats.Conn
+	natsClient     *nats.EncodedConn
 	currencyClient curClient.Client
 }
 
@@ -39,7 +40,7 @@ func NewCurrencyServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, 
 // NewCurrencyServerWithDBClient creates a new instance of currency server. The context has no effect on the server's lifecycle.
 func NewCurrencyServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*currencyServer, error) {
 	log := logging.FromContext(ctx).NewNamed("NewCurrencyServerWithDBClient")
-	nc, err := nats.Connect(natsServer)
+	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed connecting to NATS server"
 		log.Error(msg, logging.Error(err))

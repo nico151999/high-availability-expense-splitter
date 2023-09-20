@@ -8,13 +8,14 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 )
 
 type personProcessor struct {
-	natsClient *nats.Conn
+	natsClient *nats.EncodedConn
 	dbClient   bun.IDB
 }
 
@@ -24,7 +25,7 @@ var errPublishPersonDeleted = eris.New("could not publish person deleted event")
 
 // NewPersonServer creates a new instance of person server.
 func NewPersonProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*personProcessor, error) {
-	nc, err := nats.Connect(natsUrl)
+	nc, err := mqClient.NewProtoMQClient(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}

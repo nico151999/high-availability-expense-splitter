@@ -18,7 +18,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -34,7 +33,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 
 	groupId, err := createGroup(ctx, s.natsClient, s.dbClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalGroupCreated) || eris.Is(err, errPublishGroupCreated) {
+		if eris.Is(err, errPublishGroupCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -68,7 +67,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 	}), nil
 }
 
-func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1.CreateGroupRequest) (string, error) {
+func createGroup(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *groupsvcv1.CreateGroupRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	groupId := util.GenerateIdWithPrefix("group")
@@ -85,16 +84,11 @@ func createGroup(ctx context.Context, nc *nats.Conn, db bun.IDB, req *groupsvcv1
 			return errInsertGroup
 		}
 
-		marshalled, err := proto.Marshal(&groupprocv1.GroupCreated{
+		if err := nc.Publish(environment.GetGroupCreatedSubject(groupId), &groupprocv1.GroupCreated{
 			Id:             groupId,
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,
-		})
-		if err != nil {
-			log.Error("failed marshalling group created event", logging.Error(err))
-			return errMarshalGroupCreated
-		}
-		if err := nc.Publish(environment.GetGroupCreatedSubject(groupId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing group created event", logging.Error(err))
 			return errPublishGroupCreated
 		}

@@ -35,7 +35,7 @@ func (s *categoryServer) StreamCategory(ctx context.Context, req *connect.Reques
 	defer cancel()
 
 	streamSubject := fmt.Sprintf("%s.*", environment.GetCategorySubject("*", req.Msg.GetId()))
-	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*categorysvcv1.StreamCategoryResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, streamSubject, func(ctx context.Context) (*categorysvcv1.StreamCategoryResponse, error) {
 		return sendCurrentCategory(ctx, s.dbClient, req.Msg.GetId())
 	}, srv, &streamCategoryAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {

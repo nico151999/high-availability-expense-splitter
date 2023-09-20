@@ -27,7 +27,7 @@ func (s *expensestakeServer) StreamExpenseStakeIdsInExpense(ctx context.Context,
 	ctx, cancel := context.WithTimeout(ctx, time.Hour)
 	defer cancel()
 
-	if err := service.StreamResource(ctx, s.natsClient, fmt.Sprintf("%s.*", environment.GetExpenseStakeSubject("*", req.Msg.GetExpenseId(), "*")), func(ctx context.Context) (*expensestakesvcv1.StreamExpenseStakeIdsInExpenseResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, fmt.Sprintf("%s.*", environment.GetExpenseStakeSubject("*", req.Msg.GetExpenseId(), "*")), func(ctx context.Context) (*expensestakesvcv1.StreamExpenseStakeIdsInExpenseResponse, error) {
 		return sendCurrentExpenseStakeIds(ctx, s.dbClient, req.Msg.GetExpenseId())
 	}, srv, &streamExpenseStakeIdsAlive); err != nil {
 		if eris.Is(err, errSelectExpenseStakeIds) {

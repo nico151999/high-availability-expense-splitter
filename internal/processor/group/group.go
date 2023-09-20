@@ -7,17 +7,18 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 )
 
 type groupProcessor struct {
-	natsClient *nats.Conn
+	natsClient *nats.EncodedConn
 }
 
 // NewGroupServer creates a new instance of group server.
 func NewGroupProcessor(natsUrl string) (*groupProcessor, error) {
-	nc, err := nats.Connect(natsUrl)
+	nc, err := mqClient.NewProtoMQClient(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}

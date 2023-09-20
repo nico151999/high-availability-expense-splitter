@@ -21,7 +21,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -37,7 +36,7 @@ func (s *expenseServer) CreateExpense(ctx context.Context, req *connect.Request[
 
 	expenseId, err := createExpense(ctx, s.natsClient, s.dbClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalExpenseCreated) || eris.Is(err, errPublishExpenseCreated) {
+		if eris.Is(err, errPublishExpenseCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -71,7 +70,7 @@ func (s *expenseServer) CreateExpense(ctx context.Context, req *connect.Request[
 	}), nil
 }
 
-func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expensesvcv1.CreateExpenseRequest) (string, error) {
+func createExpense(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *expensesvcv1.CreateExpenseRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	expenseId := util.GenerateIdWithPrefix("expense")
@@ -104,17 +103,12 @@ func createExpense(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expenses
 			return errInsertExpense
 		}
 
-		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseCreated{
+		if err := nc.Publish(environment.GetExpenseCreatedSubject(req.GetGroupId(), expenseId), &expenseprocv1.ExpenseCreated{
 			Id:             expenseId,
 			GroupId:        req.GetGroupId(),
 			Name:           name,
 			RequestorEmail: requestorEmail,
-		})
-		if err != nil {
-			log.Error("failed marshalling expense created event", logging.Error(err))
-			return errMarshalExpenseCreated
-		}
-		if err := nc.Publish(environment.GetExpenseCreatedSubject(req.GetGroupId(), expenseId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing expense created event", logging.Error(err))
 			return errPublishExpenseCreated
 		}

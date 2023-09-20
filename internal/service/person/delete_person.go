@@ -17,7 +17,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -55,7 +54,7 @@ func (s *personServer) DeletePerson(ctx context.Context, req *connect.Request[pe
 	return connect.NewResponse(&personsvcv1.DeletePersonResponse{}), nil
 }
 
-func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId string) error {
+func deletePerson(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, personId string) error {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	return dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -71,15 +70,10 @@ func deletePerson(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, personId
 			return errDeletePerson
 		}
 
-		marshalled, err := proto.Marshal(&personprocv1.PersonDeleted{
+		if err := nc.Publish(environment.GetPersonDeletedSubject(person.GroupId, personId), &personprocv1.PersonDeleted{
 			Id:      personId,
 			GroupId: person.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling person deleted event", logging.Error(err))
-			return errMarshalPersonDeleted
-		}
-		if err := nc.Publish(environment.GetPersonDeletedSubject(person.GroupId, personId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing person deleted event", logging.Error(err))
 			return errPublishPersonDeleted
 		}

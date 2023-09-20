@@ -20,7 +20,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -41,7 +40,7 @@ func (s *expensestakeServer) CreateExpenseStake(ctx context.Context, req *connec
 
 	expensestakeId, err := createExpenseStake(ctx, s.natsClient, s.dbClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalExpenseStakeCreated) || eris.Is(err, errPublishExpenseStakeCreated) {
+		if eris.Is(err, errPublishExpenseStakeCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -75,7 +74,7 @@ func (s *expensestakeServer) CreateExpenseStake(ctx context.Context, req *connec
 	}), nil
 }
 
-func createExpenseStake(ctx context.Context, nc *nats.Conn, db bun.IDB, req *expensestakesvcv1.CreateExpenseStakeRequest) (string, error) {
+func createExpenseStake(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *expensestakesvcv1.CreateExpenseStakeRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	expensestakeId := util.GenerateIdWithPrefix("expensestake")
@@ -105,19 +104,14 @@ func createExpenseStake(ctx context.Context, nc *nats.Conn, db bun.IDB, req *exp
 			return errInsertExpenseStake
 		}
 
-		marshalled, err := proto.Marshal(&expensestakeprocv1.ExpenseStakeCreated{
+		if err := nc.Publish(environment.GetExpenseStakeCreatedSubject(expense.GetGroupId(), req.GetExpenseId(), expensestakeId), &expensestakeprocv1.ExpenseStakeCreated{
 			Id:              expensestakeId,
 			ExpenseId:       req.GetExpenseId(),
 			ForId:           req.GetForId(),
 			MainValue:       req.GetMainValue(),
 			FractionalValue: fractionalValue,
 			RequestorEmail:  requestorEmail,
-		})
-		if err != nil {
-			log.Error("failed marshalling expense stake created event", logging.Error(err))
-			return errMarshalExpenseStakeCreated
-		}
-		if err := nc.Publish(environment.GetExpenseStakeCreatedSubject(expense.GetGroupId(), req.GetExpenseId(), expensestakeId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing expense stake created event", logging.Error(err))
 			return errPublishExpenseStakeCreated
 		}

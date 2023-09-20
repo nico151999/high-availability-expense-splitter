@@ -20,7 +20,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -63,7 +62,7 @@ func (s *expenseServer) UpdateExpense(ctx context.Context, req *connect.Request[
 	}), nil
 }
 
-func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expenseId string, params []*expensesvcv1.UpdateExpenseRequest_UpdateField) (*expensev1.Expense, error) {
+func updateExpense(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, expenseId string, params []*expensesvcv1.UpdateExpenseRequest_UpdateField) (*expensev1.Expense, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	expense := &expensev1.Expense{
 		Id: expenseId,
@@ -102,15 +101,10 @@ func updateExpense(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, expense
 		}
 		expense = expenseModel.IntoProtoExpense()
 
-		marshalled, err := proto.Marshal(&expenseprocv1.ExpenseUpdated{
+		if err := nc.Publish(environment.GetExpenseUpdatedSubject(expense.GroupId, expenseId), &expenseprocv1.ExpenseUpdated{
 			Id:      expenseId,
 			GroupId: expense.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling expense updated event", logging.Error(err))
-			return errMarshalExpenseUpdated
-		}
-		if err := nc.Publish(environment.GetExpenseUpdatedSubject(expense.GroupId, expenseId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing expense updated event", logging.Error(err))
 			return errPublishExpenseUpdated
 		}

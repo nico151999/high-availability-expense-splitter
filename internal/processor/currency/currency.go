@@ -16,6 +16,7 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
+	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -23,7 +24,7 @@ import (
 )
 
 type currencyProcessor struct {
-	natsClient     *nats.Conn
+	natsClient     *nats.EncodedConn
 	dbClient       bun.IDB
 	currencyClient curClient.Client
 }
@@ -37,7 +38,7 @@ var errPublishCurrencyCreated = eris.New("could not publish currency created eve
 
 // NewCurrencyServer creates a new instance of currency server.
 func NewCurrencyProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*currencyProcessor, error) {
-	nc, err := nats.Connect(natsUrl)
+	nc, err := mqClient.NewProtoMQClient(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}

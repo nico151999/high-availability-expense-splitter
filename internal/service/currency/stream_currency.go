@@ -35,7 +35,7 @@ func (s *currencyServer) StreamCurrency(ctx context.Context, req *connect.Reques
 	defer cancel()
 
 	streamSubject := fmt.Sprintf("%s.*", environment.GetCurrencySubject(req.Msg.GetId()))
-	if err := service.StreamResource(ctx, s.natsClient, streamSubject, func(ctx context.Context) (*currencysvcv1.StreamCurrencyResponse, error) {
+	if err := service.StreamResource(ctx, s.natsClient.Conn, streamSubject, func(ctx context.Context) (*currencysvcv1.StreamCurrencyResponse, error) {
 		return sendCurrentCurrency(ctx, s.dbClient, req.Msg.GetId())
 	}, srv, &streamCurrencyAlive); err != nil {
 		if eris.Is(err, service.ErrResourceNoLongerFound) {

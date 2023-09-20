@@ -18,7 +18,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -61,7 +60,7 @@ func (s *categoryServer) UpdateCategory(ctx context.Context, req *connect.Reques
 	}), nil
 }
 
-func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, categoryId string, params []*categorysvcv1.UpdateCategoryRequest_UpdateField) (*categoryv1.Category, error) {
+func updateCategory(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, categoryId string, params []*categorysvcv1.UpdateCategoryRequest_UpdateField) (*categoryv1.Category, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 	category := categoryv1.Category{
 		Id: categoryId,
@@ -85,15 +84,10 @@ func updateCategory(ctx context.Context, nc *nats.Conn, dbClient bun.IDB, catego
 			return errUpdateCategory
 		}
 
-		marshalled, err := proto.Marshal(&categoryprocv1.CategoryUpdated{
+		if err := nc.Publish(environment.GetCategoryUpdatedSubject(category.GroupId, categoryId), &categoryprocv1.CategoryUpdated{
 			Id:      categoryId,
 			GroupId: category.GroupId,
-		})
-		if err != nil {
-			log.Error("failed marshalling category updated event", logging.Error(err))
-			return errMarshalCategoryUpdated
-		}
-		if err := nc.Publish(environment.GetCategoryUpdatedSubject(category.GroupId, categoryId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing category updated event", logging.Error(err))
 			return errPublishCategoryUpdated
 		}

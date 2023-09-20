@@ -19,7 +19,6 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -35,7 +34,7 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 
 	categoryId, err := createCategory(ctx, s.natsClient, s.dbClient, req.Msg)
 	if err != nil {
-		if eris.Is(err, errMarshalCategoryCreated) || eris.Is(err, errPublishCategoryCreated) {
+		if eris.Is(err, errPublishCategoryCreated) {
 			return nil, errors.NewErrorWithDetails(
 				ctx,
 				connect.CodeInternal,
@@ -69,7 +68,7 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 	}), nil
 }
 
-func createCategory(ctx context.Context, nc *nats.Conn, db bun.IDB, req *categorysvcv1.CreateCategoryRequest) (string, error) {
+func createCategory(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *categorysvcv1.CreateCategoryRequest) (string, error) {
 	log := otel.NewOtelLoggerFromContext(ctx)
 
 	categoryId := util.GenerateIdWithPrefix("category")
@@ -89,17 +88,12 @@ func createCategory(ctx context.Context, nc *nats.Conn, db bun.IDB, req *categor
 			return errInsertCategory
 		}
 
-		marshalled, err := proto.Marshal(&categoryprocv1.CategoryCreated{
+		if err := nc.Publish(environment.GetCategoryCreatedSubject(req.GetGroupId(), categoryId), &categoryprocv1.CategoryCreated{
 			Id:             categoryId,
 			GroupId:        req.GetGroupId(),
 			Name:           req.GetName(),
 			RequestorEmail: requestorEmail,
-		})
-		if err != nil {
-			log.Error("failed marshalling category created event", logging.Error(err))
-			return errMarshalCategoryCreated
-		}
-		if err := nc.Publish(environment.GetCategoryCreatedSubject(req.GetGroupId(), categoryId), marshalled); err != nil {
+		}); err != nil {
 			log.Error("failed publishing category created event", logging.Error(err))
 			return errPublishCategoryCreated
 		}
