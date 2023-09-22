@@ -2,23 +2,23 @@ package group
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 )
 
 type groupProcessor struct {
-	natsClient *nats.EncodedConn
+	natsClient *nats.Conn
 }
 
 // NewGroupServer creates a new instance of group server.
 func NewGroupProcessor(natsUrl string) (*groupProcessor, error) {
-	nc, err := mqClient.NewProtoMQClient(natsUrl)
+	nc, err := nats.Connect(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}
@@ -32,29 +32,41 @@ func (rpProcessor *groupProcessor) Process(ctx context.Context) error {
 	log := logging.FromContext(ctx).Named("Process")
 	ctx = logging.IntoContext(ctx, log)
 
-	var gcSub *nats.Subscription
+	sourceStreamName := environment.GetGroupSourceStreamName()
+
+	_, err := processor.CreateOrUpdateSourceStream(
+		ctx,
+		rpProcessor.natsClient,
+		sourceStreamName,
+		fmt.Sprintf("%s.*", environment.GetGroupSubject("*")),
+	)
+	if err != nil {
+		return err
+	}
+
+	var gcCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetGroupCreatedSubject("*")
 		var err error
-		gcSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupCreated)
+		gcCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_GROUP_PROCESSOR_GROUP_CREATED", eventSubject, rpProcessor.groupCreated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var gdSub *nats.Subscription
+	var gdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetGroupDeletedSubject("*")
 		var err error
-		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
+		gdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_GROUP_PROCESSOR_GROUP_DELETED", eventSubject, rpProcessor.groupDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var guSub *nats.Subscription
+	var guCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetGroupUpdatedSubject("*")
 		var err error
-		guSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupUpdated)
+		guCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_GROUP_PROCESSOR_GROUP_UPDATED", eventSubject, rpProcessor.groupUpdated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
@@ -62,10 +74,6 @@ func (rpProcessor *groupProcessor) Process(ctx context.Context) error {
 
 	<-ctx.Done()
 	log.Info("the context is done")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := processor.UnsubscribeSubscriptions(ctx, gcSub, gdSub, guSub); err != nil {
-		return eris.Wrap(err, "failed finalising group processor")
-	}
+	processor.UnsubscribeConsumeContexts(gcCCtx, gdCCtx, guCCtx)
 	return nil
 }

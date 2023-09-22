@@ -123,6 +123,12 @@ func GetTraceCollectorPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "TRACE_COLLECTOR_PORT")
 }
 
+// TODO: as env variable
+// GetExpenseSplitterSubject returns the name of the root subject all expense splitter events are published under
+func GetExpenseSplitterSubject() string {
+	return "expensesplitter"
+}
+
 // TODO: as env variable with %s parameter
 // GetGroupCreatedSubject returns the name of the subject events are published on when a group was created
 func GetGroupCreatedSubject(groupId string) string {
@@ -150,7 +156,11 @@ func GetGroupSubject(groupId string) string {
 // TODO: as env variable
 // GetGroupsSubject returns the name of the subject events of all groups are published on
 func GetGroupsSubject() string {
-	return "group"
+	return fmt.Sprintf("%s.group", GetExpenseSplitterSubject())
+}
+
+func GetGroupSourceStreamName() string {
+	return "EXPENSESPLITTER_GROUP"
 }
 
 // TODO: as env variable with %s parameter
@@ -183,6 +193,10 @@ func GetPeopleSubject(groupId string) string {
 	return fmt.Sprintf("%s.person", GetGroupSubject(groupId))
 }
 
+func GetPersonSourceStreamName() string {
+	return "EXPENSESPLITTER_PERSON"
+}
+
 // TODO: as env variable with %s parameter
 // GetCategoryCreatedSubject returns the name of the subject events are published on when a category was created
 func GetCategoryCreatedSubject(groupId string, categoryId string) string {
@@ -211,6 +225,10 @@ func GetCategorySubject(groupId string, categoryId string) string {
 // GetCategoriesSubject returns the name of the subject events of all categories are published on
 func GetCategoriesSubject(groupId string) string {
 	return fmt.Sprintf("%s.category", GetGroupSubject(groupId))
+}
+
+func GetCategorySourceStreamName() string {
+	return "EXPENSESPLITTER_CATEGORY"
 }
 
 // TODO: as env variable with %s parameter
@@ -243,6 +261,10 @@ func GetExpensesSubject(groupId string) string {
 	return fmt.Sprintf("%s.expense", GetGroupSubject(groupId))
 }
 
+func GetExpenseSourceStreamName() string {
+	return "EXPENSESPLITTER_EXPENSE"
+}
+
 // TODO: as env variable with %s parameter
 // GetExpenseStakeCreatedSubject returns the name of the subject events are published on when a expense stake was created
 func GetExpenseStakeCreatedSubject(groupId string, expenseId string, stakeId string) string {
@@ -273,6 +295,10 @@ func GetExpenseStakesSubject(groupId string, expenseId string) string {
 	return fmt.Sprintf("%s.expensestake", GetExpenseSubject(groupId, expenseId))
 }
 
+func GetExpenseStakeSourceStreamName() string {
+	return "EXPENSESPLITTER_EXPENSESTAKE"
+}
+
 // TODO: as env variable with %s parameter
 // GetCurrencyCreatedSubject returns the name of the subject events are published on when a group was created
 func GetCurrencyCreatedSubject(currencyId string) string {
@@ -300,7 +326,11 @@ func GetCurrencySubject(currencyId string) string {
 // TODO: as env variable
 // GetCurrenciesSubject returns the name of the subject events of all groups are published on
 func GetCurrenciesSubject() string {
-	return "group"
+	return fmt.Sprintf("%s.currency", GetExpenseSplitterSubject())
+}
+
+func GetCurrencySourceStreamName() string {
+	return "EXPENSESPLITTER_CURRENCY"
 }
 
 // TODO: as env variable
