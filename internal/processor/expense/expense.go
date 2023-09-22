@@ -2,20 +2,20 @@ package expense
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 )
 
 type expenseProcessor struct {
-	natsClient *nats.EncodedConn
+	natsClient *nats.Conn
 	dbClient   bun.IDB
 }
 
@@ -25,7 +25,7 @@ var errPublishExpenseDeleted = eris.New("could not publish expense deleted event
 
 // NewExpenseServer creates a new instance of expense server.
 func NewExpenseProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*expenseProcessor, error) {
-	nc, err := mqClient.NewProtoMQClient(natsUrl)
+	nc, err := nats.Connect(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}
@@ -40,47 +40,61 @@ func (rpProcessor *expenseProcessor) Process(ctx context.Context) error {
 	log := logging.FromContext(ctx).Named("Process")
 	ctx = logging.IntoContext(ctx, log)
 
-	var ccSub *nats.Subscription
+	sourceStreamName := environment.GetExpenseSourceStreamName()
+	groupSourceStreamName := environment.GetGroupSourceStreamName()
+	personSourceStreamName := environment.GetPersonSourceStreamName()
+
+	_, err := processor.CreateOrUpdateSourceStream(
+		ctx,
+		rpProcessor.natsClient,
+		sourceStreamName,
+		fmt.Sprintf("%s.*", environment.GetExpenseSubject("*", "*")),
+	)
+	if err != nil {
+		return err
+	}
+
+	var ecCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetExpenseCreatedSubject("*", "*")
 		var err error
-		ccSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.expenseCreated)
+		ecCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_EXPENSE_PROCESSOR_EXPENSE_CREATED", eventSubject, rpProcessor.expenseCreated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cdSub *nats.Subscription
+	var edCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetExpenseDeletedSubject("*", "*")
 		var err error
-		cdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.expenseDeleted)
+		edCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_EXPENSE_PROCESSOR_EXPENSE_DELETED", eventSubject, rpProcessor.expenseDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cuSub *nats.Subscription
+	var euCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetExpenseUpdatedSubject("*", "*")
 		var err error
-		cuSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.expenseUpdated)
+		euCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_EXPENSE_PROCESSOR_EXPENSE_UPDATED", eventSubject, rpProcessor.expenseUpdated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var gdSub *nats.Subscription
+	var gdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetGroupDeletedSubject("*")
 		var err error
-		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
+		gdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, groupSourceStreamName, "EXPENSESPLITTER_EXPENSE_PROCESSOR_GROUP_DELETED", eventSubject, rpProcessor.groupDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var pdSub *nats.Subscription
+	var pdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetPersonDeletedSubject("*", "*")
 		var err error
-		pdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.personDeleted)
+		pdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, personSourceStreamName, "EXPENSESPLITTER_EXPENSE_PROCESSOR_PERSON_DELETED", eventSubject, rpProcessor.personDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
@@ -88,10 +102,6 @@ func (rpProcessor *expenseProcessor) Process(ctx context.Context) error {
 
 	<-ctx.Done()
 	log.Info("the context is done")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := processor.UnsubscribeSubscriptions(ctx, ccSub, cdSub, cuSub, gdSub, pdSub); err != nil {
-		return eris.Wrap(err, "failed finalising expense processor")
-	}
+	processor.UnsubscribeConsumeContexts(ecCCtx, edCCtx, euCCtx, gdCCtx, pdCCtx)
 	return nil
 }

@@ -5,10 +5,12 @@ package currency
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	currencyv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/common/currency/v1"
 	currencyprocv1 "github.com/nico151999/high-availability-expense-splitter/gen/lib/go/processor/currency/v1"
 	curClient "github.com/nico151999/high-availability-expense-splitter/pkg/currency/client"
@@ -16,7 +18,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -24,7 +25,7 @@ import (
 )
 
 type currencyProcessor struct {
-	natsClient     *nats.EncodedConn
+	natsClient     *nats.Conn
 	dbClient       bun.IDB
 	currencyClient curClient.Client
 }
@@ -38,7 +39,7 @@ var errPublishCurrencyCreated = eris.New("could not publish currency created eve
 
 // NewCurrencyServer creates a new instance of currency server.
 func NewCurrencyProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*currencyProcessor, error) {
-	nc, err := mqClient.NewProtoMQClient(natsUrl)
+	nc, err := nats.Connect(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}
@@ -54,29 +55,41 @@ func (rpProcessor *currencyProcessor) Process(ctx context.Context) error {
 	log := logging.FromContext(ctx).Named("Process")
 	ctx = logging.IntoContext(ctx, log)
 
-	var ccSub *nats.Subscription
+	sourceStreamName := environment.GetCurrencySourceStreamName()
+
+	_, err := processor.CreateOrUpdateSourceStream(
+		ctx,
+		rpProcessor.natsClient,
+		sourceStreamName,
+		fmt.Sprintf("%s.*", environment.GetCurrencySubject("*")),
+	)
+	if err != nil {
+		return err
+	}
+
+	var ccCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCurrencyCreatedSubject("*")
 		var err error
-		ccSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.currencyCreated)
+		ccCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CURRENCY_PROCESSOR_CURRENCY_CREATED", eventSubject, rpProcessor.currencyCreated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cdSub *nats.Subscription
+	var cdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCurrencyDeletedSubject("*")
 		var err error
-		cdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.currencyDeleted)
+		cdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CURRENCY_PROCESSOR_CURRENCY_DELETED", eventSubject, rpProcessor.currencyDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cuSub *nats.Subscription
+	var cuCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCurrencyUpdatedSubject("*")
 		var err error
-		cuSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.currencyUpdated)
+		cuCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CURRENCY_PROCESSOR_CURRENCY_UPDATED", eventSubject, rpProcessor.currencyUpdated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
@@ -102,11 +115,7 @@ loop:
 			}
 		case <-ctx.Done():
 			log.Info("the context is done")
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-			defer cancel()
-			if err := processor.UnsubscribeSubscriptions(ctx, ccSub, cdSub, cuSub); err != nil {
-				return eris.Wrap(err, "failed finalising currency processor")
-			}
+			processor.UnsubscribeConsumeContexts(ccCCtx, cdCCtx, cuCCtx)
 			break loop
 		}
 	}
@@ -127,7 +136,7 @@ func (rpProcessor *currencyProcessor) updateCurrencies(ctx context.Context) erro
 		log := log.With(logging.String("currency", acronym))
 
 		err := rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-			if err := tx.NewSelect().Model((*currencyv1.Currency)(nil)).Where("acronym = ?", acronym).Limit(1).Scan(ctx); err == nil {
+			if err := tx.NewSelect().Model(&currencyv1.Currency{}).Where("acronym = ?", acronym).Limit(1).Scan(ctx); err == nil {
 				log.Debug("currency already exists in database")
 			} else {
 				if eris.Is(err, sql.ErrNoRows) {

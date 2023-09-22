@@ -2,20 +2,20 @@ package category
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	mqClient "github.com/nico151999/high-availability-expense-splitter/pkg/mq/client"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/processor"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 )
 
 type categoryProcessor struct {
-	natsClient *nats.EncodedConn
+	natsClient *nats.Conn
 	dbClient   bun.IDB
 }
 
@@ -25,7 +25,7 @@ var errPublishCategoryDeleted = eris.New("could not publish category deleted eve
 
 // NewCategoryServer creates a new instance of category server.
 func NewCategoryProcessor(natsUrl, dbUser, dbPass, dbAddr, db string) (*categoryProcessor, error) {
-	nc, err := mqClient.NewProtoMQClient(natsUrl)
+	nc, err := nats.Connect(natsUrl)
 	if err != nil {
 		return nil, eris.Wrap(err, "failed connecting to NATS server")
 	}
@@ -40,38 +40,51 @@ func (rpProcessor *categoryProcessor) Process(ctx context.Context) error {
 	log := logging.FromContext(ctx).Named("Process")
 	ctx = logging.IntoContext(ctx, log)
 
-	var ccSub *nats.Subscription
+	sourceStreamName := environment.GetCategorySourceStreamName()
+	groupSourceStreamName := environment.GetGroupSourceStreamName()
+
+	_, err := processor.CreateOrUpdateSourceStream(
+		ctx,
+		rpProcessor.natsClient,
+		sourceStreamName,
+		fmt.Sprintf("%s.*", environment.GetCategorySubject("*", "*")),
+	)
+	if err != nil {
+		return err
+	}
+
+	var ccCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCategoryCreatedSubject("*", "*")
 		var err error
-		ccSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryCreated)
+		ccCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CATEGORY_PROCESSOR_CATEGORY_CREATED", eventSubject, rpProcessor.categoryCreated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cdSub *nats.Subscription
+	var cdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCategoryDeletedSubject("*", "*")
 		var err error
-		cdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryDeleted)
+		cdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CATEGORY_PROCESSOR_CATEGORY_DELETED", eventSubject, rpProcessor.categoryDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var cuSub *nats.Subscription
+	var cuCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetCategoryUpdatedSubject("*", "*")
 		var err error
-		cuSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.categoryUpdated)
+		cuCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, sourceStreamName, "EXPENSESPLITTER_CATEGORY_PROCESSOR_CATEGORY_UPDATED", eventSubject, rpProcessor.categoryUpdated)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
 	}
-	var gdSub *nats.Subscription
+	var gdCCtx jetstream.ConsumeContext
 	{
 		eventSubject := environment.GetGroupDeletedSubject("*")
 		var err error
-		gdSub, err = processor.GetSubjectProcessor(ctx, eventSubject, rpProcessor.natsClient, rpProcessor.groupDeleted)
+		gdCCtx, err = processor.GetStreamProcessor(ctx, rpProcessor.natsClient, groupSourceStreamName, "EXPENSESPLITTER_CATEGORY_PROCESSOR_GROUP_DELETED", eventSubject, rpProcessor.groupDeleted)
 		if err != nil {
 			return eris.Wrapf(err, "an error occurred processing subject %s", eventSubject)
 		}
@@ -79,10 +92,6 @@ func (rpProcessor *categoryProcessor) Process(ctx context.Context) error {
 
 	<-ctx.Done()
 	log.Info("the context is done")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := processor.UnsubscribeSubscriptions(ctx, ccSub, cdSub, cuSub, gdSub); err != nil {
-		return eris.Wrap(err, "failed finalising category processor")
-	}
+	processor.UnsubscribeConsumeContexts(ccCCtx, cdCCtx, cuCCtx, gdCCtx)
 	return nil
 }
