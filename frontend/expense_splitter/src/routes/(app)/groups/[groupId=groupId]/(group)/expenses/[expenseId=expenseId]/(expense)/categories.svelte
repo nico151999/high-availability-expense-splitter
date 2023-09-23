@@ -50,13 +50,13 @@
         }
     }
 
-    function deleteCategory(categoryId: string) {
+    function deleteCategoryRelation(categoryId: string) {
         return async () => {
             try {
-                await categoryClient.deleteCategory({id: categoryId});
-                console.log('Deleted category');
+                await expenseCategoryRelationClient.deleteExpenseCategoryRelation({categoryId: categoryId, expenseId: expense.id});
+                console.log('Deleted category relation');
             } catch (e) {
-                console.error(`An error occurred trying to delete category ${categoryId}`, e);
+                console.error(`An error occurred trying to delete category relation to ${categoryId}`, e);
             }
         }
     }
@@ -78,7 +78,7 @@
                         <tr>
                             <td>{cID}</td>
                             <td>{category.category.name}</td>
-                            <td><button on:click|stopPropagation={deleteCategory(cID)}>Delete</button></td>
+                            <td><button on:click|stopPropagation={deleteCategoryRelation(cID)}>Delete</button></td>
                         </tr>
                     {:else}
                         <tr>Loading category with ID {cID}...</tr>
