@@ -15,7 +15,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -69,7 +68,7 @@ func (s *personServer) CreatePerson(ctx context.Context, req *connect.Request[pe
 }
 
 func createPerson(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *personsvcv1.CreatePersonRequest) (string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	personId := util.GenerateIdWithPrefix("person")
 	requestorEmail := "ab@c.de" // TODO: take user email from context

@@ -10,7 +10,13 @@ import (
 	"connectrpc.com/connect"
 	grpcreflect "connectrpc.com/grpcreflect"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/category/v1/categoryv1connect"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/currency/v1/currencyv1connect"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expense/v1/expensev1connect"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensecategoryrelation/v1/expensecategoryrelationv1connect"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/expensestake/v1/expensestakev1connect"
 	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/group/v1/groupv1connect"
+	"github.com/nico151999/high-availability-expense-splitter/gen/lib/go/service/person/v1/personv1connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/server"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
@@ -30,7 +36,13 @@ func main() {
 	serverAddress := fmt.Sprintf(":%d", environment.GetReflectionServerPort(ctx))
 
 	svc := grpcreflect.NewStaticReflector(
+		categoryv1connect.CategoryServiceName,
+		currencyv1connect.CurrencyServiceName,
+		expensev1connect.ExpenseServiceName,
+		expensecategoryrelationv1connect.ExpenseCategoryRelationServiceName,
+		expensestakev1connect.ExpenseStakeServiceName,
 		groupv1connect.GroupServiceName,
+		personv1connect.PersonServiceName,
 	)
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)

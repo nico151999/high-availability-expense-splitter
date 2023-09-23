@@ -14,7 +14,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -61,7 +60,7 @@ func (s *groupServer) UpdateGroup(ctx context.Context, req *connect.Request[grou
 }
 
 func updateGroup(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, groupId string, params []*groupsvcv1.UpdateGroupRequest_UpdateField) (*groupv1.Group, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	group := groupv1.Group{
 		Id: groupId,
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -45,7 +44,7 @@ func (s *currencyServer) ListCurrencies(ctx context.Context, req *connect.Reques
 }
 
 func listCurrencies(ctx context.Context, dbClient bun.IDB) ([]*currencyv1.Currency, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	var currencies []*currencyv1.Currency
 	if err := dbClient.NewSelect().Model(&currencies).Order("acronym ASC").Scan(ctx); err != nil {
 		log.Error("failed getting currencies", logging.Error(err))

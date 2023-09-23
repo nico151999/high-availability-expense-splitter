@@ -29,12 +29,14 @@ GROUP_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/group
 PERSON_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/person
 CURRENCY_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/currency
 CATEGORY_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/category
+EXPENSE_CATEGORY_RELATION_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expensecategoryrelation
 EXPENSE_STAKE_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expensestake
 EXPENSE_SVC_DIR:=$(REPO_ROOT_PATH)/cmd/service/expense
 GROUP_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/group
 PERSON_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/person
 CURRENCY_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/currency
 CATEGORY_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/category
+EXPENSE_CATEGORY_RELATION_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expensecategoryrelation
 EXPENSE_STAKE_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expensestake
 EXPENSE_PROCESSOR_DIR:=$(REPO_ROOT_PATH)/cmd/processor/expense
 OUT_DIR:=$(REPO_ROOT_PATH)/gen
@@ -61,12 +63,14 @@ GROUP_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(RE
 PERSON_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_SVC_DIR))
 CURRENCY_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CURRENCY_SVC_DIR))
 CATEGORY_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
+EXPENSE_CATEGORY_RELATION_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_CATEGORY_RELATION_SVC_DIR))
 EXPENSE_STAKE_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_SVC_DIR))
 EXPENSE_SVC_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_SVC_DIR))
 GROUP_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(GROUP_PROCESSOR_DIR))
 PERSON_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(PERSON_PROCESSOR_DIR))
 CURRENCY_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CURRENCY_PROCESSOR_DIR))
 CATEGORY_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+EXPENSE_CATEGORY_RELATION_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_CATEGORY_RELATION_PROCESSOR_DIR))
 EXPENSE_STAKE_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_STAKE_PROCESSOR_DIR))
 EXPENSE_PROCESSOR_OUT_DIR:=$(APPLICATION_OUT_DIR)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_PROCESSOR_DIR))
 
@@ -263,12 +267,14 @@ generate-dockerfile-links:
 	ln -sf Dockerfile ./cmd/service/person.Dockerfile
 	ln -sf Dockerfile ./cmd/service/currency.Dockerfile
 	ln -sf Dockerfile ./cmd/service/category.Dockerfile
+	ln -sf Dockerfile ./cmd/service/expensecategoryrelation.Dockerfile
 	ln -sf Dockerfile ./cmd/service/expense.Dockerfile
 	ln -sf Dockerfile ./cmd/service/expensestake.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/group.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/person.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/currency.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/category.Dockerfile
+	ln -sf Dockerfile ./cmd/processor/expensecategoryrelation.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/expense.Dockerfile
 	ln -sf Dockerfile ./cmd/processor/expensestake.Dockerfile
 
@@ -371,6 +377,11 @@ build-currency-service: generate-proto
 build-category-service: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_SVC_DIR))
 
+# builds expense category relation service
+.PHONY: build-expensecategoryrelation-service
+build-expensecategoryrelation-service: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_CATEGORY_RELATION_SVC_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_CATEGORY_RELATION_SVC_DIR))
+
 # builds expense stake service
 .PHONY: build-expensestake-service
 build-expensestake-service: generate-proto
@@ -400,6 +411,11 @@ build-currency-processor: generate-proto
 .PHONY: build-category-processor
 build-category-processor: generate-proto
 	CGO_ENABLED=0 go build -o $(CATEGORY_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(CATEGORY_PROCESSOR_DIR))
+
+# builds expensecategoryrelation processor
+.PHONY: build-expensecategoryrelation-processor
+build-expensecategoryrelation-processor: generate-proto
+	CGO_ENABLED=0 go build -o $(EXPENSE_CATEGORY_RELATION_PROCESSOR_OUT_DIR) $(GO_MODULE)/$(shell realpath -m --relative-to $(REPO_ROOT_PATH) $(EXPENSE_CATEGORY_RELATION_PROCESSOR_DIR))
 
 # builds expense stake processor
 .PHONY: build-expensestake-processor

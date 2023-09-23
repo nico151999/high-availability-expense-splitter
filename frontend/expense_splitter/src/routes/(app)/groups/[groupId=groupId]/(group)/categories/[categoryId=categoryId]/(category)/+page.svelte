@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
 	import { writable } from "svelte/store";

@@ -17,7 +17,7 @@ import (
 
 // SetupCategoryTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
 func SetupCategoryTest(t *testing.T, ctx context.Context, db bun.IDB) (categoryv1connect.CategoryServiceClient, net.Listener, func() error) {
-	log := logging.FromContext(ctx).NewNamed("setupCategoryTest")
+	log := logging.FromContext(ctx).Named("setupCategoryTest")
 	ctx = logging.IntoContext(ctx, log)
 
 	for k, v := range map[string]string{

@@ -16,7 +16,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -63,7 +62,7 @@ func (s *expenseServer) UpdateExpense(ctx context.Context, req *connect.Request[
 }
 
 func updateExpense(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, expenseId string, params []*expensesvcv1.UpdateExpenseRequest_UpdateField) (*expensev1.Expense, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	expense := &expensev1.Expense{
 		Id: expenseId,
 	}

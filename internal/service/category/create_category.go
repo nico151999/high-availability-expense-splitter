@@ -15,7 +15,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -69,7 +68,7 @@ func (s *categoryServer) CreateCategory(ctx context.Context, req *connect.Reques
 }
 
 func createCategory(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *categorysvcv1.CreateCategoryRequest) (string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	categoryId := util.GenerateIdWithPrefix("category")
 	requestorEmail := "ab@c.de" // TODO: take user email from context

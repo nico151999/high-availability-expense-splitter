@@ -14,7 +14,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -68,7 +67,7 @@ func (s *groupServer) CreateGroup(ctx context.Context, req *connect.Request[grou
 }
 
 func createGroup(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *groupsvcv1.CreateGroupRequest) (string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	groupId := util.GenerateIdWithPrefix("group")
 	requestorEmail := "ab@c.de" // TODO: take user email from context

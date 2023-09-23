@@ -17,7 +17,7 @@ import (
 
 // SetupExpenseStakeTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
 func SetupExpenseStakeTest(t *testing.T, ctx context.Context, db bun.IDB) (expensestakev1connect.ExpenseStakeServiceClient, net.Listener, func() error) {
-	log := logging.FromContext(ctx).NewNamed("setupExpenseStakeTest")
+	log := logging.FromContext(ctx).Named("setupExpenseStakeTest")
 	ctx = logging.IntoContext(ctx, log)
 
 	for k, v := range map[string]string{

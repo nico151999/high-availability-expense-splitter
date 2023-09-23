@@ -11,7 +11,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -83,7 +82,7 @@ func (s *currencyServer) StreamCurrencies(ctx context.Context, req *connect.Requ
 }
 
 func sendCurrentCurrencies(ctx context.Context, dbClient bun.IDB) (*currencysvcv1.StreamCurrenciesResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	var currencies []*currencyv1.Currency
 	if err := dbClient.NewSelect().Model(&currencies).Order("acronym ASC").Scan(ctx); err != nil {

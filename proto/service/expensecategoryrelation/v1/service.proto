@@ -1,0 +1,330 @@
+syntax = "proto3";
+
+package service.expensecategoryrelation.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+// buf:lint:ignore IMPORT_USED
+import "google/rpc/error_details.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+service ExpenseCategoryRelationService {
+  // Requests the creation of a expensecategoryrelation with the provided specs
+  rpc CreateExpenseCategoryRelation(CreateExpenseCategoryRelationRequest) returns (CreateExpenseCategoryRelationResponse) {
+    option (google.api.http) = {post: "/v1/expenses/{expense_id}/categories/{category_id}/relation"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200"; // TODO: there is an HTTP 201 for created resources: consider adding it
+          value: {
+            description: "Returns specs describing the created expensecategoryrelation";
+            schema: {
+              json_schema: {ref: ".service.expensecategoryrelation.v1.CreateExpenseCategoryRelationResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Deletes a expensecategoryrelation
+  rpc DeleteExpenseCategoryRelation(DeleteExpenseCategoryRelationRequest) returns (DeleteExpenseCategoryRelationResponse) {
+    option (google.api.http) = {delete: "/v1/expenses/{expense_id}/categories/{category_id}/relation"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Tells the expensecategoryrelation was successfully deleted";
+            schema: {
+              json_schema: {ref: ".service.expensecategoryrelation.v1.DeleteExpenseCategoryRelationResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all expense IDs for category
+  rpc ListExpenseIdsForCategory(ListExpenseIdsForCategoryRequest) returns (ListExpenseIdsForCategoryResponse) {
+    option (google.api.http) = {get: "/v1/categories/{category_id}/expenses:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested expensecategoryrelation IDs";
+            schema: {
+              json_schema: {ref: ".service.expensecategoryrelation.v1.ListExpenseIdsForCategoryResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // Lists all expense IDs for category
+  rpc ListCategoryIdsForExpense(ListCategoryIdsForExpenseRequest) returns (ListCategoryIdsForExpenseResponse) {
+    option (google.api.http) = {get: "/v1/expenses/{expense_id}/categories:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested expensecategoryrelation IDs";
+            schema: {
+              json_schema: {ref: ".service.expensecategoryrelation.v1.ListCategoryIdsForExpenseResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
+  // StreamExpenseIdsForCategory streams the list of all expense IDs for a specified category
+  rpc StreamExpenseIdsForCategory(StreamExpenseIdsForCategoryRequest) returns (stream StreamExpenseIdsForCategoryResponse) {}
+  // StreamCategoryIdsForExpense streams the list of all category IDs for a specified expense
+  rpc StreamCategoryIdsForExpense(StreamCategoryIdsForExpenseRequest) returns (stream StreamCategoryIdsForExpenseResponse) {}
+}
+
+message StreamCategoryIdsForExpenseRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamCategoryIdsForExpenseResponse {
+  message CategoryIds {
+    repeated string ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    CategoryIds category_ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+}
+
+message StreamExpenseIdsForCategoryRequest {
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseIdsForCategoryResponse {
+  message ExpenseIds {
+    repeated string ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    ExpenseIds expense_ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+}
+
+message ListExpenseIdsForCategoryRequest {
+  string category_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListExpenseIdsForCategoryResponse {
+  repeated string expense_ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListCategoryIdsForExpenseRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListCategoryIdsForExpenseResponse {
+  repeated string category_ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteExpenseCategoryRelationRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string category_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message DeleteExpenseCategoryRelationResponse {}
+
+message CreateExpenseCategoryRelationRequest {
+  string expense_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+  ];
+  string category_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message CreateExpenseCategoryRelationResponse {}

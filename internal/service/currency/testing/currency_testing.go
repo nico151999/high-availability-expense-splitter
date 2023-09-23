@@ -17,7 +17,7 @@ import (
 
 // SetupCurrencyTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
 func SetupCurrencyTest(t *testing.T, ctx context.Context, db bun.IDB) (currencyv1connect.CurrencyServiceClient, net.Listener, func() error) {
-	log := logging.FromContext(ctx).NewNamed("setupCurrencyTest")
+	log := logging.FromContext(ctx).Named("setupCurrencyTest")
 	ctx = logging.IntoContext(ctx, log)
 
 	for k, v := range map[string]string{

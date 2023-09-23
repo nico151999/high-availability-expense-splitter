@@ -135,6 +135,23 @@ build:
         buildArgs:
           SERVICE_NAME: "category"
           SVC_OUT_DIR_PARAM: "CATEGORY_SVC_OUT_DIR"
+    - image: &expensecategoryrelationSvcImage ghcr.io/nico151999/ha-expense-splitter-expensecategoryrelation-service
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expensecategoryrelation dockerignore
+          - command: ["sed", "-n", "s/{{SERVICE_NAME}}/expensecategoryrelation/g;w ./cmd/service/expensecategoryrelation.Dockerfile.dockerignore", "./.dockerignore", "./cmd/service/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/service/expensecategoryrelation.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/service/expensecategoryrelation.Dockerfile
+        buildArgs:
+          SERVICE_NAME: "expensecategoryrelation"
+          SVC_OUT_DIR_PARAM: "EXPENSE_CATEGORY_RELATION_SVC_OUT_DIR"
     - image: &expenseSvcImage ghcr.io/nico151999/ha-expense-splitter-expense-service
       context: ./
       hooks:
@@ -239,6 +256,23 @@ build:
         buildArgs:
           PROCESSOR_NAME: "category"
           PROCESSOR_OUT_DIR_PARAM: "CATEGORY_PROCESSOR_OUT_DIR"
+    - image: &expensecategoryrelationProcessorImage ghcr.io/nico151999/ha-expense-splitter-expensecategoryrelation-processor
+      context: ./
+      hooks:
+        before:
+          # concatenate main dockerignore and templated expensecategoryrelation dockerignore
+          - command: ["sed", "-n", "s/{{PROCESSOR_NAME}}/expensecategoryrelation/g;w ./cmd/processor/expensecategoryrelation.Dockerfile.dockerignore", "./.dockerignore", "./cmd/processor/.dockerignoreextension.tpl"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+        after:
+          - command: ["rm", "./cmd/processor/expensecategoryrelation.Dockerfile.dockerignore"]
+            os: [darwin, linux]
+          # TODO: create windows equivalent
+      docker:
+        dockerfile: ./cmd/processor/expensecategoryrelation.Dockerfile
+        buildArgs:
+          PROCESSOR_NAME: "expensecategoryrelation"
+          PROCESSOR_OUT_DIR_PARAM: "EXPENSE_CATEGORY_RELATION_PROCESSOR_OUT_DIR"
     - image: &expenseProcessorImage ghcr.io/nico151999/ha-expense-splitter-expense-processor
       context: ./
       hooks:
@@ -691,6 +725,12 @@ deploy:
                   image:
                     repository: *categorySvcImage
                     tag: *categorySvcImage
+                expensecategoryrelation:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expensecategoryrelationSvcImage
+                    tag: *expensecategoryrelationSvcImage
                 expense:
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets
@@ -729,6 +769,12 @@ deploy:
                   image:
                     repository: *categoryProcessorImage
                     tag: *categoryProcessorImage
+                expensecategoryrelation:
+                  securityContext: *securityContext
+                  imagePullSecrets: *imagePullSecrets
+                  image:
+                    repository: *expensecategoryrelationProcessorImage
+                    tag: *expensecategoryrelationProcessorImage
                 expense:
                   securityContext: *securityContext
                   imagePullSecrets: *imagePullSecrets

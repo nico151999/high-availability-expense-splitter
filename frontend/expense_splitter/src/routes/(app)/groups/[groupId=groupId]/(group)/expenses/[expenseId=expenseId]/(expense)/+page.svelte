@@ -4,7 +4,7 @@
 	import { writable, type Unsubscriber, type Writable } from "svelte/store";
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { ExpenseService } from "../../../../../../../../../../../gen/lib/ts/service/expense/v1/service_connect";
-	import { stakeSumInCurrency, streamExchangeRate, streamExpense } from "../../utils";
+	import { stakeSumInCurrency, streamExpense } from "../../utils";
 	import type { PageData } from "./$types";
 	import { Timestamp } from "@bufbuild/protobuf";
 	import { DateInput } from 'date-picker-svelte';
@@ -17,6 +17,7 @@
 	import { streamCurrencies, streamGroup } from "../../../../../utils";
 	import { GroupService } from "../../../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
+	import Categories from "./categories.svelte";
 
 	export let data: PageData;
 
@@ -223,4 +224,5 @@
 	{:else}
 		<span>Loading data...</span>
 	{/if}
+	<Categories expense={$expense} transport={data.grpcWebTransport}></Categories>
 {/if}

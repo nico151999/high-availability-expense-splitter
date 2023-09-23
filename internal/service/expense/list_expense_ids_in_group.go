@@ -10,7 +10,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -45,7 +44,7 @@ func (s *expenseServer) ListExpenseIdsInGroup(ctx context.Context, req *connect.
 }
 
 func listExpenseIds(ctx context.Context, dbClient bun.IDB, groupId string) ([]string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	var expenseIds []string
 	if err := dbClient.NewSelect().Model((*model.Expense)(nil)).Where("group_id = ?", groupId).Column("id").Order("timestamp DESC").Scan(ctx, &expenseIds); err != nil {
 		log.Error("failed getting expense IDs", logging.Error(err))

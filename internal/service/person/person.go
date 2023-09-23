@@ -31,7 +31,7 @@ type personServer struct {
 
 // NewPersonServer creates a new instance of person server. The context has no effect on the server's lifecycle.
 func NewPersonServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db string) (*personServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewPersonServer")
+	log := logging.FromContext(ctx).Named("NewPersonServer")
 	ctx = logging.IntoContext(ctx, log)
 	return NewPersonServerWithDBClient(
 		ctx,
@@ -41,7 +41,7 @@ func NewPersonServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db
 
 // NewPersonServerWithDBClient creates a new instance of person server. The context has no effect on the server's lifecycle.
 func NewPersonServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*personServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewPersonServerWithDBClient")
+	log := logging.FromContext(ctx).Named("NewPersonServerWithDBClient")
 	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed creating NATS client"

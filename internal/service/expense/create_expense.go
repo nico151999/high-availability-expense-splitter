@@ -17,7 +17,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -71,7 +70,7 @@ func (s *expenseServer) CreateExpense(ctx context.Context, req *connect.Request[
 }
 
 func createExpense(ctx context.Context, nc *nats.EncodedConn, db bun.IDB, req *expensesvcv1.CreateExpenseRequest) (string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	expenseId := util.GenerateIdWithPrefix("expense")
 	requestorEmail := "ab@c.de" // TODO: take user email from context

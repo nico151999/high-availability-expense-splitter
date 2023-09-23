@@ -4,7 +4,11 @@ import type { Expense } from "../../../../../../../../../gen/lib/ts/common/expen
 import type { ExpenseService } from "../../../../../../../../../gen/lib/ts/service/expense/v1/service_connect";
 import type { ExpenseStakeService } from "../../../../../../../../../gen/lib/ts/service/expensestake/v1/service_connect";
 import type { ExpenseStake } from "../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
+import type { ExpenseCategoryRelationService } from "../../../../../../../../../gen/lib/ts/service/expensecategoryrelation/v1/service_connect";
 import type { CurrencyService } from "../../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
+import type { Category } from "../../../../../../../../../gen/lib/ts/common/category/v1/category_pb";
+import { streamCategory } from "../categories/utils";
+import type { CategoryService } from "../../../../../../../../../gen/lib/ts/service/category/v1/service_connect";
 
 export async function streamExpense(
 	expenseClient: PromiseClient<typeof ExpenseService>,
@@ -98,6 +102,36 @@ export async function streamExpenses(
     console.log(`Ended expenses stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     await streamExpenses(expenseClient, groupId, abortController, expensesStore);
+}
+
+export async function streamCategoriesForExpense(
+    relationClient: PromiseClient<typeof ExpenseCategoryRelationService>,
+    expenseId: string,
+    abortController: AbortController,
+    categoryIdsStore: Writable<string[] | undefined>
+) {
+    try {
+        for await (const cIDsRes of relationClient.streamCategoryIdsForExpense({
+            expenseId: expenseId
+        }, {signal: abortController.signal})) {
+            if (cIDsRes.update.case === 'stillAlive') {
+                continue;
+            }
+            const categoryIDs = cIDsRes.update.value!.ids;
+            categoryIdsStore.set(categoryIDs);
+        }
+    } catch (e) {
+        if (e instanceof ConnectError && e.code === Code.Canceled) {
+            console.log('Intentionally aborted categories for expense stream');
+            return;
+        }
+        console.error('An error occurred trying to stream categories for expense', e);
+    } finally {
+        categoryIdsStore.set(undefined);
+    }
+    console.log(`Ended categories for expense stream. Starting new one in 5 seconds.`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await streamCategoriesForExpense(relationClient, expenseId, abortController, categoryIdsStore);
 }
 
 export async function streamExpenseStake(

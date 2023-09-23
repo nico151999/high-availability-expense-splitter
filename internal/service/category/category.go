@@ -31,7 +31,7 @@ type categoryServer struct {
 
 // NewCategoryServer creates a new instance of category server. The context has no effect on the server's lifecycle.
 func NewCategoryServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db string) (*categoryServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewCategoryServer")
+	log := logging.FromContext(ctx).Named("NewCategoryServer")
 	ctx = logging.IntoContext(ctx, log)
 	return NewCategoryServerWithDBClient(
 		ctx,
@@ -41,7 +41,7 @@ func NewCategoryServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, 
 
 // NewCategoryServerWithDBClient creates a new instance of category server. The context has no effect on the server's lifecycle.
 func NewCategoryServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*categoryServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewCategoryServerWithDBClient")
+	log := logging.FromContext(ctx).Named("NewCategoryServerWithDBClient")
 	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed connecting to NATS server"

@@ -11,7 +11,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -83,7 +82,7 @@ func (s *expensestakeServer) StreamExpenseStakeIdsInExpense(ctx context.Context,
 }
 
 func sendCurrentExpenseStakeIds(ctx context.Context, dbClient bun.IDB, expenseId string) (*expensestakesvcv1.StreamExpenseStakeIdsInExpenseResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	var expensestakeIds []string
 	if err := dbClient.NewSelect().Model((*expensestakev1.ExpenseStake)(nil)).Where("expense_id = ?", expenseId).Column("id").Order("for_id ASC").Scan(ctx, &expensestakeIds); err != nil {
