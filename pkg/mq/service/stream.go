@@ -8,7 +8,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 )
 
@@ -28,7 +27,7 @@ func StreamResource[T any](
 	retrieveCurrentResource retrieveCurrentResourceFunc[T],
 	srv *connect.ServerStream[T],
 	stillAliveMsg *T) error {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	ticker := time.NewTicker(tickerPeriod)
 	defer ticker.Stop()
@@ -78,7 +77,7 @@ func sendCurrentResource[T any](
 	ctx context.Context,
 	srv *connect.ServerStream[T],
 	retrieveCurrentResource retrieveCurrentResourceFunc[T]) error {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	res, err := retrieveCurrentResource(ctx)
 	if err != nil {

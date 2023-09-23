@@ -29,7 +29,7 @@ type expensestakeServer struct {
 
 // NewExpenseStakeServer creates a new instance of expense stake server. The context has no effect on the server's lifecycle.
 func NewExpenseStakeServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db string) (*expensestakeServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewExpenseStakeServer")
+	log := logging.FromContext(ctx).Named("NewExpenseStakeServer")
 	ctx = logging.IntoContext(ctx, log)
 	return NewExpenseStakeServerWithDBClient(
 		ctx,
@@ -39,7 +39,7 @@ func NewExpenseStakeServer(ctx context.Context, natsServer, dbUser, dbPass, dbAd
 
 // NewExpenseStakeServerWithDBClient creates a new instance of expense stake server. The context has no effect on the server's lifecycle.
 func NewExpenseStakeServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*expensestakeServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewExpenseStakeServerWithDBClient")
+	log := logging.FromContext(ctx).Named("NewExpenseStakeServerWithDBClient")
 	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed creating NATS client"

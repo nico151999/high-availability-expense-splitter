@@ -7,7 +7,6 @@ import (
 	"reflect"
 
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/protobuf/proto"
@@ -38,13 +37,10 @@ func CheckResourceExists[T protoWithId](ctx context.Context, db bun.IDB, id stri
 	modelReflect := model.ProtoReflect()
 	modelDescriptor := modelReflect.Descriptor()
 	modelName := string(modelDescriptor.Name())
-	log := otel.NewOtelLogger(
-		ctx,
-		logging.FromContext(ctx).With(
-			logging.String(
-				"resource",
-				modelName,
-			),
+	log := logging.FromContext(ctx).With(
+		logging.String(
+			"resource",
+			modelName,
 		),
 	)
 	modelReflect.Set(

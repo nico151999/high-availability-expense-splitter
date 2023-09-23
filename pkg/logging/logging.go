@@ -18,14 +18,15 @@ type Logger interface {
 	Level() Level
 	Log(lvl Level, msg string, fields ...Field)
 	Named(s string) Logger
-	NewNamed(s string) Logger
 	Panic(msg string, fields ...Field)
 	Warn(msg string, fields ...Field)
 	With(fields ...Field) Logger
+	WithInterceptors(interFuncs ...InterceptorFunc) Logger
 }
 
 type logger struct {
 	*zap.Logger
+	initialInterceptor *interceptor
 }
 
 type loggerCtxKeyType int
@@ -47,7 +48,10 @@ var globalLogger *logger
 
 func init() {
 	if l, err := zap.NewProduction(); err == nil {
-		globalLogger = &logger{l}
+		globalLogger = &logger{
+			l,
+			nil,
+		}
 	} else {
 		panic(err)
 	}
@@ -56,19 +60,14 @@ func init() {
 func (l *logger) Named(s string) Logger {
 	return &logger{
 		l.Logger.Named(s),
-	}
-}
-
-func (l *logger) NewNamed(s string) Logger {
-	n := *l.Logger
-	return &logger{
-		n.Named(s),
+		l.initialInterceptor,
 	}
 }
 
 func (l *logger) With(fields ...Field) Logger {
 	return &logger{
 		l.Logger.With(fields...),
+		l.initialInterceptor,
 	}
 }
 

@@ -117,6 +117,21 @@ haExpenseSplitter:
           - columns:
             - *expenseCurrencyId
             isUnique: false
+      expensecategoryrelation:
+        name: expense_category_relations
+        schema:
+          columns:
+          - name: &expensecategoryrelationExpenseId expense_id
+            type: text
+            constraints:
+              notNull: true
+          - name: &expensecategoryrelationCategoryId category_id
+            type: text
+            constraints:
+              notNull: true
+          primaryKey:
+          - *expensecategoryrelationExpenseId
+          - *expensecategoryrelationCategoryId
       expensestake:
         name: expense_stakes
         schema:
@@ -370,6 +385,58 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-expense-service-repo"
+          tag: "latest"
+        dependencies: [] # the services this service depends on
+      expensecategoryrelation:
+        roles: [service] # roles this service should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this service should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        ingress:
+          endpoints:
+            # TODO: create protoc plugin to auto-generate ingress.yaml
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/CreateExpenseCategoryRelation$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/ListExpenseIdsForCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/ListCategoryIdsForExpense$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/DeleteExpenseCategoryRelation$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/StreamExpenseIdsForCategory$
+              methods:
+                - POST
+                - OPTIONS
+            - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/StreamCategoryIdsForExpense$
+              methods:
+                - POST
+                - OPTIONS
+        deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expensecategoryrelation-service-repo"
           tag: "latest"
         dependencies: [] # the services this service depends on
       person:
@@ -636,6 +703,31 @@ haExpenseSplitter:
           memoryUtilizationPercentage: 80
         image:
           repository: "my-registry/my-group/my-expense-processor-repo"
+          tag: "latest"
+        dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
+        clusterRoleRules: []
+      expensecategoryrelation:
+        roles: [] # roles this processor should have; those roles need to be defined in the templates
+        clusterRoles: [] # cluster roles this processor should have; those roles need to be defined in the templates
+        db: true # tells if it uses the database
+        imagePullPolicy: *imagePullPolicy
+        imagePullSecrets: *imagePullSecrets
+        linkerdMesh: *linkerdMesh
+        securityContext: *securityContext
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 25m
+            memory: 50Mi
+        autoscaling:
+          minReplicas: 1
+          maxReplicas: 10
+          CPUUtilizationPercentage: 80
+          memoryUtilizationPercentage: 80
+        image:
+          repository: "my-registry/my-group/my-expensecategoryrelation-processor-repo"
           tag: "latest"
         dependencies: [] # the services (not processors) this processor depends on (i.e. services this processor expects to be up and waiting for requests)
         clusterRoleRules: []

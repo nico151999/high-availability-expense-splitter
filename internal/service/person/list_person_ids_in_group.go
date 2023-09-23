@@ -10,7 +10,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -45,7 +44,7 @@ func (s *personServer) ListPersonIdsInGroup(ctx context.Context, req *connect.Re
 }
 
 func listPersonIds(ctx context.Context, dbClient bun.IDB, groupId string) ([]string, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	var personIds []string
 	if err := dbClient.NewSelect().Model((*personv1.Person)(nil)).Where("group_id = ?", groupId).Column("id").Order("name ASC").Scan(ctx, &personIds); err != nil {
 		log.Error("failed getting person IDs", logging.Error(err))

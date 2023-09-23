@@ -14,7 +14,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -61,7 +60,7 @@ func (s *personServer) UpdatePerson(ctx context.Context, req *connect.Request[pe
 }
 
 func updatePerson(ctx context.Context, nc *nats.EncodedConn, dbClient bun.IDB, personId string, params []*personsvcv1.UpdatePersonRequest_UpdateField) (*personv1.Person, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 	person := personv1.Person{
 		Id: personId,
 	}

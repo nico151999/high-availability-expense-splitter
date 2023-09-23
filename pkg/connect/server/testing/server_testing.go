@@ -27,7 +27,7 @@ func StartTestServer[
 	registerServiceHandler server.ServiceHandlerRegistrarFunc,
 	createServiceHandler server.ServiceHandlerCreatorFunc[Handler],
 ) (*bufconn.Listener, func() error) {
-	log := logging.FromContext(ctx).NewNamed("StartTestServer")
+	log := logging.FromContext(ctx).Named("StartTestServer")
 	ctx = logging.IntoContext(ctx, log)
 
 	ln := bufconn.Listen(1024 * 1024)

@@ -17,7 +17,7 @@ import (
 
 // SetupPersonTest creates gRPC server and client and returns instances of interfaces allowing to close both the server and the client. The passed context has no effect on the server's lifecycle.
 func SetupPersonTest(t *testing.T, ctx context.Context, db bun.IDB) (personv1connect.PersonServiceClient, net.Listener, func() error) {
-	log := logging.FromContext(ctx).NewNamed("setupPersonTest")
+	log := logging.FromContext(ctx).Named("setupPersonTest")
 	ctx = logging.IntoContext(ctx, log)
 
 	for k, v := range map[string]string{

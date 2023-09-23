@@ -22,13 +22,13 @@ type logInterceptor struct {
 	log logging.Logger
 }
 
-func (i *logInterceptor) prepareLog(ctx context.Context, proc string) (context.Context, otel.OtelLogger) {
-	log := i.log.NewNamed(
+func (i *logInterceptor) prepareLog(ctx context.Context, proc string) (context.Context, logging.Logger) {
+	log := i.log.Named(
 		strings.ReplaceAll(proc, ".", "-"),
+	).WithInterceptors(
+		otel.NewOtelInterceptorFunc(ctx),
 	)
-	ctx = logging.IntoContext(ctx, log)
-	otelLog := otel.NewOtelLogger(ctx, log)
-	return ctx, otelLog
+	return logging.IntoContext(ctx, log), log
 }
 
 func (i *logInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
@@ -36,11 +36,11 @@ func (i *logInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		ctx context.Context,
 		req connect.AnyRequest,
 	) (connect.AnyResponse, error) {
-		ctx, otelLog := i.prepareLog(ctx, req.Spec().Procedure)
-		otelLog.Info("received request")
+		ctx, log := i.prepareLog(ctx, req.Spec().Procedure)
+		log.Info("received request")
 		res, err := next(ctx, req)
 		if err != nil {
-			otelLog.Info("request is answered with an error")
+			log.Info("request is answered with an error")
 		}
 		return res, err
 	})
@@ -53,14 +53,14 @@ func (i *logInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) c
 
 func (i *logInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
-		ctx, otelLog := i.prepareLog(ctx, conn.Spec().Procedure)
-		otelLog.Info("starting to handle stream")
+		ctx, log := i.prepareLog(ctx, conn.Spec().Procedure)
+		log.Info("starting to handle stream")
 		err := next(ctx, &streamingLogHandlerConn{
 			StreamingHandlerConn: conn,
-			otelLog:              otelLog,
+			log:                  log,
 		})
 		if err != nil {
-			otelLog.Info("stream ended with an error", logging.Error(err))
+			log.Info("stream ended with an error", logging.Error(err))
 		}
 		return err
 	}
@@ -69,15 +69,15 @@ func (i *logInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc)
 type streamingLogHandlerConn struct {
 	connect.StreamingHandlerConn
 
-	otelLog otel.OtelLogger
+	log logging.Logger
 }
 
 func (p *streamingLogHandlerConn) Receive(msg any) error {
-	p.otelLog.Info("receiving a message")
+	p.log.Info("receiving a message")
 	return p.StreamingHandlerConn.Receive(msg)
 }
 
 func (p *streamingLogHandlerConn) Send(msg any) error {
-	p.otelLog.Info("sending a message")
+	p.log.Info("sending a message")
 	return p.StreamingHandlerConn.Send(msg)
 }

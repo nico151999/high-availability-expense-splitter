@@ -15,7 +15,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/db/util"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -125,7 +124,7 @@ func streamCurrentExchangeRate(
 	currencyClient client.Client,
 	srcCurrencyId string,
 	destCurrencyId string) error {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	ticker := time.NewTicker(tickerPeriod)
 	defer ticker.Stop()
@@ -208,7 +207,7 @@ func sendCurrentExchangeRate(
 	ctx context.Context,
 	srv *connect.ServerStream[currencysvcv1.StreamExchangeRateResponse],
 	exchangeRate float64) error {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	if err := srv.Send(&currencysvcv1.StreamExchangeRateResponse{
 		Update: &currencysvcv1.StreamExchangeRateResponse_Rate{

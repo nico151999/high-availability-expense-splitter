@@ -29,7 +29,7 @@ type currencyServer struct {
 
 // NewCurrencyServer creates a new instance of currency server. The context has no effect on the server's lifecycle.
 func NewCurrencyServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db string) (*currencyServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewCurrencyServer")
+	log := logging.FromContext(ctx).Named("NewCurrencyServer")
 	ctx = logging.IntoContext(ctx, log)
 	return NewCurrencyServerWithDBClient(
 		ctx,
@@ -39,7 +39,7 @@ func NewCurrencyServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, 
 
 // NewCurrencyServerWithDBClient creates a new instance of currency server. The context has no effect on the server's lifecycle.
 func NewCurrencyServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*currencyServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewCurrencyServerWithDBClient")
+	log := logging.FromContext(ctx).Named("NewCurrencyServerWithDBClient")
 	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed connecting to NATS server"

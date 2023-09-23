@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/rotisserie/eris"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 )
@@ -34,7 +33,7 @@ type multiValidatableMessage interface {
 	ValidateAll() error
 }
 
-func validateRequest(log otel.OtelLogger, msg interface{}) error {
+func validateRequest(log logging.Logger, msg interface{}) error {
 	violations, err := validateMessage(log, msg)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, eris.New("failed validating incoming message"))
@@ -57,7 +56,7 @@ func validateRequest(log otel.OtelLogger, msg interface{}) error {
 	return nil
 }
 
-func validateResponse(log otel.OtelLogger, msg interface{}) error {
+func validateResponse(log logging.Logger, msg interface{}) error {
 	violations, err := validateMessage(log, msg)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, eris.New("failed checking server response message"))
@@ -76,7 +75,7 @@ func validateResponse(log otel.OtelLogger, msg interface{}) error {
 }
 
 // validateMessage expects a struct to be passed and recursively validates all fields that are vaildatable
-func validateMessage(log otel.OtelLogger, msg interface{}) ([]*errdetails.BadRequest_FieldViolation, error) {
+func validateMessage(log logging.Logger, msg interface{}) ([]*errdetails.BadRequest_FieldViolation, error) {
 	fieldViolations := []*errdetails.BadRequest_FieldViolation{}
 	switch v := msg.(type) {
 	case multiValidatableMessage:
@@ -121,7 +120,7 @@ func validateMessage(log otel.OtelLogger, msg interface{}) ([]*errdetails.BadReq
 	return fieldViolations, nil
 }
 
-func addFieldViolation(log otel.OtelLogger, fieldViolations []*errdetails.BadRequest_FieldViolation, err error) ([]*errdetails.BadRequest_FieldViolation, error) {
+func addFieldViolation(log logging.Logger, fieldViolations []*errdetails.BadRequest_FieldViolation, err error) ([]*errdetails.BadRequest_FieldViolation, error) {
 	if valErr, ok := err.(validationError); ok {
 		return append(fieldViolations, &errdetails.BadRequest_FieldViolation{
 			Field:       valErr.Field(),
@@ -137,14 +136,14 @@ func addFieldViolation(log otel.OtelLogger, fieldViolations []*errdetails.BadReq
 // NewValidationInterceptor creates a connect interceptor that validates messages exchanged between server and client
 func NewValidationInterceptor(ctx context.Context) *validationInterceptor {
 	return &validationInterceptor{
-		otelLog: otel.NewOtelLogger(ctx, logging.FromContext(ctx).NewNamed("unaryValidateInterceptorFunc")),
+		log: logging.FromContext(ctx).Named("unaryValidateInterceptorFunc"),
 	}
 }
 
 var _ connect.Interceptor = (*validationInterceptor)(nil)
 
 type validationInterceptor struct {
-	otelLog otel.OtelLogger
+	log logging.Logger
 }
 
 func (i *validationInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
@@ -152,12 +151,12 @@ func (i *validationInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryF
 		ctx context.Context,
 		req connect.AnyRequest,
 	) (connect.AnyResponse, error) {
-		if err := validateRequest(i.otelLog, req.Any()); err != nil {
+		if err := validateRequest(i.log, req.Any()); err != nil {
 			return nil, err
 		}
 		res, err := next(ctx, req)
 		if err == nil {
-			if err := validateResponse(i.otelLog, res.Any()); err != nil {
+			if err := validateResponse(i.log, res.Any()); err != nil {
 				return nil, err
 			}
 		}
@@ -174,7 +173,7 @@ func (i *validationInterceptor) WrapStreamingHandler(next connect.StreamingHandl
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
 		return next(ctx, &streamingValidationHandlerConn{
 			StreamingHandlerConn: conn,
-			otelLog:              i.otelLog,
+			log:                  i.log,
 		})
 	}
 }
@@ -182,20 +181,20 @@ func (i *validationInterceptor) WrapStreamingHandler(next connect.StreamingHandl
 type streamingValidationHandlerConn struct {
 	connect.StreamingHandlerConn
 
-	otelLog otel.OtelLogger
+	log logging.Logger
 }
 
 func (p *streamingValidationHandlerConn) Receive(msg any) error {
 	if err := p.StreamingHandlerConn.Receive(msg); err != nil {
-		p.otelLog.Error("failed receiving message", logging.Error(err))
+		p.log.Error("failed receiving message", logging.Error(err))
 		return connect.NewError(connect.CodeInternal, eris.New("failed receiving message"))
 	}
-	return validateRequest(p.otelLog, msg)
+	return validateRequest(p.log, msg)
 }
 
 func (p *streamingValidationHandlerConn) Send(msg any) error {
-	if err := validateResponse(p.otelLog, msg); err != nil {
-		p.otelLog.Error("failed sending message", logging.Error(err))
+	if err := validateResponse(p.log, msg); err != nil {
+		p.log.Error("failed sending message", logging.Error(err))
 		return connect.NewError(connect.CodeInternal, eris.New("failed sending message"))
 	}
 	return p.StreamingHandlerConn.Send(msg)

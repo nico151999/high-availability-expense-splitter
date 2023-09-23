@@ -11,7 +11,6 @@ import (
 	"github.com/nico151999/high-availability-expense-splitter/pkg/connect/errors"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/environment"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/logging"
-	"github.com/nico151999/high-availability-expense-splitter/pkg/logging/otel"
 	"github.com/nico151999/high-availability-expense-splitter/pkg/mq/service"
 	"github.com/rotisserie/eris"
 	"github.com/uptrace/bun"
@@ -83,7 +82,7 @@ func (s *groupServer) StreamGroupIds(ctx context.Context, req *connect.Request[g
 }
 
 func sendCurrentGroupIds(ctx context.Context, dbClient bun.IDB) (*groupsvcv1.StreamGroupIdsResponse, error) {
-	log := otel.NewOtelLoggerFromContext(ctx)
+	log := logging.FromContext(ctx)
 
 	var groupIds []string
 	if err := dbClient.NewSelect().Model((*groupv1.Group)(nil)).Column("id").Order("name ASC").Scan(ctx, &groupIds); err != nil {

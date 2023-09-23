@@ -31,7 +31,7 @@ type groupServer struct {
 
 // NewGroupServer creates a new instance of group server. The context has no effect on the server's lifecycle.
 func NewGroupServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db string) (*groupServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewGroupServer")
+	log := logging.FromContext(ctx).Named("NewGroupServer")
 	ctx = logging.IntoContext(ctx, log)
 	return NewGroupServerWithDBClient(
 		ctx,
@@ -41,7 +41,7 @@ func NewGroupServer(ctx context.Context, natsServer, dbUser, dbPass, dbAddr, db 
 
 // NewGroupServerWithDBClient creates a new instance of group server. The context has no effect on the server's lifecycle.
 func NewGroupServerWithDBClient(ctx context.Context, dbClient bun.IDB, natsServer string) (*groupServer, error) {
-	log := logging.FromContext(ctx).NewNamed("NewGroupServerWithDBClient")
+	log := logging.FromContext(ctx).Named("NewGroupServerWithDBClient")
 	nc, err := mqClient.NewProtoMQClient(natsServer)
 	if err != nil {
 		msg := "failed creating NATS client"
