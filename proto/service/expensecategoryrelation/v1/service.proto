@@ -234,7 +234,7 @@ message StreamCategoryIdsForExpenseResponse {
     repeated string ids = 1 [
       (validate.rules).repeated.unique = true,
       (google.api.field_behavior) = OUTPUT_ONLY,
-      (validate.rules).repeated.items.string = {pattern: "^expense-[A-Za-z0-9]{15}$"}
+      (validate.rules).repeated.items.string = {pattern: "^category-[A-Za-z0-9]{15}$"}
     ];
   }
   oneof update {
