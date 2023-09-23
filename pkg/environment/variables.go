@@ -30,6 +30,10 @@ func GetExpensestakeServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "EXPENSESTAKE_SERVER_PORT")
 }
 
+func GetExpensecategoryrelationServerPort(ctx context.Context) uint16 {
+	return MustLookupUint16(ctx, "EXPENSECATEGORYRELATION_SERVER_PORT")
+}
+
 // GetCurrencyServerPort returns the port the expense service will run on
 func GetCurrencyServerPort(ctx context.Context) uint16 {
 	return MustLookupUint16(ctx, "CURRENCY_SERVER_PORT")
@@ -331,6 +335,34 @@ func GetCurrenciesSubject() string {
 
 func GetCurrencySourceStreamName() string {
 	return "EXPENSESPLITTER_CURRENCY"
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseCategoryRelationCreatedSubject returns the name of the subject events are published on when a expense stake was created
+func GetExpenseCategoryRelationCreatedSubject(groupId string, expenseId string, categoryId string) string {
+	return fmt.Sprintf("%s.created", GetExpenseCategoryRelationSubject(groupId, expenseId, categoryId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseCategoryRelationDeletedSubject returns the name of the subject events are published on when a expense stake was deleted
+func GetExpenseCategoryRelationDeletedSubject(groupId string, expenseId string, categoryId string) string {
+	return fmt.Sprintf("%s.deleted", GetExpenseCategoryRelationSubject(groupId, expenseId, categoryId))
+}
+
+// TODO: as env variable with %s parameter
+// GetExpenseCategoryRelationSubject returns the name of the subject events of a single expense stake are published on
+func GetExpenseCategoryRelationSubject(groupId string, expenseId string, categoryId string) string {
+	return fmt.Sprintf("%s.%s", GetExpenseCategoryRelationsSubject(groupId, expenseId), categoryId)
+}
+
+// TODO: as env variable
+// GetExpenseCategoryRelationsSubject returns the name of the subject events of all expense stakes are published on
+func GetExpenseCategoryRelationsSubject(groupId string, expenseId string) string {
+	return fmt.Sprintf("%s.category", GetExpenseSubject(groupId, expenseId))
+}
+
+func GetExpenseCategoryRelationSourceStreamName() string {
+	return "EXPENSESPLITTER_EXPENSECATEGORYRELATION"
 }
 
 // TODO: as env variable

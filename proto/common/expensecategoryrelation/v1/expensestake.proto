@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package common.expensecategoryrelation.v1;
+
+import "google/api/resource.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message ExpenseCategoryRelation {
+  option (google.api.resource) = {type: "common.expensecategoryrelation.v1/ExpenseCategoryRelation"};
+  string expense_id = 1 [
+    (google.api.resource_reference) = {type: "common.expense.v1/Expense"},
+    (validate.rules).string = {pattern: "^expense-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+  string category_id = 2 [
+    (google.api.resource_reference) = {type: "common.category.v1/Category"},
+    (validate.rules).string = {pattern: "^category-[A-Za-z0-9]{15}$"},
+    (tagger.tags) = "bun:\",pk\""
+  ];
+}

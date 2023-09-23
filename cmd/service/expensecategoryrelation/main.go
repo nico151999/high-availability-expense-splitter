@@ -43,7 +43,6 @@ func main() {
 	environment.GetExpenseCategoryRelationSubject("foo", "bar", "bob")
 	environment.GetExpenseCategoryRelationCreatedSubject("foo", "bar", "bob")
 	environment.GetExpenseCategoryRelationDeletedSubject("foo", "bar", "bob")
-	environment.GetExpenseCategoryRelationUpdatedSubject("foo", "bar", "bob")
 
 	svc, err := expensecategoryrelation.NewExpenseCategoryRelationServer(
 		ctx,
