@@ -6,9 +6,7 @@ import type { ExpenseStakeService } from "../../../../../../../../../gen/lib/ts/
 import type { ExpenseStake } from "../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
 import type { ExpenseCategoryRelationService } from "../../../../../../../../../gen/lib/ts/service/expensecategoryrelation/v1/service_connect";
 import type { CurrencyService } from "../../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
-import type { Category } from "../../../../../../../../../gen/lib/ts/common/category/v1/category_pb";
-import { streamCategory } from "../categories/utils";
-import type { CategoryService } from "../../../../../../../../../gen/lib/ts/service/category/v1/service_connect";
+import { streamExpenseStake } from "../../../utils";
 
 export async function streamExpense(
 	expenseClient: PromiseClient<typeof ExpenseService>,
@@ -134,37 +132,7 @@ export async function streamCategoriesForExpense(
     await streamCategoriesForExpense(relationClient, expenseId, abortController, categoryIdsStore);
 }
 
-export async function streamExpenseStake(
-	expensestakeClient: PromiseClient<typeof ExpenseStakeService>,
-	expensestakeID: string,
-	abortController: AbortController,
-    expensestake: Writable<ExpenseStake | undefined>
-): Promise<boolean> {
-	try {
-		for await (const pRes of expensestakeClient.streamExpenseStake({id: expensestakeID}, {signal: abortController.signal})) {
-			if (pRes.update.case === 'stillAlive') {
-				continue;
-			}
-            expensestake.set(pRes.update.value);
-		}
-    } catch (e) {
-        if (e instanceof ConnectError) {
-            if (e.code === Code.Canceled) {
-                console.log(`Intentionally aborted expensestake ${expensestakeID} stream`);
-                return true;
-            } else if (e.code === Code.DataLoss) {
-                console.log(`ExpenseStake with ID ${expensestakeID} no longer exists`);
-                return false;
-            }
-        }
-        console.error('An error occurred trying to stream expensestake.', e);
-    }
-    console.log(`Ended expensestake ${expensestakeID} stream. Starting new one in 5 seconds.`);
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    return await streamExpenseStake(expensestakeClient, expensestakeID, abortController, expensestake);
-}
-
-export async function streamExpenseStakes(
+export async function streamExpenseStakesInExpense(
     expensestakeClient: PromiseClient<typeof ExpenseStakeService>,
     expenseId: string,
     abortController: AbortController,
@@ -225,7 +193,7 @@ export async function streamExpenseStakes(
     }
     console.log(`Ended expensestakes stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
-    await streamExpenseStakes(expensestakeClient, expenseId, abortController, expensestakesStore);
+    await streamExpenseStakesInExpense(expensestakeClient, expenseId, abortController, expensestakesStore);
 }
 
 export async function streamExchangeRate(
@@ -260,45 +228,4 @@ export async function streamExchangeRate(
     console.log(`Ended exchange rate stream. Starting new one in 5 seconds.`);
     await new Promise(resolve => setTimeout(resolve, 5000));
     return await streamExchangeRate(currencyClient, srcCurrencyID, destCurrencyID, abortController, exchangeRate);
-}
-
-export function summariseStakes(expensestakes: ExpenseStake[]): string {
-    const mainValues: number[] = [];
-    const fractionalValues: number[] = [];
-    for (let stake of expensestakes) {
-        mainValues.push(stake.mainValue);
-        if (stake.fractionalValue) {
-            fractionalValues.push(stake.fractionalValue);
-        }
-    }
-    let mainSummary = mainValues.reduce((partialSum, a) => partialSum + a, 0);
-    const fractionalSummary = fractionalValues.reduce((partialSum, a) => partialSum + a, 0)
-    mainSummary += Math.floor(fractionalSummary / 100);
-    const fractionalRemainder = fractionalSummary % 100;
-    return marshalMainAndFractionalValues(mainSummary, fractionalRemainder);
-}
-
-export function stakeSumInCurrency(
-    exchangeRate: number,
-    stakeSum: string
-): number {
-    const sum = parseFloat(stakeSum);
-    return sum * exchangeRate;
-}
-
-export function marshalExpenseStakeValue(expensestake: ExpenseStake): string {
-    return marshalMainAndFractionalValues(expensestake.mainValue, expensestake.fractionalValue)
-}
-
-function marshalMainAndFractionalValues(main: number, fractional?: number): string {
-    let fractionalValue: string;
-    if (fractional) {
-        fractionalValue = fractional.toString();
-        if (fractionalValue.length === 1) {
-            fractionalValue = `0${fractionalValue}`;
-        }
-    } else {
-        fractionalValue = '00';
-    }
-    return `${main}.${fractionalValue}`;
 }

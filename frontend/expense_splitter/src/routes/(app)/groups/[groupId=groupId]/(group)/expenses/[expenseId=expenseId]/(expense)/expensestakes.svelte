@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { writable, type Writable } from "svelte/store";
+	import { writable, type Unsubscriber, type Writable } from "svelte/store";
 	import type { ExpenseStake } from "../../../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
 	import { ExpenseStakeService } from "../../../../../../../../../../../gen/lib/ts/service/expensestake/v1/service_connect";
 	import { createPromiseClient, type Transport } from "@bufbuild/connect";
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { onDestroy, onMount } from "svelte";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
-	import { streamExpenseStakes, summariseStakes, marshalExpenseStakeValue } from "../../utils";
+	import { streamExpenseStakesInExpense } from "../../utils";
+	import { marshalExpenseStakeValue, summariseStakes } from "../../../../../utils";
 
     export let expense: Expense;
     export let transport: Transport;
@@ -26,15 +27,17 @@
 	let expensestakes: Writable<
 		Map<string, {expensestake?: ExpenseStake, abortController: AbortController}> | undefined
 	> = writable();
+	let unsubscribeExpensestake: Unsubscriber|undefined;
 	const abortController = new AbortController();
 
     onDestroy(() => {
         abortController.abort();
+		if (unsubscribeExpensestake) {unsubscribeExpensestake()}
     });
 
     onMount(async () => {
-        streamExpenseStakes(expensestakeClient, expense.id, abortController, expensestakes);
-		expensestakes.subscribe((expensestakes) => {
+        streamExpenseStakesInExpense(expensestakeClient, expense.id, abortController, expensestakes);
+		unsubscribeExpensestake = expensestakes.subscribe((expensestakes) => {
 			if (!expensestakes) {
 				return;
 			}

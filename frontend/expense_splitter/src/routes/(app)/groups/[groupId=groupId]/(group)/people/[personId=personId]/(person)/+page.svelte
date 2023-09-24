@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
-	import { writable } from "svelte/store";
+	import { writable, type Writable } from "svelte/store";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPerson } from "../../utils";
@@ -13,6 +13,7 @@
 	const personClient = createPromiseClient(PersonService, data.grpcWebTransport);
 	let person = writable(undefined as Person | undefined);
 	const abortController = new AbortController();
+
     let editMode = false;
 
 	const editedPerson = writable({

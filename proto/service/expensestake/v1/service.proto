@@ -15,7 +15,7 @@ import "validate/validate.proto";
 service ExpenseStakeService {
   // Requests the creation of a expensestake with the provided specs
   rpc CreateExpenseStake(CreateExpenseStakeRequest) returns (CreateExpenseStakeResponse) {
-    option (google.api.http) = {post: "/v1/groups/{expense_id}/expensestakes"};
+    option (google.api.http) = {post: "/v1/expenses/{expense_id}/expensestakes"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -163,9 +163,9 @@ service ExpenseStakeService {
       ];
     };
   }
-  // Lists all expensestake IDs
+  // Lists all expensestake IDs in expense
   rpc ListExpenseStakeIdsInExpense(ListExpenseStakeIdsInExpenseRequest) returns (ListExpenseStakeIdsInExpenseResponse) {
-    option (google.api.http) = {get: "/v1/groups/{expense_id}/expensestakes:id"};
+    option (google.api.http) = {get: "/v1/expenses/{expense_id}/expensestakes:id"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       responses: [
         {
@@ -216,8 +216,63 @@ service ExpenseStakeService {
       ];
     };
   }
+  // Lists all expensestake IDs in group
+  rpc ListExpenseStakeIdsInGroup(ListExpenseStakeIdsInGroupRequest) returns (ListExpenseStakeIdsInGroupResponse) {
+    option (google.api.http) = {get: "/v1/group/{group_id}/expensestakes:id"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: [
+        {
+          key: "200";
+          value: {
+            description: "Returns the requested expensestake IDs";
+            schema: {
+              json_schema: {ref: ".service.expensestake.v1.ListExpenseStakeIdsInGroupResponse"};
+            };
+          };
+        },
+        {
+          key: "400";
+          value: {
+            description: "Provides details telling the user about why the request was bad";
+            schema: {
+              json_schema: {ref: ".google.rpc.BadRequest"};
+            };
+          };
+        },
+        {
+          key: "401";
+          value: {
+            description: "Provides details telling the user he is unauthenticated";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "403";
+          value: {
+            description: "Provides details telling the user he is unauthorized to perform the requested operation";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        },
+        {
+          key: "404";
+          value: {
+            description: "Tells that the resource could not be found";
+            schema: {
+              json_schema: {ref: ".google.rpc.ErrorInfo"};
+            };
+          };
+        }
+      ];
+    };
+  }
   // StreamExpenseStakeIdsInExpense streams the list of all expensestake IDs
   rpc StreamExpenseStakeIdsInExpense(StreamExpenseStakeIdsInExpenseRequest) returns (stream StreamExpenseStakeIdsInExpenseResponse) {}
+  // StreamExpenseStakeIdsInGroup streams the list of all expensestake IDs
+  rpc StreamExpenseStakeIdsInGroup(StreamExpenseStakeIdsInGroupRequest) returns (stream StreamExpenseStakeIdsInGroupResponse) {}
   // StreamExpenseStake streams the requested expensestake
   rpc StreamExpenseStake(StreamExpenseStakeRequest) returns (stream StreamExpenseStakeResponse) {}
 }
@@ -299,6 +354,22 @@ message ListExpenseStakeIdsInExpenseResponse {
   ];
 }
 
+message ListExpenseStakeIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message ListExpenseStakeIdsInGroupResponse {
+  repeated string ids = 1 [
+    (validate.rules).repeated.unique = true,
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+  ];
+}
+
 message StreamExpenseStakeIdsInExpenseRequest {
   string expense_id = 1 [
     (google.api.field_behavior) = REQUIRED,
@@ -308,6 +379,30 @@ message StreamExpenseStakeIdsInExpenseRequest {
 }
 
 message StreamExpenseStakeIdsInExpenseResponse {
+  // the current list of expensestake IDs
+  message ExpenseStakeIds {
+    repeated string ids = 1 [
+      (validate.rules).repeated.unique = true,
+      (google.api.field_behavior) = OUTPUT_ONLY,
+      (validate.rules).repeated.items.string = {pattern: "^expensestake-[A-Za-z0-9]{15}$"}
+    ];
+  }
+  oneof update {
+    option (validate.required) = true;
+    google.protobuf.Empty still_alive = 1;
+    ExpenseStakeIds ids = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+}
+
+message StreamExpenseStakeIdsInGroupRequest {
+  string group_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {type: "common.group.v1/Group"},
+    (validate.rules).string = {pattern: "^group-[A-Za-z0-9]{15}$"}
+  ];
+}
+
+message StreamExpenseStakeIdsInGroupResponse {
   // the current list of expensestake IDs
   message ExpenseStakeIds {
     repeated string ids = 1 [

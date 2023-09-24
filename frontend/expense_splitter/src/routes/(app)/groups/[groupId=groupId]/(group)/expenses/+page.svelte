@@ -6,7 +6,7 @@
 	import { onDestroy, onMount } from "svelte";
 	import { get, writable, type Unsubscriber, type Writable } from "svelte/store";
 	import { goto } from "$app/navigation";
-	import { stakeSumInCurrency, streamExpenseStakes, streamExpenses, summariseStakes } from "./utils";
+	import { streamExpenseStakesInExpense, streamExpenses } from "./utils";
 	import { Timestamp } from "@bufbuild/protobuf";
 	import { DateInput } from 'date-picker-svelte';
 	import type { Person } from "../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
@@ -14,7 +14,7 @@
 	import { streamPeople } from "../people/utils";
 	import { CurrencyService } from "../../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
 	import type { Currency } from "../../../../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
-	import { streamCurrencies, streamGroup } from "../../../utils";
+	import { stakeSumInCurrency, streamCurrencies, streamGroup, summariseStakes } from "../../../utils";
 	import type { ExpenseStake } from "../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
 	import { ExpenseStakeService } from "../../../../../../../../../gen/lib/ts/service/expensestake/v1/service_connect";
 	import { GroupService } from "../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
@@ -153,7 +153,7 @@
 					expensesSummary = summariseExpenses();
 				});
 				const abortController = new AbortController();
-				streamExpenseStakes(expensestakeClient, expenseId, abortController, expenseStakes);
+				streamExpenseStakesInExpense(expensestakeClient, expenseId, abortController, expenseStakes);
 				expensestakesPerExpense.set(expenseId, {
 					expensestakes: expenseStakes,
 					abortController: abortController,

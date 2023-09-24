@@ -4,7 +4,7 @@
 	import { writable, type Unsubscriber, type Writable } from "svelte/store";
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { ExpenseService } from "../../../../../../../../../../../gen/lib/ts/service/expense/v1/service_connect";
-	import { stakeSumInCurrency, streamExpense } from "../../utils";
+	import { streamExpense } from "../../utils";
 	import type { PageData } from "./$types";
 	import { Timestamp } from "@bufbuild/protobuf";
 	import { DateInput } from 'date-picker-svelte';
@@ -14,7 +14,7 @@
 	import Expensestakes from "./expensestakes.svelte";
 	import { CurrencyService } from "../../../../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
 	import type { Currency } from "../../../../../../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
-	import { streamCurrencies, streamGroup } from "../../../../../utils";
+	import { stakeSumInCurrency, streamCurrencies, streamGroup } from "../../../../../utils";
 	import { GroupService } from "../../../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import Categories from "./categories.svelte";
