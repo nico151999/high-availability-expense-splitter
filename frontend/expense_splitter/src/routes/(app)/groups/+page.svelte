@@ -9,6 +9,7 @@
 	import { writable, type Writable } from "svelte/store";
 	import { goto } from "$app/navigation";
 	import { streamCurrencies, streamGroups } from "./utils";
+	import { t } from '$lib/localization';
 
 	export let data: PageData;
 
@@ -77,7 +78,7 @@
 		<th>ID</th>
 		<th>Name</th>
 		<th>Default Currency</th>
-		<th>Action</th>
+		<th>{$t('groups.action')}</th>
 	</thead>
 	<tbody>
 		{#if $groups}

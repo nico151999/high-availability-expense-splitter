@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import { API_SECURE, API_HOSTNAME, API_PORT } from '$env/static/private';
-import { locales, loadTranslations, translations, locale } from '$lib/localization';
+import { locales, loadTranslations, translations } from '$lib/localization';
 
 export const load = (async ({ url, cookies, request }) => {
     const { pathname } = url;
@@ -10,7 +10,7 @@ export const load = (async ({ url, cookies, request }) => {
 
     // Get user preferred locale
     if (!locale) {
-        locale = `${`${request.headers.get('accept-language')}`.match(/[a-zA-Z]+?(?=-|_|,|;)/)}`.toLowerCase();
+        locale = `${`${request.headers.get('accept-language')}`.match(/^[a-zA-Z]+/)}`.toLowerCase();
     }
 
     // Get defined locales
