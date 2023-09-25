@@ -8,5 +8,3 @@
 
 <h2>My main page</h2>
 <button on:click={gotoGroups}>Open Groups</button>
-
-<slot></slot>
