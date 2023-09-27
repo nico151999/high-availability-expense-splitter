@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
-	import { writable, type Writable } from "svelte/store";
+	import { writable } from "svelte/store";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPerson } from "../../utils";
 	import type { PageData } from "./$types";
+	import { t } from '$lib/localization';
 
 	export let data: PageData;
 
@@ -76,7 +76,7 @@
 		{#if $person}
             {#if editMode}
                 <tr>
-                    <td><input type="text" placeholder="Person name" bind:value={$editedPerson.name}/></td>
+                    <td><input type="text" placeholder={$t('person.namePlaceholder')} bind:value={$editedPerson.name}/></td>
                     <td>
                         <button on:click={updatePerson}>Update person</button>
                         <button on:click={stopEdit}>Cancel</button>
