@@ -5,7 +5,7 @@ const config: Config<Parser.Params> = ({
     translations: {
         en: {lang},
         de: {lang},
-        no: {lang}
+        nb: {lang}
     },
     loaders: [
         {
@@ -153,75 +153,75 @@ const config: Config<Parser.Params> = ({
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'root',
             routes: ['/'],
             loader: async () => (
-                await import('./no/root.json')
+                await import('./nb/root.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'groups',
             routes: ['/groups'],
             loader: async () => (
-                await import('./no/groups.json')
+                await import('./nb/groups.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'group',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}$/],
             loader: async () => (
-                await import('./no/group.json')
+                await import('./nb/group.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'categories',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/categories$/],
             loader: async () => (
-                await import('./no/category.json')
+                await import('./nb/category.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'category',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/categories\/category-[A-Za-z0-9]{15}$/],
             loader: async () => (
-                await import('./no/category.json')
+                await import('./nb/category.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'expenses',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/expenses$/],
             loader: async () => (
-                await import('./no/expenses.json')
+                await import('./nb/expenses.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'expenses',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/expenses\/expense-[A-Za-z0-9]{15}$/],
             loader: async () => (
-                await import('./no/expense.json')
+                await import('./nb/expense.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'people',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/people$/],
             loader: async () => (
-                await import('./no/people.json')
+                await import('./nb/people.json')
             ).default,
         },
         {
-            locale: 'no',
+            locale: 'nb',
             key: 'person',
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/people\/person-[A-Za-z0-9]{15}$/],
             loader: async () => (
-                await import('./no/person.json')
+                await import('./nb/person.json')
             ).default,
         },
     ],

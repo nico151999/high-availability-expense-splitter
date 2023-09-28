@@ -71,7 +71,7 @@
 	}
 </script>
 
-<h2>Your groups</h2>
+<h1>{$t('groups.yourGroups')}</h1>
 
 <table>
 	<thead>
@@ -92,13 +92,13 @@
 								{@const currency = $currencies.get(group.group.currencyId)}
 								<span>{currency?.acronym} - {currency?.name}</span>
 							{:else}
-								<span>Loading currencies...</span>
+								<span>{$t('groups.loadingCurrencies')}</span>
 							{/if}
 						</td>
-						<td><button on:click|stopPropagation={deleteGroup(gID)}>Delete</button></td>
+						<td><button on:click|stopPropagation={deleteGroup(gID)}>{$t('groups.delete')}</button></td>
 					</tr>
 				{:else}
-					<tr>Loading group with ID {gID}...</tr>
+					<tr>{$t('groups.loadingGroupWithId', {groupId: gID})}</tr>
 				{/if}
 			{/each}
 		{:else}
