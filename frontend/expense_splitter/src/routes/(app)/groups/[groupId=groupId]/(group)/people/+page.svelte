@@ -158,7 +158,6 @@
 							<Row>
 								<LinearProgress
 									indeterminate
-									closed={!!person.person}
 									aria-label={$t('people.loadingPersonWithId', { personId: pID })} />
 							</Row>
 						{/if}

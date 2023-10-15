@@ -118,7 +118,11 @@
 								</Cell>
 							</Row>
 						{:else}
-							<Row>{$t('groups.loadingGroupWithId', { groupId: gID })}</Row>
+							<Row>
+								<LinearProgress
+									indeterminate
+									aria-label={$t('groups.loadingGroupWithId', { groupId: gID })} />
+							</Row>
 						{/if}
 					{/each}
 				{/if}

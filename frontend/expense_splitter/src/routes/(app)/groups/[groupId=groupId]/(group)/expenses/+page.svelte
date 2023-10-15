@@ -8,7 +8,7 @@
 	import { goto } from "$app/navigation";
 	import { streamExpenseStakesInExpense, streamExpenses } from "./utils";
 	import { Timestamp } from "@bufbuild/protobuf";
-	import { DateInput } from 'date-picker-svelte';
+	import { DateInput, DatePicker } from 'date-picker-svelte';
 	import type { Person } from "../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPeople } from "../people/utils";
@@ -19,6 +19,16 @@
 	import { ExpenseStakeService } from "../../../../../../../../../gen/lib/ts/service/expensestake/v1/service_connect";
 	import { GroupService } from "../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import { t } from "$lib/localization";
+	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
+	import LinearProgress from "@smui/linear-progress";
+	import IconButton from "@smui/icon-button";
+	import { Separator } from "@smui/list";
+	import Textfield from "@smui/textfield";
+	import HelperText from "@smui/textfield/helper-text";
+	import Select, {Option} from "@smui/select";
+	import Button, { Label } from "@smui/button";
 
 	export let data: PageData;
 
@@ -60,7 +70,6 @@
 
 	let expensesSummary: number|undefined;
 
-	let timestampValid: boolean | undefined;
 	const newExpense = {
 		name: '',
 		byId: '',
@@ -168,10 +177,6 @@
 	}
 
 	async function createExpense() {
-		if (!timestampValid) {
-			console.error('Cannot create expense if timestamp input is invalid');
-			return;
-		}
 		try {
 			const res = await expenseClient.createExpense({
                 groupId: data.groupId,
@@ -234,77 +239,123 @@
 	}
 </script>
 
-
-{#if $group}
-	<h2>Your expenses in group {$group?.name}</h2>
-	{#if $currencies && expensesSummary !== undefined}
-		<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
-	{:else}
-		<span>Loading total value...</span>
-	{/if}
-{:else}
-	<span>Loading group...</span>
-{/if}
-
-<table>
-	<thead>
-		<th>ID</th>
-		<th>Name</th>
-		<th>By</th>
-		<th>Currency</th>
-		<th>Timestamp</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $expenses && $people}
-			{#each [...$expenses] as [pID, expense]}
-				{#if expense.expense}
-					{@const e = expense.expense}
-					<tr on:click={openExpense(pID)}>
-						<td>{pID}</td>
-						<td>{e.name}</td>
-						<td>{$people.get(e.byId)?.person?.name}</td>
-						<td>
-							{#if $currencies}
-								{@const currency = $currencies.get(e.currencyId)}
-								<span>{currency?.acronym} - {currency?.name}</span>
-							{:else}
-								<span>Loading currencies...</span>
-							{/if}
-						</td>
-						<td>{e.timestamp?.toDate().toLocaleString()}</td>
-						<td><button on:click|stopPropagation={deleteExpense(pID)}>Delete</button></td>
-					</tr>
-				{:else}
-					<tr>Loading expense with ID {pID}...</tr>
-				{/if}
-			{/each}
-			<tr>
-				<td></td>
-				<td><input type="text" placeholder="Expense name" bind:value={newExpense.name}/></td>
-				<td>
-					<select bind:value={newExpense.byId}>
-						{#each [...$people] as [pID, person]}
-							<option value={pID}>{person.person?.name}</option>
-						{/each}
-					</select>
-				</td>
-				<td>
-					{#if $currencies}
-						<select bind:value={newExpense.currencyId}>
-							{#each [...$currencies] as [cID, currency]}
-								<option value={cID}>{currency.acronym} - {currency.name}</option>
-							{/each}
-						</select>
-					{:else}
-						<span>Loading currencies...</span>
-					{/if}
-				</td>
-				<td><DateInput min={new Date(1640995200000)} max={new Date()} bind:value={newExpense.timestamp} bind:valid={timestampValid}/></td>
-				<td><button on:click={createExpense}>Create expense</button></td>
-			</tr>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Expenses</h2>
+		{#if $group && $currencies && expensesSummary !== undefined}
+			<span>Total value: {expensesSummary.toFixed(2)} {$currencies.get($group.currencyId)?.acronym}</span>
 		{:else}
-			<tr>Loading expenses...</tr>
+			<span>Loading total value...</span>
 		{/if}
-	</tbody>
-</table>
+		
+		<DataTable table$aria-label="Group list" style="width: 100%">
+			<Head>
+				<Row>
+					<Cell>ID</Cell>
+					<Cell>Name</Cell>
+					<Cell>By</Cell>
+					<Cell>Currency</Cell>
+					<Cell>Timestamp</Cell>
+					<Cell>Action</Cell>
+				</Row>
+			</Head>
+			<Body>
+				{#if $expenses && $people}
+					{#each [...$expenses] as [eID, expense]}
+						{#if expense.expense}
+							{@const e = expense.expense}
+							<Row on:click={openExpense(eID)}>
+								<Cell>{eID}</Cell>
+								<Cell>{e.name}</Cell>
+								<Cell>{$people.get(e.byId)?.person?.name}</Cell>
+								<Cell>
+									{#if $currencies}
+										{@const currency = $currencies.get(e.currencyId)}
+										<span>{currency?.acronym} - {currency?.name}</span>
+									{/if}
+									<LinearProgress
+										indeterminate
+										closed={!!$currencies}
+										aria-label="Currencies are being loaded..."/>
+								</Cell>
+								<Cell>{e.timestamp?.toDate().toLocaleString()}</Cell>
+								<Cell>
+									<IconButton
+										on:click$stopPropagation={deleteExpense(eID)}
+										class="material-icons"
+										aria-label="Delete expense">delete</IconButton>
+								</Cell>
+							</Row>
+						{:else}
+							<Row>
+								<LinearProgress
+									indeterminate
+									aria-label={$t('expenses.loadingExpenseWithId', { expenseId: eID })} />
+							</Row>
+						{/if}
+					{/each}
+				{/if}
+			</Body>
+		
+			<LinearProgress
+				indeterminate
+				closed={!!$expenses && !!people}
+				aria-label="Expenses and people are being loaded..."
+				slot="progress"
+			/>
+		</DataTable>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<Separator />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New expense</h4>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+		<Textfield variant="outlined" bind:value={newExpense.name} label="Expense name" style="width: 100%" helperLine$style="width: 100%">
+			<HelperText slot="helper">The name of the expense that is to be created</HelperText>
+		</Textfield>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+		{#if $people}
+			<Select variant="outlined" bind:value={newExpense.byId} label="Person" style="width: 100%">
+				{#each [...$people] as [pID, person]}
+					<Option value={pID}>
+						{#if person.person}
+							{person.person.name}
+						{:else}
+							<LinearProgress
+								indeterminate
+								aria-label={$t('expenses.loadingPersonWithId', { personId: pID })} />
+						{/if}
+					</Option>
+				{/each}
+			</Select>
+		{/if}
+		<LinearProgress
+			indeterminate
+			closed={!!$currencies}
+			aria-label="People are being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		{#if $currencies}
+			<Select variant="outlined" bind:value={newExpense.currencyId} label="Currency" style="width: 100%">
+				{#each [...$currencies] as [cID, currency]}
+					<Option value={cID}>{currency.acronym} - {currency.name}</Option>
+				{/each}
+			</Select>
+		{/if}
+		<LinearProgress
+			indeterminate
+			closed={!!$currencies}
+			aria-label="Currencies are being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+		<DatePicker min={new Date(1640995200000)} max={new Date()} bind:value={newExpense.timestamp} />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: flex-end">
+		<Button on:click={createExpense} touch variant="outlined">
+			<Label>Create expense</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>

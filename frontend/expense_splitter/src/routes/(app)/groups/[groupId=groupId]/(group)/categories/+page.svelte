@@ -99,7 +99,6 @@
 							<Row>
 								<LinearProgress
 									indeterminate
-									closed={!!category.category}
 									aria-label={$t('categories.loadingCategoryWithId', { categoryId: cID })} />
 							</Row>
 						{/if}
