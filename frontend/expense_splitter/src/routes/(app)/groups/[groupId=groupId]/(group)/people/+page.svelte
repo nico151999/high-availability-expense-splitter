@@ -16,6 +16,15 @@
 	import type { ExpenseStake } from "../../../../../../../../../gen/lib/ts/common/expensestake/v1/expensestake_pb";
 	import { GroupService } from "../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
+	import { t } from "$lib/localization";
+	import IconButton from "@smui/icon-button";
+	import LinearProgress from "@smui/linear-progress";
+	import { Separator } from "@smui/list";
+	import Textfield from "@smui/textfield";
+	import HelperText from "@smui/textfield/helper-text";
+	import Button, { Label } from "@smui/button";
 
 	export let data: PageData;
 
@@ -50,9 +59,9 @@
 	const currencyClient = createPromiseClient(CurrencyService, data.grpcWebTransport);
 
 
-	const newPerson = writable({
+	const newPerson = {
 		name: '',
-	});
+	};
 
 	onDestroy(() => {
 		abortController.abort();
@@ -77,11 +86,11 @@
 		try {
 			const res = await personClient.createPerson({
                 groupId: data.groupId,
-                name: $newPerson.name
+                name: newPerson.name
 			});
 			console.log('Created person', res.id);
 
-            newPerson.set({name: ''});
+            newPerson.name = '';
 		} catch (e) {
 			console.error(`An error occurred trying to create person in group ${data.groupId}`, e);
 		}
@@ -105,36 +114,80 @@
 	}
 </script>
 
-<h2>Your people in group {data.groupId}</h2>
-
-<table>
-	<thead>
-		<th>ID</th>
-		<th>Name</th>
-		<th>Account</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $people}
-			{#each [...$people] as [pID, person]}
-				{#if person.person}
-					<tr on:click={openPerson(pID)}>
-						<td>{pID}</td>
-						<td>{person.person?.name}</td>
-						<td>{$accountsPerPerson?.get(pID)?.toFixed(2) ?? 'Loading account...'}</td>
-						<td><button on:click|stopPropagation={deletePerson(pID)}>Delete</button></td>
-					</tr>
-				{:else}
-					<tr>Loading person with ID {pID}...</tr>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>People</h2>
+		
+		<DataTable table$aria-label="Person list" style="width: 100%">
+			<Head>
+				<Row>
+					<Cell>ID</Cell>
+					<Cell>Name</Cell>
+					<Cell>Account</Cell>
+					<Cell>Action</Cell>
+				</Row>
+			</Head>
+			<Body>
+				{#if $people}
+					{#each [...$people] as [pID, person]}
+						{#if person.person}
+							<Row on:click={openPerson(pID)}>
+								<Cell>{pID}</Cell>
+								<Cell>{person.person.name}</Cell>
+								<Cell>
+									{$accountsPerPerson?.get(pID)?.toFixed(2) ?? 'Loading account...'}
+									{#if $accountsPerPerson}
+										{@const accountPerPerson = $accountsPerPerson.get(pID)}
+										{#if accountPerPerson}
+											{accountPerPerson.toFixed(2)}
+										{/if}
+									{/if}
+									<LinearProgress
+										indeterminate
+										closed={$accountsPerPerson?.get(pID) !== undefined}
+										aria-label="Account is being loaded..." />
+								</Cell>
+								<Cell>
+									<IconButton
+										on:click$stopPropagation={deletePerson(pID)}
+										class="material-icons"
+										aria-label="Delete person">delete</IconButton>
+								</Cell>
+							</Row>
+						{:else}
+							<Row>
+								<LinearProgress
+									indeterminate
+									closed={!!person.person}
+									aria-label={$t('people.loadingPersonWithId', { personId: pID })} />
+							</Row>
+						{/if}
+					{/each}
 				{/if}
-			{/each}
-		{:else}
-			<tr>Loading people...</tr>
-		{/if}
-		<tr>
-			<td></td>
-			<td><input type="text" placeholder="Person name" bind:value={$newPerson.name}/></td>
-			<td><button on:click={createPerson}>Create person</button></td>
-		</tr>
-	</tbody>
-</table>
+			</Body>
+		
+			<LinearProgress
+				indeterminate
+				closed={!!$people}
+				aria-label="People are being loaded..."
+				slot="progress"
+			/>
+		</DataTable>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<Separator />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New person</h4>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+		<Textfield variant="outlined" bind:value={newPerson.name} label="Person name" style="width: 100%" helperLine$style="width: 100%">
+			<HelperText slot="helper">The name of the person that is to be created</HelperText>
+		</Textfield>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 6, phone: 4 }} style="display: flex; justify-content: flex-end">
+		<Button on:click={createPerson} touch variant="outlined">
+			<Label>Create person</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>

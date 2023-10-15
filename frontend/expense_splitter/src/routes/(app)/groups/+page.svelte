@@ -84,7 +84,7 @@
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		<h2>{$t('groups.yourGroups')}</h2>
 		
-		<DataTable table$aria-label="User list" style="width: 100%">
+		<DataTable table$aria-label="Group list" style="width: 100%">
 			<Head>
 				<Row>
 					<Cell>ID</Cell>
@@ -104,9 +104,11 @@
 									{#if $currencies}
 										{@const currency = $currencies.get(group.group.currencyId)}
 										<span>{currency?.acronym} - {currency?.name}</span>
-									{:else}
-										<span>{$t('groups.loadingCurrencies')}</span>
 									{/if}
+									<LinearProgress
+										indeterminate
+										closed={!!$currencies}
+										aria-label="Currencies are being loaded..."/>
 								</Cell>
 								<Cell>
 									<IconButton

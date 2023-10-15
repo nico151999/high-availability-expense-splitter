@@ -73,7 +73,7 @@
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		<h2>Categories</h2>
 		
-		<DataTable table$aria-label="User list" style="width: 100%">
+		<DataTable table$aria-label="Category list" style="width: 100%">
 			<Head>
 				<Row>
 					<Cell>ID</Cell>
@@ -96,7 +96,12 @@
 								</Cell>
 							</Row>
 						{:else}
-							<Row>{$t('categories.loadingCategoryWithId', { categoryId: cID })}</Row>
+							<Row>
+								<LinearProgress
+									indeterminate
+									closed={!!category.category}
+									aria-label={$t('categories.loadingCategoryWithId', { categoryId: cID })} />
+							</Row>
 						{/if}
 					{/each}
 				{/if}
