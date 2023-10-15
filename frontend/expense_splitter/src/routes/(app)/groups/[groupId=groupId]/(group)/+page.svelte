@@ -120,10 +120,16 @@
 		</LayoutCell>
 		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
 			{#if editMode}
-				<button on:click={updateGroup}>Update group</button>
-				<button on:click={stopEdit}>Cancel</button>
+				<Button on:click={updateGroup} variant="outlined">
+					<Label>Update group</Label>
+				</Button>
+				<Button on:click={stopEdit} variant="outlined">
+					<Label>Cancel</Label>
+				</Button>
 			{:else}
-				<button on:click={startEdit}>Edit group</button>
+				<Button on:click={startEdit} variant="outlined">
+					<Label>Edit group</Label>
+				</Button>
 			{/if}
 		</LayoutCell>
 	{/if}
