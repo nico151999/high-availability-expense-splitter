@@ -154,12 +154,6 @@
 										aria-label="Delete person">delete</IconButton>
 								</Cell>
 							</Row>
-						{:else}
-							<Row>
-								<LinearProgress
-									indeterminate
-									aria-label={$t('people.loadingPersonWithId', { personId: pID })} />
-							</Row>
 						{/if}
 					{/each}
 				{/if}

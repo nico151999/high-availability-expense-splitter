@@ -95,12 +95,6 @@
 										aria-label="Delete category">delete</IconButton>
 								</Cell>
 							</Row>
-						{:else}
-							<Row>
-								<LinearProgress
-									indeterminate
-									aria-label={$t('categories.loadingCategoryWithId', { categoryId: cID })} />
-							</Row>
 						{/if}
 					{/each}
 				{/if}

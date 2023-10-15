@@ -286,12 +286,6 @@
 										aria-label="Delete expense">delete</IconButton>
 								</Cell>
 							</Row>
-						{:else}
-							<Row>
-								<LinearProgress
-									indeterminate
-									aria-label={$t('expenses.loadingExpenseWithId', { expenseId: eID })} />
-							</Row>
 						{/if}
 					{/each}
 				{/if}
