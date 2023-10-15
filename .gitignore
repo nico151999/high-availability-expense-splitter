@@ -43,6 +43,8 @@ Dockerfile.cross
 /frontend/**/.output
 /frontend/**/vite.config.js.timestamp-*
 /frontend/**/vite.config.ts.timestamp-*
+/frontend/expense_splitter/static/smui-dark.css
+/frontend/expense_splitter/static/smui.css
 
 # temporary dockerignores
 /cmd/processor/*.Dockerfile.dockerignore

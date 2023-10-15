@@ -8,6 +8,15 @@
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { streamExpenseStakesInExpense } from "../../utils";
 	import { marshalExpenseStakeValue, summariseStakes } from "../../../../../utils";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
+	import IconButton from "@smui/icon-button";
+	import { t } from "$lib/localization";
+	import LinearProgress from "@smui/linear-progress";
+	import Textfield from "@smui/textfield";
+	import HelperText from "@smui/textfield/helper-text";
+	import Select, {Option} from "@smui/select";
+	import Button, { Label } from "@smui/button";
 
     export let expense: Expense;
     export let transport: Transport;
@@ -20,7 +29,7 @@
 	const newExpenseStake = {
 		forId: '',
 		mainValue: 0,
-		fractionalValue: undefined as number|undefined
+		fractionalValue: 0 as number|undefined
 	};
 
     const expensestakeClient = createPromiseClient(ExpenseStakeService, transport);
@@ -63,7 +72,7 @@
 
 			newExpenseStake.forId = '';
 			newExpenseStake.mainValue = 0;
-			newExpenseStake.fractionalValue = undefined
+			newExpenseStake.fractionalValue = 0;
 		} catch (e) {
 			console.error(`An error occurred trying to create expensestake in expense ${expense.id}`, e);
 		}
@@ -81,46 +90,80 @@
 	}
 </script>
 
-<h2>Your expense stakes in expense {expense.id}</h2>
-
-<table>
-	<thead>
-		<th>ID</th>
-		<th>For</th>
-		<th>Value</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $expensestakes && $people}
-			{#each [...$expensestakes] as [eID, expensestake]}
-				{#if expensestake.expensestake}
-					<tr>
-						<td>{eID}</td>
-						<td>{$people.get(expensestake.expensestake.forId)?.person?.name}</td>
-						<td>{marshalExpenseStakeValue(expensestake.expensestake)}</td>
-						<td><button on:click|stopPropagation={deleteExpenseStake(eID)}>Delete</button></td>
-					</tr>
-				{:else}
-					<tr>Loading expense with ID {eID}...</tr>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Expense stakes</h2>
+		
+		<DataTable table$aria-label="Expense stake list" style="width: 100%">
+			<Head>
+				<Row>
+					<Cell>ID</Cell>
+					<Cell>For</Cell>
+					<Cell>Value</Cell>
+					<Cell>Action</Cell>
+				</Row>
+			</Head>
+			<Body>
+				{#if $expensestakes && $people}
+					{#each [...$expensestakes] as [eID, expensestake]}
+						{#if expensestake.expensestake}
+							<Row>
+								<Cell>{eID}</Cell>
+								<Cell>{$people.get(expensestake.expensestake.forId)?.person?.name}</Cell>
+								<Cell>{marshalExpenseStakeValue(expensestake.expensestake)}</Cell>
+								<Cell>
+									<IconButton
+										on:click$stopPropagation={deleteExpenseStake(eID)}
+										class="material-icons"
+										aria-label="Delete expense stake">delete</IconButton>
+								</Cell>
+							</Row>
+						{/if}
+					{/each}
 				{/if}
-			{/each}
-			<tr>
-				<td></td>
-				<td>
-                    <select bind:value={newExpenseStake.forId}>
-                        {#each [...$people] as [pID, person]}
-                            <option value={pID}>{person.person?.name}</option>
-                        {/each}
-                    </select>
-				</td>
-				<td>
-					<input type="number" placeholder="Main value" min="0" step="1" bind:value={newExpenseStake.mainValue}/>
-					<input disabled="{fractionalDisabled}" min="0" max="99" step="1" type="number" placeholder="Fractional value" bind:value={newExpenseStake.fractionalValue}/>
-				</td>
-				<td><button on:click={createExpenseStake}>Create expense stake</button></td>
-			</tr>
-		{:else}
-			<tr>Loading expenses...</tr>
+			</Body>
+		
+			<LinearProgress
+				indeterminate
+				closed={!!$expensestakes}
+				aria-label="Expense stakes are being loaded..."
+				slot="progress"
+			/>
+		</DataTable>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New expense stake</h4>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		{#if $people}
+			<Select variant="outlined" bind:value={newExpenseStake.forId} label="For" style="width: 100%">
+				{#each [...$people] as [pID, person]}
+					{#if person.person}
+						<Option value={pID}>
+							{person.person.name}
+						</Option>
+					{/if}
+				{/each}
+			</Select>
 		{/if}
-	</tbody>
-</table>
+		<LinearProgress
+			indeterminate
+			closed={!!$expensestakes}
+			aria-label="Expense stakes are being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 2 }}>
+		<Textfield variant="outlined" bind:value={newExpenseStake.mainValue} type="number" input$min="0" input$step="1" label="Main value" style="width: 100%" helperLine$style="width: 100%">
+			<HelperText slot="helper">The main value without the fractional part</HelperText>
+		</Textfield>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 2 }}>
+		<Textfield variant="outlined" bind:value={newExpenseStake.fractionalValue} disabled="{fractionalDisabled}" input$min={0} input$max={99} input$step={1} type="number" label="Fractional value" style="width: 100%" helperLine$style="width: 100%">
+			<HelperText slot="helper">The fractional part of the value</HelperText>
+		</Textfield>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: flex-end">
+		<Button on:click={createExpenseStake} touch variant="outlined">
+			<Label>Create expense stake</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>

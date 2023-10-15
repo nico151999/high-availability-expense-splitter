@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import { API_SECURE, API_HOSTNAME, API_PORT } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { locales, loadTranslations, translations } from '$lib/localization';
 
 export const load = (async ({ url, cookies, request }) => {
@@ -23,9 +23,9 @@ export const load = (async ({ url, cookies, request }) => {
 
     await loadTranslations(locale, pathname);
     return {
-        schema: API_SECURE === 'true' ? 'https' : 'http',
-        address: (API_HOSTNAME ?? (() => { throw new Error('hostname not defined') })()) as string,
-        port: +((API_PORT ?? (() => { throw new Error('port not defined') })()) as string),
+        schema: env.API_SECURE === 'true' ? 'https' : 'http',
+        address: (env.API_HOSTNAME ?? (() => { throw new Error('hostname not defined') })()) as string,
+        port: +((env.API_PORT ?? (() => { throw new Error('port not defined') })()) as string),
         i18n: { locale, route: pathname },
         translations: translations.get(),
     };

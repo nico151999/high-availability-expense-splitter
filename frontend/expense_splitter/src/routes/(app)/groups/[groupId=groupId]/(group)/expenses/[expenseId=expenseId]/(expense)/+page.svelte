@@ -7,7 +7,7 @@
 	import { streamExpense } from "../../utils";
 	import type { PageData } from "./$types";
 	import { Timestamp } from "@bufbuild/protobuf";
-	import { DateInput } from 'date-picker-svelte';
+	import { DateInput, DatePicker } from 'date-picker-svelte';
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPeople } from "../../../people/utils";
@@ -18,6 +18,13 @@
 	import { GroupService } from "../../../../../../../../../../../gen/lib/ts/service/group/v1/service_connect";
 	import type { Group } from "../../../../../../../../../../../gen/lib/ts/common/group/v1/group_pb";
 	import Categories from "./categories.svelte";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import Textfield from "@smui/textfield";
+	import Select, {Option} from "@smui/select";
+	import LinearProgress from "@smui/linear-progress";
+	import Button, { Label } from "@smui/button";
+	import { Separator } from "@smui/list";
+	import { t } from "$lib/localization";
 
 	export let data: PageData;
 
@@ -42,13 +49,18 @@
 	const unsubscribeGroup = group.subscribe(updateExchangeRate);
 
     let editMode = false;
-	let timestampValid: boolean | undefined;
 	const editedExpense = {
 		name: '',
 		byId: '',
 		currencyId: '',
 		timestamp: new Date()
 	};
+	$: if (!editMode) {
+		editedExpense.name = $expense?.name ?? '';
+		editedExpense.byId = $expense?.byId ?? '';
+		editedExpense.currencyId = $expense?.currencyId ?? '';
+		editedExpense.timestamp = $expense?.timestamp?.toDate() ?? new Date();
+	}
 
 	let stakeSum: string;
 	let exchangeRate: number | undefined;
@@ -89,10 +101,6 @@
 	}
 
 	async function updateExpense() {
-		if (!timestampValid) {
-			console.error('Cannot update expense if timestamp input is invalid');
-			return;
-		}
 		try {
 			const res = await expenseClient.updateExpense({
 				id: data.expenseId,
@@ -134,10 +142,6 @@
         if (!$expense) {
             return;
         }
-		editedExpense.name = $expense.name ?? '';
-		editedExpense.byId = $expense.byId;
-		editedExpense.currencyId = $expense.currencyId;
-		editedExpense.timestamp = $expense.timestamp?.toDate() ?? new Date();
         editMode = true;
     }
 
@@ -146,83 +150,87 @@
     }
 </script>
 
-<h2>Your expense with ID {data.expenseId}</h2>
-<table>
-	<thead>
-		<th>Name</th>
-		<th>By</th>
-		<th>Currency</th>
-		<th>Timestamp</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $expense}
-            {#if editMode}
-                <tr>
-                    <td><input type="text" placeholder="Expense name" bind:value={editedExpense.name}/></td>
-					<td>
-						{#if $people}
-							<select bind:value={editedExpense.byId}>
-								{#each [...$people] as [pID, person]}
-									<option value={pID}>{person.person?.name}</option>
-								{/each}
-							</select>
-						{:else}
-							<span>Loading people...</span>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Expense</h2>
+	</LayoutCell>
+	{#if $expense}
+		<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+			<Textfield variant="outlined" disabled={!editMode} bind:value={editedExpense.name} label="Expense name" style="width: 100%" />
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+			{#if $people}
+				<Select variant="outlined" disabled={!editMode} bind:value={editedExpense.byId} label="Person" style="width: 100%">
+					{#each [...$people] as [pID, person]}
+						{#if person.person}
+							<Option value={pID}>
+								{person.person.name}
+							</Option>
 						{/if}
-					</td>
-					<td>
-						{#if $currencies}
-							<select bind:value={editedExpense.currencyId}>
-								{#each [...$currencies] as [cID, currency]}
-									<option value={cID}>{currency.acronym} - {currency.name}</option>
-								{/each}
-							</select>
-						{:else}
-							<span>Loading currencies...</span>
-						{/if}
-					</td>
-					<td><DateInput min={new Date(1640995200000)} max={new Date()} bind:value={editedExpense.timestamp} bind:valid={timestampValid}/></td>
-                    <td>
-                        <button on:click={updateExpense}>Update expense</button>
-                        <button on:click={stopEdit}>Cancel</button>
-                    </td>
-                </tr>
-            {:else}
-                <tr>
-                    <td>{$expense.name}</td>
-					<td>
-						{#if $people}
-							<span>{$people.get($expense.byId)?.person?.name}</span>
-						{:else}
-							<span>Loading people...</span>
-						{/if}
-					</td>
-					<td>
-						{#if $currencies}
-							{@const currency = $currencies.get($expense.currencyId)}
-							<span>{currency?.acronym} - {currency?.name}</span>
-						{:else}
-							<span>Loading currencies...</span>
-						{/if}
-					</td>
-					<td>{$expense.timestamp?.toDate().toLocaleString()}</td>
-                    <td><button on:click={startEdit}>Update expense</button></td>
-                </tr>
-            {/if}
-		{:else}
-			<tr>Loading expense...</tr>
-		{/if}
-	</tbody>
-</table>
-{#if $expense}
-	<Expensestakes expense={$expense} transport={data.grpcWebTransport} people={people} bind:stakeSum={stakeSum}></Expensestakes>
-	{#if $currencies && $group && exchangeRate}
-		{@const exCurrency = $currencies.get($expense.currencyId)}
-		{@const grCurrency = $currencies.get($group.currencyId)}
-		<span>{stakeSum} {exCurrency?.acronym} - {stakeSumInCurrency(exchangeRate, stakeSum).toFixed(2)} {grCurrency?.acronym}</span>
-	{:else}
-		<span>Loading data...</span>
+					{/each}
+				</Select>
+			{/if}
+			<LinearProgress
+				indeterminate
+				closed={!!$currencies}
+				aria-label="Currencies are being loaded..."/>
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			{#if $currencies}
+				<Select variant="outlined" disabled={!editMode} bind:value={editedExpense.currencyId} label="Currency" style="width: 100%">
+					{#each [...$currencies] as [cID, currency]}
+						<Option value={cID}>{currency.acronym} - {currency.name}</Option>
+					{/each}
+				</Select>
+			{/if}
+			<LinearProgress
+				indeterminate
+				closed={!!$currencies}
+				aria-label="Currencies are being loaded..."/>
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+			<DatePicker min={new Date(1640995200000)} max={new Date()} bind:value={editedExpense.timestamp}/>
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+			{#if editMode}
+				<Button on:click={updateExpense} variant="outlined">
+					<Label>Update expense</Label>
+				</Button>
+				<Button on:click={stopEdit} variant="outlined">
+					<Label>Cancel</Label>
+				</Button>
+			{:else}
+				<Button on:click={startEdit} variant="outlined">
+					<Label>Edit expense</Label>
+				</Button>
+			{/if}
+		</LayoutCell>
 	{/if}
-	<Categories expense={$expense} transport={data.grpcWebTransport}></Categories>
-{/if}
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<LinearProgress
+			indeterminate
+			closed={!!$expense}
+			aria-label="Expense is being loaded..."/>
+	</LayoutCell>
+	{#if $expense}
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			<Separator />
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			<Expensestakes expense={$expense} transport={data.grpcWebTransport} people={people} bind:stakeSum={stakeSum}></Expensestakes>
+			{#if $currencies && $group && exchangeRate}
+				{@const exCurrency = $currencies.get($expense.currencyId)}
+				{@const grCurrency = $currencies.get($group.currencyId)}
+				<span>{stakeSum} {exCurrency?.acronym} - {stakeSumInCurrency(exchangeRate, stakeSum).toFixed(2)} {grCurrency?.acronym}</span>
+			{:else}
+				<span>Loading data...</span>
+			{/if}
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			<Separator />
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			<Categories expense={$expense} transport={data.grpcWebTransport}></Categories>
+		</LayoutCell>
+	{/if}
+</LayoutGrid>

@@ -1,3 +1,11 @@
 {
-    "action": "Action"
+    "action": "Action",
+    "navigateLevelUp": "Navigate level up",
+    "yourGroups": "Your groups",
+    "id": "ID",
+    "name": "Name",
+    "defaultCurrency": "Default currency",
+    "loadingCurrencies": "Loading currencies...",
+    "loadingGroup": "Loading group with ID {groupId}...",
+    "delete": "Delete"
 }

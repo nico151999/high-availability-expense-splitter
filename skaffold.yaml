@@ -587,6 +587,9 @@ deploy:
               annotations:
                 clusterPods:
                   "linkerd\\.io/inject": enabled
+            pods:
+              persistentVolume:
+                storageClass: "{{ .HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME }}"
             managedSql:
               secretScripts:
                 "create-{{ .HA_EXPENSE_SPLITTER_ES_DB_HOST }}-database": |
@@ -846,6 +849,8 @@ profiles:
     patches:
       - op: remove
         path: /deploy/helm/releases/12/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+      - op: remove
+        path: /deploy/helm/releases/10/setValueTemplates/cluster.pods.persistentVolume.storageClass
   - name: DEDICATED_NATS_INSTANCE
     requiresAllActivations: true
     activation:

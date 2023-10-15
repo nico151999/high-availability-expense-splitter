@@ -8,6 +8,13 @@
 	import { onDestroy, onMount } from "svelte";
 	import type { Expense } from "../../../../../../../../../../../gen/lib/ts/common/expense/v1/expense_pb";
 	import { streamCategories } from "../../../categories/utils";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
+	import IconButton from "@smui/icon-button";
+	import LinearProgress from "@smui/linear-progress";
+	import { Separator } from "@smui/list";
+	import Select, {Option} from "@smui/select";
+	import Button, { Label } from "@smui/button";
 
     export let transport: Transport;
     export let expense: Expense;
@@ -62,42 +69,69 @@
     }
 </script>
 
-<h2>Your categories stakes in expense {expense.id}</h2>
-
-<table>
-	<thead>
-		<th>ID</th>
-		<th>Name</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Categories</h2>
+		
+		<DataTable table$aria-label="Category relation list" style="width: 100%">
+			<Head>
+				<Row>
+					<Cell>ID</Cell>
+					<Cell>Name</Cell>
+					<Cell>Action</Cell>
+				</Row>
+			</Head>
+			<Body>
+				{#if $categories && $relatedCategoryIds}
+					{#each [...$relatedCategoryIds] as cID}
+                        {@const category = $categories.get(cID)}
+                        {#if category?.category}
+                            <Row>
+                                <Cell>{cID}</Cell>
+                                <Cell>{category.category.name}</Cell>
+                                <Cell>
+                                    <IconButton
+                                        on:click$stopPropagation={deleteCategoryRelation(cID)}
+                                        class="material-icons"
+                                        aria-label="Delete category">delete</IconButton>
+                                </Cell>
+                            </Row>
+                        {/if}
+					{/each}
+				{/if}
+			</Body>
+		
+			<LinearProgress
+				indeterminate
+				closed={!!$categories && !!$relatedCategoryIds}
+				aria-label="Categories are being loaded..."
+				slot="progress"
+			/>
+		</DataTable>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New expense category relation</h4>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		{#if $categories}
-			{#each [...$categories] as [cID, category]}
-                {#if $relatedCategoryIds?.includes(cID)}
-                    {#if category.category}
-                        <tr>
-                            <td>{cID}</td>
-                            <td>{category.category.name}</td>
-                            <td><button on:click|stopPropagation={deleteCategoryRelation(cID)}>Delete</button></td>
-                        </tr>
-                    {:else}
-                        <tr>Loading category with ID {cID}...</tr>
+			<Select variant="outlined" bind:value={newCategoryRelation.categoryId} label="Expense category relation" style="width: 100%">
+				{#each [...$categories] as [cID, category]}
+                    {#if category.category && $relatedCategoryIds && !$relatedCategoryIds.includes(cID)}
+                        <Option value={cID}>
+                            {category.category.name}
+                        </Option>
                     {/if}
-                {/if}
-			{/each}
-			<tr>
-				<td></td>
-				<td>
-                    <select bind:value={newCategoryRelation.categoryId}>
-                        {#each [...$categories] as [cID, category]}
-                            <option value={cID}>{category.category?.name}</option>
-                        {/each}
-                    </select>
-				</td>
-				<td><button on:click={createCategoryRelation}>Create category relation</button></td>
-			</tr>
-		{:else}
-			<tr>Loading categories...</tr>
+				{/each}
+			</Select>
 		{/if}
-	</tbody>
-</table>
+		<LinearProgress
+			indeterminate
+			closed={!!$categories}
+			aria-label="Currencies are being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: flex-end">
+		<Button on:click={createCategoryRelation} touch variant="outlined">
+			<Label>Create category relation</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>

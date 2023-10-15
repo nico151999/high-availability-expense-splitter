@@ -1,24 +1,31 @@
 <script lang="ts">
 	import { createPromiseClient } from "@bufbuild/connect";
 	import { onDestroy, onMount } from "svelte";
-	import { writable } from "svelte/store";
+	import { writable, type Writable } from "svelte/store";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { PersonService } from "../../../../../../../../../../../gen/lib/ts/service/person/v1/service_connect";
 	import { streamPerson } from "../../utils";
 	import type { PageData } from "./$types";
 	import { t } from '$lib/localization';
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import Textfield from "@smui/textfield";
+	import Button, { Label } from "@smui/button";
+	import LinearProgress from "@smui/linear-progress";
 
 	export let data: PageData;
 
 	const personClient = createPromiseClient(PersonService, data.grpcWebTransport);
-	let person = writable(undefined as Person | undefined);
+	let person: Writable<Person | undefined> = writable();
 	const abortController = new AbortController();
 
     let editMode = false;
 
-	const editedPerson = writable({
+	const editedPerson = {
 		name: ''
-	});
+	};
+	$: if (!editMode) {
+        editedPerson.name = $person?.name ?? '';
+	}
 
 	onDestroy(() => {
 		abortController.abort();
@@ -39,7 +46,7 @@
 					{
 						updateOption: {
 							case: 'name',
-							value: $editedPerson.name
+							value: editedPerson.name
 						}
 					}
 				]
@@ -55,9 +62,6 @@
         if (!$person) {
             return;
         }
-        editedPerson.set({
-            name: $person.name
-        })
         editMode = true;
     }
 
@@ -66,30 +70,33 @@
     }
 </script>
 
-<h2>Your person with ID {data.personId}</h2>
-<table>
-	<thead>
-		<th>Name</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $person}
-            {#if editMode}
-                <tr>
-                    <td><input type="text" placeholder={$t('person.namePlaceholder')} bind:value={$editedPerson.name}/></td>
-                    <td>
-                        <button on:click={updatePerson}>Update person</button>
-                        <button on:click={stopEdit}>Cancel</button>
-                    </td>
-                </tr>
-            {:else}
-                <tr>
-                    <td>{$person.name}</td>
-                    <td><button on:click={startEdit}>Update person</button></td>
-                </tr>
-            {/if}
-		{:else}
-			<tr>Loading person...</tr>
-		{/if}
-	</tbody>
-</table>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Person</h2>
+	</LayoutCell>
+	{#if $person}
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+			<Textfield variant="outlined" disabled={!editMode} bind:value={editedPerson.name} label={$t('person.namePlaceholder')} style="width: 100%" />
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+			{#if editMode}
+				<Button on:click={updatePerson} variant="outlined">
+					<Label>Update person</Label>
+				</Button>
+				<Button on:click={stopEdit} variant="outlined">
+					<Label>Cancel</Label>
+				</Button>
+			{:else}
+				<Button on:click={startEdit} variant="outlined">
+					<Label>Edit person</Label>
+				</Button>
+			{/if}
+		</LayoutCell>
+	{/if}
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<LinearProgress
+			indeterminate
+			closed={!!$person}
+			aria-label="Person is being loaded..."/>
+	</LayoutCell>
+</LayoutGrid>

@@ -9,11 +9,18 @@
 	import type { PageData } from "./$types";
 	import { CurrencyService } from "../../../../../../../../gen/lib/ts/service/currency/v1/service_connect";
 	import type { Currency } from "../../../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import { t } from "$lib/localization";
+	import LinearProgress from "@smui/linear-progress";
+	import Button, { Label } from "@smui/button";
+	import Textfield from "@smui/textfield";
+	import Select, {Option} from "@smui/select";
+	import { Separator } from "@smui/list";
 
 	export let data: PageData;
 
 	const groupClient = createPromiseClient(GroupService, data.grpcWebTransport);
-	let group = writable(undefined as Group | undefined);
+	let group: Writable<Group | undefined> = writable();
 	const abortController = new AbortController();
 
 	const currencyClient = createPromiseClient(CurrencyService, data.grpcWebTransport);
@@ -26,6 +33,10 @@
 		name: '',
 		currencyId: ''
 	};
+	$: if (!editMode) {
+        editedGroup.name = $group?.name ?? '';
+		editedGroup.currencyId = $group?.currencyId ?? '';
+	}
 
 	onDestroy(() => {
 		abortController.abort();
@@ -82,8 +93,6 @@
         if (!$group) {
             return;
         }
-        editedGroup.name = $group.name;
-		editedGroup.currencyId = $group.currencyId;
         editMode = true;
     }
 
@@ -92,55 +101,64 @@
     }
 </script>
 
-<h2>Your group with ID {data.groupId}</h2>
-<table>
-	<thead>
-		<th>Name</th>
-		<th>Currency</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $group}
-            {#if editMode}
-                <tr>
-                    <td><input type="text" placeholder="Group name" bind:value={editedGroup.name}/></td>
-					<td>
-						{#if $currencies}
-							<select bind:value={editedGroup.currencyId}>
-								{#each [...$currencies] as [cID, currency]}
-									<option value={cID}>{currency.acronym} - {currency.name}</option>
-								{/each}
-							</select>
-						{:else}
-							<span>Loading currencies...</span>
-						{/if}
-					</td>
-                    <td>
-                        <button on:click={updateGroup}>Update group</button>
-                        <button on:click={stopEdit}>Cancel</button>
-                    </td>
-                </tr>
-            {:else}
-                <tr>
-                    <td>{$group.name}</td>
-                    <td>
-						{#if $currencies}
-							{@const currency = $currencies.get($group.currencyId)}
-							<span>{currency?.acronym} - {currency?.name}</span>
-						{:else}
-							<span>Loading currencies...</span>
-						{/if}
-					</td>
-                    <td><button on:click={startEdit}>Update group</button></td>
-                </tr>
-            {/if}
-		{:else}
-			<tr>Loading group...</tr>
-		{/if}
-	</tbody>
-</table>
-<div>
-	<button on:click={openExpenses}>Open expenses</button>
-	<button on:click={openCategories}>Open categories</button>
-	<button on:click={openPeople}>Open people</button>
-</div>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Group</h2>
+	</LayoutCell>
+	{#if $group}
+		<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+			<Textfield variant="outlined" disabled={!editMode} bind:value={editedGroup.name} label="Group name" style="width: 100%" />
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+			{#if $currencies}
+				<Select variant="outlined" disabled={!editMode} bind:value={editedGroup.currencyId} label="Currency" style="width: 100%">
+					{#each [...$currencies] as [cID, currency]}
+						<Option value={cID}>{currency.acronym} - {currency.name}</Option>
+					{/each}
+				</Select>
+			{/if}
+			<LinearProgress
+				indeterminate
+				closed={!!$currencies}
+				aria-label="Currencies are being loaded..."/>
+		</LayoutCell>
+		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+			{#if editMode}
+				<Button on:click={updateGroup} variant="outlined">
+					<Label>Update group</Label>
+				</Button>
+				<Button on:click={stopEdit} variant="outlined">
+					<Label>Cancel</Label>
+				</Button>
+			{:else}
+				<Button on:click={startEdit} variant="outlined">
+					<Label>Edit group</Label>
+				</Button>
+			{/if}
+		</LayoutCell>
+	{/if}
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<LinearProgress
+			indeterminate
+			closed={!!$group}
+			aria-label="Group is being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<Separator />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 4, tablet: 4, phone: 2 }} style="display: flex; justify-content: center">
+		<Button on:click={openExpenses} variant="outlined">
+			<Label>Open expenses</Label>
+		</Button>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 4, tablet: 4, phone: 2 }} style="display: flex; justify-content: center">
+		<Button on:click={openCategories} variant="outlined">
+			<Label>Open categories</Label>
+		</Button>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 4, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">
+		<Button on:click={openPeople} variant="outlined">
+			<Label>Open people</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>
