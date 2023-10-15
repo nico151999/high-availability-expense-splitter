@@ -1,13 +1,25 @@
-import i18n, {type Config, type Parser} from 'sveltekit-i18n';
+import i18n, {type Config} from 'sveltekit-i18n';
 import lang from './lang.json';
 
-const config: Config<Parser.Params> = ({
+interface Params {
+    [key: string]: string;
+}
+
+const config: Config<Params> = ({
     translations: {
         en: {lang},
         de: {lang},
         nb: {lang}
     },
     loaders: [
+        {
+            locale: 'en',
+            key: 'global',
+            routes: [/^\//],
+            loader: async () => (
+                await import('./en/global.json')
+            ).default,
+        },
         {
             locale: 'en',
             key: 'root',
@@ -82,6 +94,14 @@ const config: Config<Parser.Params> = ({
         },
         {
             locale: 'de',
+            key: 'global',
+            routes: [/^\//],
+            loader: async () => (
+                await import('./de/global.json')
+            ).default,
+        },
+        {
+            locale: 'de',
             key: 'root',
             routes: ['/'],
             loader: async () => (
@@ -150,6 +170,14 @@ const config: Config<Parser.Params> = ({
             routes: [/^\/groups\/group-[A-Za-z0-9]{15}\/people\/person-[A-Za-z0-9]{15}$/],
             loader: async () => (
                 await import('./de/person.json')
+            ).default,
+        },
+        {
+            locale: 'nb',
+            key: 'global',
+            routes: [/^\//],
+            loader: async () => (
+                await import('./nb/global.json')
             ).default,
         },
         {
@@ -229,4 +257,4 @@ const config: Config<Parser.Params> = ({
 
 export const { t, loading, locales, locale, loadTranslations, addTranslations, translations, setLocale, setRoute } = new i18n(config);
 
-loading.subscribe((l) => l && console.log('Loading translations for the main instance...'));
+loading.subscribe((l) => l && console.log('Loading translations...'));

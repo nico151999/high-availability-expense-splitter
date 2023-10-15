@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { t } from "$lib/localization";
+	import Button, { Label } from "@smui/button";
+	import LayoutGrid, {Cell} from "@smui/layout-grid";
 
     function gotoGroups() {
         goto('./groups');
     }
 </script>
 
-<h2>My main page</h2>
-<button on:click={gotoGroups}>{$t("root.openGroups")}</button>
+<LayoutGrid>
+	<Cell span={12}>
+        <h1>Welcome</h1>
+        <Button on:click={gotoGroups} touch variant="outlined">
+            <Label>{$t("root.openGroups")}</Label>
+        </Button>
+    </Cell>
+</LayoutGrid>
