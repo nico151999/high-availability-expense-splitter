@@ -80,7 +80,7 @@
 </script>
 
 <LayoutGrid>
-	<LayoutCell span={12}>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		<h1>{$t('groups.yourGroups')}</h1>
 		
 		<DataTable table$aria-label="User list" style="width: 100%">
@@ -129,15 +129,15 @@
 			/>
 		</DataTable>
 	</LayoutCell>
-	<LayoutCell span={12}>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		<h2>New group</h2>
 	</LayoutCell>
-	<LayoutCell span={6}>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
 		<Textfield variant="outlined" bind:value={newGroup.name} label="Group name" style="width: 100%" helperLine$style="width: 100%">
 			<HelperText slot="helper">The name of the group that is to be created</HelperText>
 		</Textfield>
 	</LayoutCell>
-	<LayoutCell span={6}>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
 		{#if $currencies}
 			<Select variant="outlined" bind:value={newGroup.currencyId} label="Currency" style="width: 100%">
 				{#each [...$currencies] as [cID, currency]}
@@ -150,7 +150,7 @@
 			closed={!!$currencies}
 			aria-label="Currencies are being loaded..."/>
 	</LayoutCell>
-	<LayoutCell span={12} style="display: flex; justify-content: flex-end">
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: flex-end">
 		<Button on:click={createGroup} touch variant="outlined">
 			<Label>Create group</Label>
 		</Button>
