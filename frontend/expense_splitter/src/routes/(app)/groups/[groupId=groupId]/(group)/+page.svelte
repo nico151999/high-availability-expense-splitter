@@ -15,6 +15,7 @@
 	import Button, { Label } from "@smui/button";
 	import Textfield from "@smui/textfield";
 	import Select, {Option} from "@smui/select";
+	import { Separator } from "@smui/list";
 
 	export let data: PageData;
 
@@ -101,6 +102,9 @@
 </script>
 
 <LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Group</h2>
+	</LayoutCell>
 	{#if $group}
 		<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
 			<Textfield variant="outlined" disabled={!editMode} bind:value={editedGroup.name} label="Group name" style="width: 100%" />
@@ -138,6 +142,9 @@
 			indeterminate
 			closed={!!$group}
 			aria-label="Group is being loaded..."/>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<Separator />
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 4, tablet: 4, phone: 2 }} style="display: flex; justify-content: center">
 		<Button on:click={openExpenses} variant="outlined">

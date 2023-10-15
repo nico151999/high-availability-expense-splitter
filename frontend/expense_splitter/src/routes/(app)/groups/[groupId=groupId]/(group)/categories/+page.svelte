@@ -7,6 +7,15 @@
 	import { writable, type Writable } from "svelte/store";
 	import { goto } from "$app/navigation";
 	import { streamCategories } from "./utils";
+	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
+	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
+	import { t } from "$lib/localization";
+	import IconButton from "@smui/icon-button";
+	import LinearProgress from "@smui/linear-progress";
+	import Textfield from "@smui/textfield";
+	import HelperText from "@smui/textfield/helper-text";
+	import Button, { Label } from "@smui/button";
+	import { Separator } from "@smui/list";
 
 	export let data: PageData;
 
@@ -15,9 +24,9 @@
 		Map<string, {category?: Category, abortController: AbortController}> | undefined
 	> = writable();
 
-	const newCategory = writable({
+	const newCategory = {
 		name: '',
-	});
+	};
 
 	const abortController = new AbortController();
 	onDestroy(() => {
@@ -32,11 +41,11 @@
 		try {
 			const res = await categoryClient.createCategory({
                 groupId: data.groupId,
-                name: $newCategory.name
+                name: newCategory.name
 			});
 			console.log('Created category', res.id);
 
-            newCategory.set({name: ''});
+            newCategory.name = '';
 		} catch (e) {
 			console.error(`An error occurred trying to create category in group ${data.groupId}`, e);
 		}
@@ -60,34 +69,61 @@
 	}
 </script>
 
-<h2>Your categories in group {data.groupId}</h2>
-
-<table>
-	<thead>
-		<th>ID</th>
-		<th>Name</th>
-		<th>Action</th>
-	</thead>
-	<tbody>
-		{#if $categories}
-			{#each [...$categories] as [pID, category]}
-				{#if category.category}
-					<tr on:click={openCategory(pID)}>
-						<td>{pID}</td>
-						<td>{category.category?.name}</td>
-						<td><button on:click|stopPropagation={deleteCategory(pID)}>Delete</button></td>
-					</tr>
-				{:else}
-					<tr>Loading category with ID {pID}...</tr>
+<LayoutGrid>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h2>Categories</h2>
+		
+		<DataTable table$aria-label="User list" style="width: 100%">
+			<Head>
+				<Row>
+					<Cell>ID</Cell>
+					<Cell>Name</Cell>
+					<Cell>Action</Cell>
+				</Row>
+			</Head>
+			<Body>
+				{#if $categories}
+					{#each [...$categories] as [cID, category]}
+						{#if category.category}
+							<Row on:click={openCategory(cID)}>
+								<Cell>{cID}</Cell>
+								<Cell>{category.category.name}</Cell>
+								<Cell>
+									<IconButton
+										on:click$stopPropagation={deleteCategory(cID)}
+										class="material-icons"
+										aria-label="Delete category">delete</IconButton>
+								</Cell>
+							</Row>
+						{:else}
+							<Row>{$t('categories.loadingCategoryWithId', { categoryId: cID })}</Row>
+						{/if}
+					{/each}
 				{/if}
-			{/each}
-		{:else}
-			<tr>Loading categories...</tr>
-		{/if}
-		<tr>
-			<td></td>
-			<td><input type="text" placeholder="Category name" bind:value={$newCategory.name}/></td>
-			<td><button on:click={createCategory}>Create category</button></td>
-		</tr>
-	</tbody>
-</table>
+			</Body>
+		
+			<LinearProgress
+				indeterminate
+				closed={!!$categories}
+				aria-label="Categories are being loaded..."
+				slot="progress"
+			/>
+		</DataTable>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<Separator />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New category</h4>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
+		<Textfield variant="outlined" bind:value={newCategory.name} label="Category name" style="width: 100%" helperLine$style="width: 100%">
+			<HelperText slot="helper">The name of the category that is to be created</HelperText>
+		</Textfield>
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }} style="display: flex; justify-content: flex-end">
+		<Button on:click={createCategory} touch variant="outlined">
+			<Label>Create category</Label>
+		</Button>
+	</LayoutCell>
+</LayoutGrid>

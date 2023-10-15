@@ -18,6 +18,7 @@
 	import Select, { Option } from '@smui/select';
 	import { t } from '$lib/localization';
 	import IconButton from '@smui/icon-button';
+	import { Separator } from '@smui/list';
 
 	export let data: PageData;
 
@@ -81,7 +82,7 @@
 
 <LayoutGrid>
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-		<h1>{$t('groups.yourGroups')}</h1>
+		<h2>{$t('groups.yourGroups')}</h2>
 		
 		<DataTable table$aria-label="User list" style="width: 100%">
 			<Head>
@@ -130,7 +131,10 @@
 		</DataTable>
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-		<h2>New group</h2>
+		<Separator />
+	</LayoutCell>
+	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
+		<h4>New group</h4>
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 6, tablet: 4, phone: 4 }}>
 		<Textfield variant="outlined" bind:value={newGroup.name} label="Group name" style="width: 100%" helperLine$style="width: 100%">
