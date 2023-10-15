@@ -20,7 +20,7 @@ func (rpProcessor *expenseProcessor) personDeleted(ctx context.Context, req *per
 
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		var expenseModels []*model.Expense
-		if err := tx.NewDelete().Model(&expenseModels).Where("person_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
+		if err := tx.NewDelete().Model(&expenseModels).Where("by_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {
 			log.Error("failed deleting expenses related to deleted person", logging.Error(err))
 			return errDeleteExpenses
 		}
