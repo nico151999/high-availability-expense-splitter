@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: "{{ include "frontend-name-ingress" (include "expenseSplitterFrontend-shortName" .) }}"
   annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.haExpenseSplitter.clusterCertIssuer | quote }}
     {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.frontends.expenseSplitter.linkerdMesh) }}
     nginx.ingress.kubernetes.io/service-upstream: "true"
     {{- end}}

@@ -691,6 +691,7 @@ deploy:
         createNamespace: true
         setValueTemplates:
           haExpenseSplitter:
+            clusterCertIssuer: "{{ .HA_EXPENSE_SPLITTER_CLUSTER_ISSUER }}"
             imagePullSecrets: *imagePullSecrets
             securityContext: *securityContext
             frontends:
@@ -728,6 +729,7 @@ deploy:
                   port: 4317
               ingress:
                 host: "{{ .HA_EXPENSE_SPLITTER_SERVICES_HOST }}"
+                port: "{{ .HA_EXPENSE_SPLITTER_SERVICES_PORT }}"
               reflection:
                 securityContext: *securityContext
                 imagePullSecrets: *imagePullSecrets

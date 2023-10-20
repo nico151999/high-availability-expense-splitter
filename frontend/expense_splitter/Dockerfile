@@ -39,6 +39,7 @@ RUN (addgroup -S $GROUP_ID || echo "Group $GROUP_ID already exists.") &&\
 USER $USER_ID
 WORKDIR /usr/src/app/frontend/expense_splitter
 COPY --from=builder --chown=$USER_ID:$GROUP_ID /usr/src/app/frontend/expense_splitter/package.json /usr/src/app/frontend/expense_splitter/package.json
+COPY --from=builder --chown=$USER_ID:$GROUP_ID /usr/src/app/node_modules /usr/src/app/node_modules
 COPY --from=builder --chown=$USER_ID:$GROUP_ID /usr/src/app/frontend/expense_splitter/node_modules /usr/src/app/frontend/expense_splitter/node_modules
 COPY --from=builder --chown=$USER_ID:$GROUP_ID /usr/src/app/frontend/expense_splitter/build /usr/src/app/frontend/expense_splitter/build
 
