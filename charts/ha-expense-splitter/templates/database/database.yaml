@@ -7,18 +7,20 @@ spec:
   connection:
     postgres:
       dbname:
-        value: {{ .Values.haExpenseSplitter.db.name }}
+        value: {{ .Values.haExpenseSplitter.db.name | quote }}
       host:
-        value: {{ .Values.haExpenseSplitter.db.host }}
+        value: {{ .Values.haExpenseSplitter.db.host | quote }}
       port:
-        value: "{{ .Values.haExpenseSplitter.db.port }}"
+        value: {{ .Values.haExpenseSplitter.db.port | quote }}
       user:
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
-            key: {{ .Values.haExpenseSplitter.db.adminUser.secret.userKey }}
+            name: {{ .Values.haExpenseSplitter.db.adminUser.username.secret.name }}
+            key: {{ .Values.haExpenseSplitter.db.adminUser.username.secret.key }}
+      {{- if hasKey .Values.haExpenseSplitter.db.adminUser "password" }}
       password:
         valueFrom:
           secretKeyRef:
-            name: {{ .Values.haExpenseSplitter.db.adminUser.secret.name }}
-            key: {{ .Values.haExpenseSplitter.db.adminUser.secret.passwordKey }}
+            name: {{ .Values.haExpenseSplitter.db.adminUser.password.secret.name }}
+            key: {{ .Values.haExpenseSplitter.db.adminUser.password.secret.key }}
+      {{- end }}

@@ -1,0 +1,1 @@
+The Cockroach Operator CRDs were installed successfully. You are ready to deploy the operator itself now.

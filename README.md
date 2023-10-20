@@ -37,5 +37,5 @@ Some elemental features that are intended to be implemented in the near future i
 - generate /cmd/*.Dockerfile.dockerignore files from root .dockerignore or find another way to extend the root .dockerignore (background for the current, weird structure: https://github.com/moby/moby/issues/12886)
 - export OTEL to trace collector deployed with Jaeger
 - cleanup frontend Dockerfile
-- auth (probably via Ory Stack in combination with Stackgres for persistence)
+- auth (probably via Ory Stack in combination with CockroachDB for persistence)
 - caching layer for requests against external APIs (e.g. currency API)

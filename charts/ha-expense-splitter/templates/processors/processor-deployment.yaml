@@ -20,6 +20,7 @@ spec:
       {{- if default $.Values.haExpenseSplitter.linkerdMesh $processorSpec.linkerdMesh }}
       annotations:
         linkerd.io/inject: enabled
+        config.linkerd.io/default-inbound-policy: cluster-authenticated
       {{- end }}
     spec:
       serviceAccountName: "{{ include "processor-name-serviceaccount" $processorName }}"

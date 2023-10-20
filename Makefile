@@ -302,7 +302,9 @@ ifeq (false,$(SKIP_BREAKING_CHANGES_CHECK))
 endif
 	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/ha-expense-splitter'
 	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/linkerd-cert-config'
-	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/stackgres-cluster'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/cockroach-operator-crds'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/cockroach-operator'
+	$(HELM_INSTALL_LOCATION) kubeconform --verbose --summary '$(REPO_ROOT_PATH)/charts/cockroach-db'
 	go vet ./...
 ifeq (false,$(SKIP_GOLANGCI))
 	$(GOLANGCI_LINT_INSTALL_LOCATION) run --concurrency 1 --verbose

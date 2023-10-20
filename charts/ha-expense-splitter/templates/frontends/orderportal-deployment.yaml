@@ -19,6 +19,7 @@ spec:
       {{- if (default .Values.haExpenseSplitter.linkerdMesh .Values.haExpenseSplitter.frontends.expenseSplitter.linkerdMesh) }}
       annotations:
         linkerd.io/inject: enabled
+        config.linkerd.io/default-inbound-policy: cluster-authenticated
       {{- end }}
     spec:
       {{- include "imagepullsecrets" (dict "primary" .Values.haExpenseSplitter.frontends.expenseSplitter.imagePullSecrets "fallback" .Values.haExpenseSplitter.imagePullSecrets) | nindent 6 }}

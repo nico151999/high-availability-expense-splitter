@@ -1,0 +1,73 @@
+{{- if hasKey .Values "initialDb" -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-create-db" .Values.clusterName | quote }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 0
+      serviceAccountName: {{ printf "%s-sa" .Values.clusterName | quote }} # TODO: once parameterised (no longer hardcoded) in the operator chart use the service account directly
+      initContainers:
+      - name: wait-for-database
+        image: {{ .Values.busyboxImage | quote }}
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            until nc -z "{{ printf "%s-public" .Values.clusterName }}" "{{ .Values.sqlPort }}"
+            do
+              echo "waiting for database"
+              sleep 1
+            done
+      containers:
+      - name: {{ printf "%s-create-db" .Values.clusterName | quote }}
+        image: {{ printf "cockroachdb/cockroach:%s" .Values.cockroachDBVersion | quote }}
+        env:
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.initialDb.username.secret.name | quote }}
+              key: {{ .Values.initialDb.username.secret.key | quote }}
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.initialDb.password.secret.name | quote }}
+              key: {{ .Values.initialDb.password.secret.key | quote }}
+        - name: DATABASE_NAME
+          value: {{ .Values.initialDb.dbName | quote }}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: client-certs
+          mountPath: /cockroach/cockroach-certs/
+        command:
+        - bash
+        - -c
+        - |
+          ./cockroach sql --certs-dir=/cockroach/cockroach-certs --host=expense-splitter-db-public --execute "
+          CREATE ROLE IF NOT EXISTS $DATABASE_USER WITH LOGIN PASSWORD '$DATABASE_PASSWORD' CREATEROLE CREATELOGIN;
+          CREATE DATABASE IF NOT EXISTS $DATABASE_NAME WITH OWNER $DATABASE_USER;
+          GRANT ALL ON DATABASE $DATABASE_NAME TO $DATABASE_USER WITH GRANT OPTION;
+          "
+      volumes:
+      - name: client-certs
+        projected:
+            sources:
+              - secret:
+                  name: {{ printf "%s-node" .Values.clusterName | quote }}
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - secret:
+                  name: {{ printf "%s-root" .Values.clusterName | quote }}
+                  items:
+                    - key: tls.crt
+                      path: client.root.crt
+                    - key: tls.key
+                      path: client.root.key
+            defaultMode: 256
+{{- end -}}

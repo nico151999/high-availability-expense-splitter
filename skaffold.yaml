@@ -328,8 +328,57 @@ deploy:
                 done
                 for ns in $(echo $SKAFFOLD_NAMESPACES | sed "s/,/ /g"); do
                   kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f - || exit 1
-                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" --save-config --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" -n "$ns" --dry-run=client -o yaml | kubectl apply -f - || exit 1
+                  kubectl create secret docker-registry "$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET" \
+                    --save-config \
+                    --docker-server="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_SERVER" \
+                    --docker-username="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_USERNAME" \
+                    --docker-password="$HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET_PASSWORD" \
+                    -n "$ns" \
+                    --dry-run=client \
+                    -o yaml | kubectl apply -f - || exit 1
                 done
+            os: [darwin, linux]
+        - host:
+            command:
+              - sh
+              - -c
+              - |
+                echo 'Creating database secret'
+                if [ -n "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD" ]; then
+                  echo 'Database password is provided'
+                  if [ "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" = "$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_NAME" ]; then
+                    echo 'Putting database user and password in the same secret'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  else
+                    echo 'Putting database user and password into different secrets'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
+                      -n "$HA_EXPENSE_SPLITTER_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  fi
+                else
+                  echo 'Putting database user into secret without password'
+                  kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
+                    --save-config \
+                    --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
+                    -n "$HA_EXPENSE_SPLITTER_NAMESPACE" \
+                    --dry-run=client \
+                    -o yaml | kubectl apply -f - || exit 1
+                fi
             os: [darwin, linux]
             # TODO: create windows equivalent
     releases:
@@ -555,67 +604,46 @@ deploy:
               "linkerd\\.io/inject": enabled
             admissionWebhooks:
               enabled: false
-      - name: stackgres-operator
-        repo: "https://stackgres.io/downloads/stackgres-k8s/stackgres/helm/"
-        remoteChart: stackgres-operator
-        namespace: "stackgres-operator"
+      - name: cockroach-operator-crds
+        chartPath: charts/cockroach-operator-crds
+        namespace: cockroach-operator
         createNamespace: true
-        version: "1.5.0"
-        wait: false # waiting causes the cert install job not to be executed; therefore we must not pass the wait flag
-        setValueTemplates:
-          cert:
-            certManager:
-              autoConfigure: true
-          grafana:
-            autoEmbed: true
-            webHost: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana.{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:80"
-            secretNamespace: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAMESPACE }}"
-            secretName: "{{ .HA_EXPENSE_SPLITTER_PROMETHEUS_STACK_NAME }}-grafana"
-            secretUserKey: admin-user
-            secretPasswordKey: admin-password
+        wait: true
+      - name: cockroach-operator
+        chartPath: charts/cockroach-operator
+        namespace: cockroach-operator
+        createNamespace: true
+        wait: true
+      # TODO: wait for operator to actually run before creating databases; otherwise the webhook will not be reachable and the database creation will fail
       # TODO: deploy database for ory stack and deploy ory stack itself
       # TODO: setup Minio
-      # TODO: deploy expense splitter DB as part of the expense splitter chart
-      - name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_HOST }}"
-        chartPath: charts/stackgres-cluster
+      - name: cockroach-db
+        chartPath: charts/cockroach-db
         namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
         createNamespace: true
         wait: true
         setValueTemplates:
-          cluster:
-            metadata:
-              annotations:
-                clusterPods:
-                  "linkerd\\.io/inject": enabled
-            pods:
-              persistentVolume:
-                storageClass: "{{ .HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME }}"
-            managedSql:
-              secretScripts:
-                "create-{{ .HA_EXPENSE_SPLITTER_ES_DB_HOST }}-database": |
-                  DO
-                  $do$
-                  BEGIN
-                    IF EXISTS (
-                        SELECT FROM pg_catalog.pg_roles
-                        WHERE  rolname = '{{ .HA_EXPENSE_SPLITTER_ES_DB_USER }}') THEN
-                        RAISE NOTICE 'Role "{{ .HA_EXPENSE_SPLITTER_ES_DB_USER }}" already exists. Skipping.';
-                    ELSE
-                        CREATE ROLE {{ .HA_EXPENSE_SPLITTER_ES_DB_USER }} LOGIN PASSWORD '{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD }}' NOSUPERUSER CREATEROLE INHERIT;
-                    END IF;
-                  END
-                  $do$;
-                  DO
-                  $do$
-                  BEGIN
-                    IF EXISTS (SELECT FROM pg_database WHERE datname = '{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}') THEN
-                        RAISE NOTICE 'Database already exists';
-                    ELSE
-                        PERFORM dblink_exec('dbname=' || current_database()
-                                          \, 'CREATE DATABASE {{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }} WITH OWNER {{ .HA_EXPENSE_SPLITTER_ES_DB_USER }}');
-                    END IF;
-                  END
-                  $do$;
+          clusterName: expense-splitter-db
+          cockroachDBVersion: v23.1.4
+          tlsEnabled: true
+          storage: 20Gi
+          storageClassName: "{{ .HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME }}"
+          nodeCount: 3
+          additionalArgs:
+            - --accept-sql-without-tls
+          additionalAnnotations:
+            "linkerd\\.io/inject": enabled
+            "config\\.linkerd\\.io/opaque-ports": "{{ .HA_EXPENSE_SPLITTER_ES_DB_PORT }}"
+          initialDb: # the DB and user that's to be created initially
+            username:
+              secret:
+                name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_NAME }}"
+                key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY }}"
+            password:
+              secret:
+                name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME }}"
+                key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY }}"
+            dbName: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
       - name: "schemahero"
         chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
         namespace: "schemahero"
@@ -675,15 +703,18 @@ deploy:
                   repository: *expenseSplitterFrontendImage
                   tag: *expenseSplitterFrontendImage
             db:
-              name: postgres # TODO: use "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}" once managed Stackgres Scripts work, i.e. they create a role + database
+              name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
               host: "{{ .HA_EXPENSE_SPLITTER_ES_DB_HOST }}"
-              port: "5432"
+              port: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PORT }}"
               adminUser:
-                # TODO: use credentials instead of secret once managed Stackgres Scripts work, i.e. they create a role + database
-                secret:
-                  name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_HOST }}"
-                  userKey: superuser-username
-                  passwordKey: superuser-password
+                username:
+                  secret:
+                    name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_NAME }}" # the name of the secret
+                    key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY }}" # the key of the username in the secret
+                password: # the optional password that will be used if provided
+                  secret:
+                    name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME }}" # the name of the secret
+                    key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY }}" # the key of the password in the secret
             documentation:
               securityContext: *securityContext
               imagePullSecrets: *imagePullSecrets
@@ -820,18 +851,26 @@ profiles:
       - op: replace
         path: /build/local/push
         value: true
+  - name: SKIP_DB_PASSWORD
+    activation:
+      - env: HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME=
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.name
+      - op: remove
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.key
   - name: SKIP_SERVICES_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -842,15 +881,15 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/12/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+        path: /deploy/helm/releases/13/setValueTemplates/nats.jetstream.fileStorage.storageClassName
       - op: remove
-        path: /deploy/helm/releases/10/setValueTemplates/cluster.pods.persistentVolume.storageClass
+        path: /deploy/helm/releases/11/setValueTemplates/cluster.pods.persistentVolume.storageClass
   - name: DEDICATED_NATS_INSTANCE
     requiresAllActivations: true
     activation:
@@ -858,32 +897,38 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
     patches:
       - op: replace
-        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.host
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.nats.server.host
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
       - op: add
-        path: /deploy/helm/releases/13/setValueTemplates/haExpenseSplitter.services.nats.server.port
+        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.nats.server.port
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/13
+        path: /deploy/helm/releases/14
   - name: SKIP_NATS_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/12
+        path: /deploy/helm/releases/13
   - name: SKIP_SCHEMAHERO_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_SCHEMAHERO_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/11
-  - name: SKIP_STACKGRES_INSTALLATION
+        path: /deploy/helm/releases/12
+  - name: SKIP_COCKROACH_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_STACKGRES_INSTALLATION=true
+      - env: HA_EXPENSE_SPLITTER_SKIP_COCKROACH_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/11
+  - name: SKIP_COCKROACH_OPERATOR_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_COCKROACH_OPERATOR_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/10

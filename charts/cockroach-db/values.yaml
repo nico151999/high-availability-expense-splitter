@@ -1,0 +1,21 @@
+clusterName: cockroachdb
+cockroachDBVersion: v23.1.4
+tlsEnabled: true
+sqlPort: 26257
+storage: 60Gi
+storageClassName: nfs
+nodeCount: 3
+additionalLabels: {}
+additionalAnnotations: {}
+additionalArgs: []
+busyboxImage: busybox
+# initialDb: # the DB and user that's to be created initially
+#   username:
+#     secret:
+#       name: awesome-db-specs
+#       key: username
+#   password:
+#     secret:
+#       name: awesome-db-specs
+#       key: password
+#   dbName: awesome-db
