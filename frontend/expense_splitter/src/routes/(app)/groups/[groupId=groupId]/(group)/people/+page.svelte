@@ -135,7 +135,6 @@
 								<Cell>{pID}</Cell>
 								<Cell>{person.person.name}</Cell>
 								<Cell>
-									{$accountsPerPerson?.get(pID)?.toFixed(2) ?? 'Loading account...'}
 									{#if $accountsPerPerson}
 										{@const accountPerPerson = $accountsPerPerson.get(pID)}
 										{#if accountPerPerson}

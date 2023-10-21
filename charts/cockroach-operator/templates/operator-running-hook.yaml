@@ -1,0 +1,26 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cockroach-operator-running-check
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 0
+      serviceAccountName: cockroach-operator-sa
+      containers:
+      - name: wait-for-operator
+        image: busybox
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            until nc -z "cockroach-operator-webhook-service" "443"
+            do
+              echo "waiting for operator webhook to become available"
+              sleep 1
+            done

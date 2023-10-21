@@ -18,14 +18,16 @@ haExpenseSplitter:
     host: expense-splitter-db-host
     port: "5432"
     adminUser:
-      secret:
-        name: expense-splitter-db-sec
-        userKey: user
-        passwordKey: password
-      # -- if you want to create a new secret you need to remove the credentials key
-      # credentials:
-      #   user: username
-      #   password: my-secure-password
+      username:
+        # value: my-username # optional value that is written to the secret if provided, not recommended
+        secret:
+          name: expense-splitter-db-sec # the name of the secret
+          key: user # the key of the username in the secret
+      # password: # the optional password that will be used if provided
+      #   # value: my-password # optional value that is written to the secret if provided, not recommended
+      #   secret:
+      #     name: expense-splitter-db-sec # the name of the secret
+      #     key: password # the key of the password in the secret
     image:
       psql:
         repository: governmentpaas/psql
