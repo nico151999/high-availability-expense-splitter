@@ -76,7 +76,6 @@
 		<DataTable table$aria-label="Category list" style="width: 100%">
 			<Head>
 				<Row>
-					<Cell>ID</Cell>
 					<Cell>Name</Cell>
 					<Cell>Action</Cell>
 				</Row>
@@ -86,7 +85,6 @@
 					{#each [...$categories] as [cID, category]}
 						{#if category.category}
 							<Row on:click={openCategory(cID)}>
-								<Cell>{cID}</Cell>
 								<Cell>{category.category.name}</Cell>
 								<Cell>
 									<IconButton

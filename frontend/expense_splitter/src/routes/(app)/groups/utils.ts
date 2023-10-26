@@ -250,6 +250,19 @@ export function marshalExpenseStakeValue(expensestake: ExpenseStake): string {
     return marshalMainAndFractionalValues(expensestake.mainValue, expensestake.fractionalValue)
 }
 
+export function divideMainAndFractionalValues(by: number, main: number, fractional?: number): [number, number?] {
+    let value = +marshalMainAndFractionalValues(main, fractional);
+    if (fractional === undefined) {
+        return [Math.round(value / by), undefined];
+    } else {
+        value = value / by;
+        return [
+            (value > 0) ? Math.floor(value) : Math.ceil(value),
+            Math.floor((value % 1) * 100)
+        ];
+    }
+}
+
 function marshalMainAndFractionalValues(main: number, fractional?: number): string {
     let fractionalValue: string;
     if (fractional) {

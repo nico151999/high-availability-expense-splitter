@@ -94,6 +94,17 @@
 		streamExpenses(expenseClient, data.groupId, abortController, expenses);
 		streamPeople(personClient, data.groupId, abortController, people);
 		streamCurrencies(currencyClient, currencyAbortController, currencies);
+
+		// initially set currency to group currency in form but do not update on changes
+		let unsubscribeInitialGroup: Unsubscriber|undefined;
+		unsubscribeInitialGroup = group.subscribe((g) => {
+			if (unsubscribeInitialGroup) {
+				// unsubscribe so that future changes have no effect
+				unsubscribeInitialGroup();
+				newExpense.currencyId = g?.currencyId ?? '';
+			}
+		});
+
 		streamGroup(groupClient, data.groupId, groupAbortController, group);
 		unsubscribeExpenses = expenses.subscribe(onExpensesChanged);
 		unsubscribeGroup = group.subscribe(onGroupChanged);
@@ -189,7 +200,7 @@
 
 			newExpense.name = '';
 			newExpense.byId = '';
-			newExpense.currencyId = '';
+			newExpense.currencyId = $group?.currencyId ?? '';
 			newExpense.timestamp = new Date();
 		} catch (e) {
 			console.error(`An error occurred trying to create expense in group ${data.groupId}`, e);
@@ -251,7 +262,6 @@
 		<DataTable table$aria-label="Group list" style="width: 100%">
 			<Head>
 				<Row>
-					<Cell>ID</Cell>
 					<Cell>Name</Cell>
 					<Cell>By</Cell>
 					<Cell>Currency</Cell>
@@ -265,7 +275,6 @@
 						{#if expense.expense}
 							{@const e = expense.expense}
 							<Row on:click={openExpense(eID)}>
-								<Cell>{eID}</Cell>
 								<Cell>{e.name}</Cell>
 								<Cell>{$people.get(e.byId)?.person?.name}</Cell>
 								<Cell>
@@ -332,7 +341,7 @@
 			aria-label="People are being loaded..."/>
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-		{#if $currencies}
+		{#if $currencies && newExpense.currencyId}
 			<Select variant="outlined" bind:value={newExpense.currencyId} label="Currency" style="width: 100%">
 				{#each [...$currencies] as [cID, currency]}
 					<Option value={cID}>{currency.acronym} - {currency.name}</Option>
@@ -341,7 +350,7 @@
 		{/if}
 		<LinearProgress
 			indeterminate
-			closed={!!$currencies}
+			closed={!!$currencies && !!newExpense.currencyId}
 			aria-label="Currencies are being loaded..."/>
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: center">

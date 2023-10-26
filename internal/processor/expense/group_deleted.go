@@ -18,6 +18,8 @@ func (rpProcessor *expenseProcessor) groupDeleted(ctx context.Context, req *grou
 	log := logging.FromContext(ctx).With(logging.String("groupId", req.GetId()))
 	log.Info("processing group.GroupDeleted event")
 
+	// TODO: evaluate advantages and disadvantages of deleting directly in the processor (as done in the following)
+	// and calling the list expenses RPC followed by the delete expense RPC for each expense (keep transactional nature in mind)!
 	return rpProcessor.dbClient.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 		var expenseModels []*model.Expense
 		if err := tx.NewDelete().Model(&expenseModels).Where("group_id = ?", req.GetId()).Returning("id").Scan(ctx); err != nil {

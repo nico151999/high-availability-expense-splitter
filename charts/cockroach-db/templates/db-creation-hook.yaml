@@ -48,7 +48,7 @@ spec:
         - bash
         - -c
         - |
-          ./cockroach sql --certs-dir=/cockroach/cockroach-certs --host=expense-splitter-db-public --execute "
+          ./cockroach sql --certs-dir=/cockroach/cockroach-certs --host={{ printf "%s-public" .Values.clusterName }} --execute "
           CREATE ROLE IF NOT EXISTS $DATABASE_USER WITH LOGIN PASSWORD '$DATABASE_PASSWORD' CREATEROLE CREATELOGIN;
           CREATE DATABASE IF NOT EXISTS $DATABASE_NAME WITH OWNER $DATABASE_USER;
           GRANT ALL ON DATABASE $DATABASE_NAME TO $DATABASE_USER WITH GRANT OPTION;

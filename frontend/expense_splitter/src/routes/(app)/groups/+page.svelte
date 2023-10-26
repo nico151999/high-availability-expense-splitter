@@ -87,7 +87,6 @@
 		<DataTable table$aria-label="Group list" style="width: 100%">
 			<Head>
 				<Row>
-					<Cell>ID</Cell>
 					<Cell>Name</Cell>
 					<Cell>Default Currency</Cell>
 					<Cell>{$t('groups.action')}</Cell>
@@ -98,7 +97,6 @@
 					{#each [...$groups] as [gID, group]}
 						{#if group.group}
 							<Row on:click={openGroup(gID)}>
-								<Cell>{gID}</Cell>
 								<Cell>{group.group.name}</Cell>
 								<Cell>
 									{#if $currencies}

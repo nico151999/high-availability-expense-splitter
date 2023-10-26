@@ -217,10 +217,16 @@
 			<Separator />
 		</LayoutCell>
 		<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
-			<Expensestakes expense={$expense} transport={data.grpcWebTransport} people={people} bind:stakeSum={stakeSum}></Expensestakes>
 			{#if $currencies && $group && exchangeRate}
 				{@const exCurrency = $currencies.get($expense.currencyId)}
 				{@const grCurrency = $currencies.get($group.currencyId)}
+				{#if exCurrency}
+					<Expensestakes currency={exCurrency} expense={$expense} transport={data.grpcWebTransport} people={people} bind:stakeSum={stakeSum}></Expensestakes>
+				{/if}
+				<LinearProgress
+					indeterminate
+					closed={!!exCurrency}
+					aria-label="Expens stakes are being loaded..."/>
 				<span>{stakeSum} {exCurrency?.acronym} - {stakeSumInCurrency(exchangeRate, stakeSum).toFixed(2)} {grCurrency?.acronym}</span>
 			{:else}
 				<span>Loading data...</span>

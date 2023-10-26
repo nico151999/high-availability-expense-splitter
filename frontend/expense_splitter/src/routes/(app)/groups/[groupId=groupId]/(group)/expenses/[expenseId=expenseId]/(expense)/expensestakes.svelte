@@ -7,7 +7,7 @@
 	import { onDestroy, onMount } from "svelte";
 	import type { Person } from "../../../../../../../../../../../gen/lib/ts/common/person/v1/person_pb";
 	import { streamExpenseStakesInExpense } from "../../utils";
-	import { marshalExpenseStakeValue, summariseStakes } from "../../../../../utils";
+	import { marshalExpenseStakeValue, summariseStakes, divideMainAndFractionalValues } from "../../../../../utils";
 	import LayoutGrid, {Cell as LayoutCell} from "@smui/layout-grid";
 	import DataTable, { Body, Cell, Head, Row } from "@smui/data-table";
 	import IconButton from "@smui/icon-button";
@@ -17,14 +17,19 @@
 	import HelperText from "@smui/textfield/helper-text";
 	import Select, {Option} from "@smui/select";
 	import Button, { Label } from "@smui/button";
+	import type { Currency } from "../../../../../../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
+	import { Separator } from "@smui/list";
 
     export let expense: Expense;
+	export let currency: Currency;
     export let transport: Transport;
     export let people: Writable<
 		Map<string, {person?: Person, abortController: AbortController}> | undefined
 	>;
 	export let stakeSum = '0';
 	export let fractionalDisabled = false;
+
+	let splitOption = 'split';
 
 	const newExpenseStake = {
 		forId: '',
@@ -60,15 +65,32 @@
 		});
     });
 
-    async function createExpenseStake() {
+    async function createExpenseStakes() {
 		try {
-			const res = await expensestakeClient.createExpenseStake({
-                expenseId: expense.id,
-				forId: newExpenseStake.forId,
-				mainValue: newExpenseStake.mainValue,
-				fractionalValue: newExpenseStake.fractionalValue,
-			});
-			console.log('Created expense stake', res.id);
+			if (newExpenseStake.forId === splitOption) {
+				if (!$people) {
+					console.error('Expected people to be defined when creating expense');
+					return;
+				}
+				const [mainValue, fractionalValue] = divideMainAndFractionalValues($people.size, newExpenseStake.mainValue, newExpenseStake.fractionalValue);
+				const expenseStakeCreationRequests: Array<Promise<void>> = [];
+				for (const forId of $people.keys()) {
+					expenseStakeCreationRequests.push(
+						createExpenseStake(
+							forId,
+							mainValue,
+							fractionalValue
+						)
+					);
+				}
+				await Promise.all(expenseStakeCreationRequests);
+			} else {
+				await createExpenseStake(
+					newExpenseStake.forId,
+					newExpenseStake.mainValue,
+					newExpenseStake.fractionalValue
+				);
+			}
 
 			newExpenseStake.forId = '';
 			newExpenseStake.mainValue = 0;
@@ -76,6 +98,16 @@
 		} catch (e) {
 			console.error(`An error occurred trying to create expensestake in expense ${expense.id}`, e);
 		}
+	}
+
+	async function createExpenseStake(forId: string, mainValue: number, fractionalValue: number|undefined): Promise<void> {
+		const res = await expensestakeClient.createExpenseStake({
+			expenseId: expense.id,
+			forId: forId,
+			mainValue: mainValue,
+			fractionalValue: fractionalValue,
+		});
+		console.log('Created expense stake', res.id);
 	}
 
 	function deleteExpenseStake(expensestakeId: string) {
@@ -97,7 +129,6 @@
 		<DataTable table$aria-label="Expense stake list" style="width: 100%">
 			<Head>
 				<Row>
-					<Cell>ID</Cell>
 					<Cell>For</Cell>
 					<Cell>Value</Cell>
 					<Cell>Action</Cell>
@@ -108,9 +139,8 @@
 					{#each [...$expensestakes] as [eID, expensestake]}
 						{#if expensestake.expensestake}
 							<Row>
-								<Cell>{eID}</Cell>
 								<Cell>{$people.get(expensestake.expensestake.forId)?.person?.name}</Cell>
-								<Cell>{marshalExpenseStakeValue(expensestake.expensestake)}</Cell>
+								<Cell>{marshalExpenseStakeValue(expensestake.expensestake)} {currency.acronym}</Cell>
 								<Cell>
 									<IconButton
 										on:click$stopPropagation={deleteExpenseStake(eID)}
@@ -137,6 +167,10 @@
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }}>
 		{#if $people}
 			<Select variant="outlined" bind:value={newExpenseStake.forId} label="For" style="width: 100%">
+				<Option value={splitOption}>
+					Split among all (might require rounding)
+				</Option>
+				<Separator />
 				{#each [...$people] as [pID, person]}
 					{#if person.person}
 						<Option value={pID}>
@@ -162,7 +196,7 @@
 		</Textfield>
 	</LayoutCell>
 	<LayoutCell spanDevices={{ desktop: 12, tablet: 8, phone: 4 }} style="display: flex; justify-content: flex-end">
-		<Button on:click={createExpenseStake} touch variant="outlined">
+		<Button on:click={createExpenseStakes} touch variant="outlined">
 			<Label>Create expense stake</Label>
 		</Button>
 	</LayoutCell>

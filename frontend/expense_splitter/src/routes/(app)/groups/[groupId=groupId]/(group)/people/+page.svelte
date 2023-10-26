@@ -25,6 +25,7 @@
 	import Textfield from "@smui/textfield";
 	import HelperText from "@smui/textfield/helper-text";
 	import Button, { Label } from "@smui/button";
+	import type { Currency } from "../../../../../../../../../gen/lib/ts/common/currency/v1/currency_pb";
 
 	export let data: PageData;
 
@@ -57,7 +58,21 @@
 	const accountsPerPersonAbortController = new AbortController();
 
 	const currencyClient = createPromiseClient(CurrencyService, data.grpcWebTransport);
+	let groupCurrency: Currency|undefined;
 
+	$: if ($group) {
+		fetchGroupCurrency($group).then(g => groupCurrency = g);
+	}
+
+	async function fetchGroupCurrency(group: Group): Promise<Currency|undefined> {
+		try {
+			return (await currencyClient.getCurrency({id: group.currencyId})).currency;
+		} catch (e) {
+			console.error('An error occurred trying to fetch group currency. Trying anew in 5 seconds.', e);
+			await new Promise(resolve => setTimeout(resolve, 5000));
+			return (await fetchGroupCurrency(group));
+		}
+	}
 
 	const newPerson = {
 		name: '',
@@ -121,7 +136,6 @@
 		<DataTable table$aria-label="Person list" style="width: 100%">
 			<Head>
 				<Row>
-					<Cell>ID</Cell>
 					<Cell>Name</Cell>
 					<Cell>Account</Cell>
 					<Cell>Action</Cell>
@@ -132,13 +146,12 @@
 					{#each [...$people] as [pID, person]}
 						{#if person.person}
 							<Row on:click={openPerson(pID)}>
-								<Cell>{pID}</Cell>
 								<Cell>{person.person.name}</Cell>
 								<Cell>
-									{#if $accountsPerPerson}
+									{#if $accountsPerPerson && groupCurrency}
 										{@const accountPerPerson = $accountsPerPerson.get(pID)}
-										{#if accountPerPerson}
-											{accountPerPerson.toFixed(2)}
+										{#if accountPerPerson !== undefined}
+											{accountPerPerson.toFixed(2)} {groupCurrency.acronym}
 										{/if}
 									{/if}
 									<LinearProgress

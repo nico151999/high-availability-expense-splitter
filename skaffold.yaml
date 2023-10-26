@@ -343,11 +343,11 @@ deploy:
               - sh
               - -c
               - |
-                echo 'Creating database secret'
+                echo 'Creating expense splitter database secret'
                 if [ -n "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD" ]; then
-                  echo 'Database password is provided'
+                  echo 'Expense splitter database password is provided'
                   if [ "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" = "$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_NAME" ]; then
-                    echo 'Putting database user and password in the same secret'
+                    echo 'Putting expense splitter database user and password in the same secret'
                     kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
                       --save-config \
                       --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
@@ -356,7 +356,7 @@ deploy:
                       --dry-run=client \
                       -o yaml | kubectl apply -f - || exit 1
                   else
-                    echo 'Putting database user and password into different secrets'
+                    echo 'Putting expense splitter database user and password into different secrets'
                     kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
                       --save-config \
                       --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
@@ -371,11 +371,120 @@ deploy:
                       -o yaml | kubectl apply -f - || exit 1
                   fi
                 else
-                  echo 'Putting database user into secret without password'
+                  echo 'Putting expense splitter database user into secret without password'
                   kubectl create secret generic "$HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME" \
                     --save-config \
                     --from-literal="$HA_EXPENSE_SPLITTER_ES_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ES_DB_USER" \
                     -n "$HA_EXPENSE_SPLITTER_NAMESPACE" \
+                    --dry-run=client \
+                    -o yaml | kubectl apply -f - || exit 1
+                fi
+            os: [darwin, linux]
+        - host:
+            command:
+              - sh
+              - -c
+              - |
+                echo 'Creating Ory database secret'
+                if [ -n "$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD" ]; then
+                  echo 'Ory database password is provided'
+                  if [ "$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME" = "$HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_NAME" ]; then
+                    echo 'Putting Ory database user and password in the same secret'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ORY_DB_USER" \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  else
+                    echo 'Putting Ory database user and password into different secrets'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ORY_DB_USER" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  fi
+                else
+                  echo 'Putting Ory database user into secret without password'
+                  kubectl create secret generic "$HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME" \
+                    --save-config \
+                    --from-literal="$HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_ORY_DB_USER" \
+                    -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                    --dry-run=client \
+                    -o yaml | kubectl apply -f - || exit 1
+                fi
+            os: [darwin, linux]
+        - host:
+            command:
+              - sh
+              - -c
+              - |
+                echo 'Creating Expense Splitter SMTP secret'
+                if [ -n "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD" ]; then
+                  echo 'Expense Splitter SMTP password is provided'
+                  if [ "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" = "$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_NAME" ]; then
+                    echo 'Putting Expense Splitter SMTP user and password in the same secret'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_SMTP_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  else
+                    echo 'Putting Expense Splitter SMTP user and password into different secrets'
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                      -n "$HA_EXPENSE_SPLITTER_SMTP_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                    kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_NAME" \
+                      --save-config \
+                      --from-literal="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_PASSWORD" \
+                      -n "$HA_EXPENSE_SPLITTER_SMTP_NAMESPACE" \
+                      --dry-run=client \
+                      -o yaml | kubectl apply -f - || exit 1
+                  fi
+                else
+                  echo 'Putting Expense Splitter SMTP user into secret without password'
+                  kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                    --save-config \
+                    --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                    -n "$HA_EXPENSE_SPLITTER_ORY_NAMESPACE" \
+                    --dry-run=client \
+                    -o yaml | kubectl apply -f - || exit 1
+                  kubectl create secret generic "$HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME" \
+                    --save-config \
+                    --from-literal="$HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY"="$HA_EXPENSE_SPLITTER_SMTP_USER" \
+                    -n "$HA_EXPENSE_SPLITTER_SMTP_NAMESPACE" \
                     --dry-run=client \
                     -o yaml | kubectl apply -f - || exit 1
                 fi
@@ -614,10 +723,9 @@ deploy:
         namespace: cockroach-operator
         createNamespace: true
         wait: true
-      # TODO: wait for operator to actually run before creating databases; otherwise the webhook will not be reachable and the database creation will fail
       # TODO: deploy database for ory stack and deploy ory stack itself
       # TODO: setup Minio
-      - name: cockroach-db
+      - name: expense-splitter-db
         chartPath: charts/cockroach-db
         namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
         createNamespace: true
@@ -644,6 +752,33 @@ deploy:
                 name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME }}"
                 key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY }}"
             dbName: "{{ .HA_EXPENSE_SPLITTER_ES_DB_NAME }}"
+      - name: ory-db
+        chartPath: charts/cockroach-db
+        namespace: "{{ .HA_EXPENSE_SPLITTER_ORY_NAMESPACE }}"
+        createNamespace: true
+        wait: true
+        setValueTemplates:
+          clusterName: ory-db
+          cockroachDBVersion: v23.1.4
+          tlsEnabled: true
+          storage: 20Gi
+          storageClassName: "{{ .HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME }}"
+          nodeCount: 3
+          additionalArgs:
+            - --accept-sql-without-tls
+          additionalAnnotations:
+            "linkerd\\.io/inject": enabled
+            "config\\.linkerd\\.io/opaque-ports": "{{ .HA_EXPENSE_SPLITTER_ORY_DB_PORT }}"
+          initialDb: # the DB and user that's to be created initially
+            username:
+              secret:
+                name: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_NAME }}"
+                key: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_KEY }}"
+            password:
+              secret:
+                name: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME }}"
+                key: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_KEY }}"
+            dbName: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_NAME }}"
       - name: "schemahero"
         chartPath: "oci://ghcr.io/schemahero/helm/schemahero"
         namespace: "schemahero"
@@ -685,6 +820,95 @@ deploy:
             enabled: true
           natsbox:
             enabled: false
+      - name: "kratos"
+        repo: https://k8s.ory.sh/helm/charts
+        remoteChart: kratos
+        namespace: "{{ .HA_EXPENSE_SPLITTER_ORY_NAMESPACE }}"
+        version: 0.36.0
+        createNamespace: true
+        setValueTemplates:
+          deployment: &kratosReplicaConfig
+            extraEnv: &kratosPodEnv # this "hack" is applied to prevent the need of
+            - name: ORY_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_NAME }}"
+                  key: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_USER_SECRET_KEY }}"
+            - name: ORY_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_NAME }}"
+                  key: "{{ .HA_EXPENSE_SPLITTER_ORY_DB_PASSWORD_SECRET_KEY }}"
+            - name: ORY_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_NAME }}"
+                  key: "{{ .HA_EXPENSE_SPLITTER_SMTP_USER_SECRET_KEY }}"
+            - name: ORY_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_NAME }}"
+                  key: "{{ .HA_EXPENSE_SPLITTER_SMTP_PASSWORD_SECRET_KEY }}"
+            - name: DSN
+              value: "cockroach://$(ORY_DB_USERNAME):$(ORY_DB_PASSWORD)@ory-db-public.{{ .HA_EXPENSE_SPLITTER_ORY_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}:{{ .HA_EXPENSE_SPLITTER_ORY_DB_PORT }}/{{ .HA_EXPENSE_SPLITTER_ORY_DB_NAME }}"
+            - name: COURIER_SMTP_CONNECTION_URI
+              value: "smtps://$(ORY_SMTP_USERNAME):$(ORY_SMTP_PASSWORD)@{{ .HA_EXPENSE_SPLITTER_SMTP_HOST }}:1025/?skip_ssl_verify=true"
+            podMetadata:
+              annotations:
+                "linkerd\\.io/inject": enabled
+          statefulSet: *kratosReplicaConfig
+          job:
+            extraEnv: *kratosPodEnv
+          kratos:
+            automigration:
+              enabled: true
+            config:
+              identity:
+                default_schema_id: default
+                schemas:
+                  - id: default
+                    url: file:///etc/config/identity.default.schema.json
+              selfservice:
+                default_browser_return_url: "https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}/"
+        overrides:
+          kratos:
+            identitySchemas:
+              "identity.default.schema.json": |
+                {
+                  "$id": "https://schemas.ory.sh/presets/kratos/identity.email.schema.json",
+                  "$schema": "http://json-schema.org/draft-07/schema#",
+                  "title": "Person",
+                  "type": "object",
+                  "properties": {
+                    "traits": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "title": "E-Mail",
+                          "ory.sh/kratos": {
+                            "credentials": {
+                              "password": {
+                                "identifier": true
+                              }
+                            },
+                            "recovery": {
+                              "via": "email"
+                            },
+                            "verification": {
+                              "via": "email"
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "email"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                }
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
         namespace: expense-splitter
@@ -858,21 +1082,21 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.name
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.name
       - op: remove
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.key
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.key
   - name: SKIP_SERVICES_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -883,13 +1107,13 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/13/setValueTemplates/nats.jetstream.fileStorage.storageClassName
+        path: /deploy/helm/releases/14/setValueTemplates/nats.jetstream.fileStorage.storageClassName
       - op: remove
         path: /deploy/helm/releases/11/setValueTemplates/cluster.pods.persistentVolume.storageClass
   - name: DEDICATED_NATS_INSTANCE
@@ -899,32 +1123,44 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
     patches:
       - op: replace
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.nats.server.host
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.nats.server.host
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
       - op: add
-        path: /deploy/helm/releases/14/setValueTemplates/haExpenseSplitter.services.nats.server.port
+        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.nats.server.port
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/14
+        path: /deploy/helm/releases/16
+  - name: SKIP_KRATOS_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_KRATOS_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/15
   - name: SKIP_NATS_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_NATS_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/13
+        path: /deploy/helm/releases/14
   - name: SKIP_SCHEMAHERO_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_SCHEMAHERO_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/12
-  - name: SKIP_COCKROACH_INSTALLATION
+        path: /deploy/helm/releases/13
+  - name: SKIP_COCKROACH_ORY_INSTALLATION
     activation:
-      - env: HA_EXPENSE_SPLITTER_SKIP_COCKROACH_INSTALLATION=true
+      - env: HA_EXPENSE_SPLITTER_SKIP_COCKROACH_ORY_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/12
+  - name: SKIP_COCKROACH_ES_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_COCKROACH_ES_INSTALLATION=true
     patches:
       - op: remove
         path: /deploy/helm/releases/11
