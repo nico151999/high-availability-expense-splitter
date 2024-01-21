@@ -23,9 +23,9 @@ export const load = (async ({ url, cookies, request }) => {
 
     await loadTranslations(locale, pathname);
     return {
-        schema: env.API_SECURE === 'true' ? 'https' : 'http',
-        address: (env.API_HOSTNAME ?? (() => { throw new Error('hostname not defined') })()) as string,
-        port: +((env.API_PORT ?? (() => { throw new Error('port not defined') })()) as string),
+        apiSchema: env.API_SECURE === 'true' ? 'https' : 'http',
+        apiAddress: (env.API_HOSTNAME ?? (() => { throw new Error('API hostname not defined') })()) as string,
+        apiPort: +((env.API_PORT ?? (() => { throw new Error('API port not defined') })()) as string),
         i18n: { locale, route: pathname },
         translations: translations.get(),
     };

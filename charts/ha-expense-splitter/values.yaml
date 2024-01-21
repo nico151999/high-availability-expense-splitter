@@ -238,6 +238,10 @@ haExpenseSplitter:
     image:
       repository: "my-registry/my-group/my-doc-repo"
       tag: "latest"
+  kratos:
+    host: "kratos.localhost"
+    port: 443
+    secure: true
   services:
     cors:
       allowedHeaders: "x-grpc-web,x-user-agent,content-type"

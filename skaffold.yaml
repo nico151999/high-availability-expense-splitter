@@ -828,7 +828,7 @@ deploy:
         createNamespace: true
         setValueTemplates:
           deployment: &kratosReplicaConfig
-            extraEnv: &kratosPodEnv # this "hack" is applied to prevent the need of
+            extraEnv: &kratosPodEnv # this "hack" is applied to prevent the need of passing password as values to helm
             - name: ORY_DB_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -859,6 +859,19 @@ deploy:
           statefulSet: *kratosReplicaConfig
           job:
             extraEnv: *kratosPodEnv
+          ingress:
+            public:
+              enabled: true
+              className: "nginx"
+              hosts:
+                - host: "kratos.expense-splitter.kind" # TODO: parameterizable
+                  paths:
+                    - path: /
+                      pathType: ImplementationSpecific
+              tls:
+              - hosts:
+                - "kratos.expense-splitter.kind" # TODO: parameterizable
+                secretName: kratos-ingress-cert
           kratos:
             automigration:
               enabled: true
@@ -868,8 +881,43 @@ deploy:
                 schemas:
                   - id: default
                     url: file:///etc/config/identity.default.schema.json
+              cookies:
+                domain: 'expense-splitter.kind'
+              serve:
+                public:
+                  base_url: "https://kratos.expense-splitter.kind" # TODO: parameterizable
+                  cors:
+                    enabled: true
+                    allowed_origins:
+                      - 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}'
+                    allowed_methods:
+                      - POST
+                      - GET
+                      - PUT
+                      - PATCH
+                      - DELETE
+                    allowed_headers:
+                      - Authorization
+                      - Cookie
+                      - Content-Type
+                    exposed_headers:
+                      - Content-Type
+                      - Set-Cookie
               selfservice:
-                default_browser_return_url: "https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}/"
+                flows:
+                  login:
+                    ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/login'
+                  registration:
+                    ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/registration'
+                  recovery:
+                    ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/recovery'
+                  verification:
+                    ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/verification'
+                  error:
+                    ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/error'
+                default_browser_return_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/' # TODO: try to implement https://github.com/emrahcom/kratos-selfservice-svelte-node
+                allowed_return_urls:
+                  - 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}'
         overrides:
           kratos:
             identitySchemas:
@@ -940,6 +988,10 @@ deploy:
                   secret:
                     name: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME }}" # the name of the secret
                     key: "{{ .HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_KEY }}" # the key of the password in the secret
+            kratos:
+              secure: true
+              host: kratos.expense-splitter.kind # TODO: parameterizable
+              port: 443
             documentation:
               securityContext: *securityContext
               imagePullSecrets: *imagePullSecrets
