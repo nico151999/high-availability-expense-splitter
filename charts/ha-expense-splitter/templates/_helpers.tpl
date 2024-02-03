@@ -14,6 +14,11 @@ Function naming convention (though not always possible to apply):
 {{- end}}
 
 {{/* Accepts the short name of the service as parameter */}}
+{{- define "service-name-rule" -}}
+{{ include "service-name" . }}-rule
+{{- end}}
+
+{{/* Accepts the short name of the service as parameter */}}
 {{- define "service-name-deployment" -}}
 {{ include "service-name" . }}-dpl
 {{- end}}

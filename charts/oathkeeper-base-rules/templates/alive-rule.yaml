@@ -1,0 +1,16 @@
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: {{ .Values.aliveRule.name }}
+spec:
+  authenticators:
+  - handler: anonymous
+  authorizer:
+    handler: allow
+  errors:
+  - config: {}
+    handler: json
+  match:
+    methods:
+    - GET
+    url: <^.+>/health/alive

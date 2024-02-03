@@ -1,0 +1,18 @@
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: "{{ include "service-name-rule" (include "reflectionService-shortName" .) }}"
+spec:
+  match:
+    methods:
+      - POST
+    url: '<^https?://[A-Za-z0-9\-\.:]+>/grpc.reflection.<v1(alpha)?>.ServerReflection/<[A-Za-z0-9]+$>'
+  authenticators:
+    - handler: anonymous
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop
+      config: {}
+  upstream:
+    url: "http://{{ include "service-name-service" (include "reflectionService-shortName" .) }}:{{ include "service-name-port" (include "reflectionService-shortName" .) }}"

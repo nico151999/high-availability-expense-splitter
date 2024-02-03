@@ -1,0 +1,4 @@
+readyRule:
+  name: ready-rule
+aliveRule:
+  name: alive-rule

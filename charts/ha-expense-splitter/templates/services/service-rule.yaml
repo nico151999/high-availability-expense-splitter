@@ -1,0 +1,22 @@
+{{- range $serviceName, $serviceSpec := $.Values.haExpenseSplitter.services.specs }}
+{{- range $i, $endpoint := $serviceSpec.ingress.endpoints }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: "{{ include "service-name-rule" $serviceName }}-{{ $i }}"
+spec:
+  match:
+    methods:
+    {{ $endpoint.methods | toYaml | nindent 6 }}
+    url: '<^https?://[A-Za-z0-9\-\.:]+{{ $endpoint.pathRegex }}>'
+  authenticators:
+    {{ $endpoint.authenticators | toYaml | nindent 6 }}
+  authorizer:
+    {{ $endpoint.authorizer | toYaml | nindent 6 }}
+  mutators:
+    {{ $endpoint.mutators | toYaml | nindent 6 }}
+  upstream:
+    url: "http://{{ include "service-name-service" $serviceName }}:{{ include "service-serverPort" . }}"
+{{- end }}
+{{- end}}

@@ -820,7 +820,48 @@ deploy:
             enabled: true
           natsbox:
             enabled: false
-      - name: "kratos"
+      - name: "{{ .HA_EXPENSE_SPLITTER_OATHKEEPER_NAME }}"
+        repo: "https://k8s.ory.sh/helm/charts"
+        remoteChart: "oathkeeper"
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
+        createNamespace: true
+        version: 0.39.1
+        setValueTemplates:
+          service:
+            proxy:
+              enabled: true
+            api:
+              enabled: false
+          deployment:
+            podMetadata:
+              annotations:
+                "linkerd\\.io/inject": enabled
+          oathkeeper:
+            config:
+              authenticators:
+                anonymous:
+                  enabled: true
+                bearer_token:
+                  enabled: true
+                  config:
+                    check_session_url: "http://{{ .HA_EXPENSE_SPLITTER_KRATOS_NAME }}.{{ .HA_EXPENSE_SPLITTER_ORY_NAMESPACE }}.svc.{{ .HA_EXPENSE_SPLITTER_CLUSTER_DOMAIN }}"
+                    token_from:
+                      cookie: auth-token
+              mutators:
+                noop:
+                  enabled: true
+              authorizers:
+                allow:
+                  enabled: true
+              serve:
+                proxy:
+                  port: "{{ .HA_EXPENSE_SPLITTER_OATHKEEPER_PROXY_PORT }}"
+            managedAccessRules: false
+      - name: "{{ .HA_EXPENSE_SPLITTER_OATHKEEPER_NAME }}-base-rules" # in accordance with https://linkerd.io/2.13/tasks/automatically-rotating-control-plane-tls-credentials/
+        chartPath: charts/oathkeeper-base-rules
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
+        createNamespace: false
+      - name: "{{ .HA_EXPENSE_SPLITTER_KRATOS_NAME }}"
         repo: https://k8s.ory.sh/helm/charts
         remoteChart: kratos
         namespace: "{{ .HA_EXPENSE_SPLITTER_ORY_NAMESPACE }}"
@@ -915,7 +956,7 @@ deploy:
                     ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/verification'
                   error:
                     ui_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/auth/error'
-                default_browser_return_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/' # TODO: try to implement https://github.com/emrahcom/kratos-selfservice-svelte-node
+                default_browser_return_url: 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}/'
                 allowed_return_urls:
                   - 'https://{{ .HA_EXPENSE_SPLITTER_FRONTEND_HOST }}{{ if ne "443" .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}:{{ .HA_EXPENSE_SPLITTER_FRONTEND_PORT }}{{ end }}'
         overrides:
@@ -959,7 +1000,7 @@ deploy:
                 }
       - name: ha-expense-splitter
         chartPath: charts/ha-expense-splitter
-        namespace: expense-splitter
+        namespace: "{{ .HA_EXPENSE_SPLITTER_NAMESPACE }}"
         createNamespace: true
         setValueTemplates:
           haExpenseSplitter:
@@ -992,6 +1033,9 @@ deploy:
               secure: true
               host: kratos.expense-splitter.kind # TODO: parameterizable
               port: 443
+            oathkeeper:
+              service: "{{ .HA_EXPENSE_SPLITTER_OATHKEEPER_NAME }}-proxy"
+              port: "{{ .HA_EXPENSE_SPLITTER_OATHKEEPER_PROXY_PORT }}"
             documentation:
               securityContext: *securityContext
               imagePullSecrets: *imagePullSecrets
@@ -1134,21 +1178,21 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_ES_DB_PASSWORD_SECRET_NAME=
     patches:
       - op: remove
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.name
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.name
       - op: remove
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.key
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.db.adminUser.password.secret.key
   - name: SKIP_SERVICES_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_SERVICES_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.ingress.host
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.services.ingress.host
   - name: SKIP_FRONTEND_HOST
     activation:
       - env: HA_EXPENSE_SPLITTER_FRONTEND_HOST=
     patches:
       - op: remove
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.frontends.expenseSplitter.ingress.host
   - name: SKIP_IMAGE_PULL_SECRET
     activation:
       - env: HA_EXPENSE_SPLITTER_IMAGE_PULL_SECRET=
@@ -1159,7 +1203,7 @@ profiles:
       - op: remove
         path: /deploy/helm/hooks/before/0
       - op: remove
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.imagePullSecrets[0].name
   - name: DEFAULT_STORAGE_CLASS
     activation:
       - env: HA_EXPENSE_SPLITTER_STORAGE_CLASS_NAME=
@@ -1175,21 +1219,29 @@ profiles:
       - env: HA_EXPENSE_SPLITTER_NATS_PORT=.
     patches:
       - op: replace
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.nats.server.host
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.services.nats.server.host
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_HOST }}"
       - op: add
-        path: /deploy/helm/releases/16/setValueTemplates/haExpenseSplitter.services.nats.server.port
+        path: /deploy/helm/releases/18/setValueTemplates/haExpenseSplitter.services.nats.server.port
         value: "{{ .HA_EXPENSE_SPLITTER_NATS_PORT }}"
   - name: SKIP_EXPENSE_SPLITTER_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_EXPENSE_SPLITTER_INSTALLATION=true
     patches:
       - op: remove
-        path: /deploy/helm/releases/16
+        path: /deploy/helm/releases/18
   - name: SKIP_KRATOS_INSTALLATION
     activation:
       - env: HA_EXPENSE_SPLITTER_SKIP_KRATOS_INSTALLATION=true
     patches:
+      - op: remove
+        path: /deploy/helm/releases/17
+  - name: SKIP_OATHKEEPER_INSTALLATION
+    activation:
+      - env: HA_EXPENSE_SPLITTER_SKIP_OATHKEEPER_INSTALLATION=true
+    patches:
+      - op: remove
+        path: /deploy/helm/releases/16
       - op: remove
         path: /deploy/helm/releases/15
   - name: SKIP_NATS_INSTALLATION

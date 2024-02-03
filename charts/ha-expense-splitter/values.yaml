@@ -239,9 +239,12 @@ haExpenseSplitter:
       repository: "my-registry/my-group/my-doc-repo"
       tag: "latest"
   kratos:
+    secure: true
     host: "kratos.localhost"
     port: 443
-    secure: true
+  oathkeeper:
+    service: "oathkeeper-proxy"
+    port: 4455
   services:
     cors:
       allowedHeaders: "x-grpc-web,x-user-agent,content-type"
@@ -292,30 +295,79 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/GetGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/ListGroupIds$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/UpdateGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/DeleteGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/StreamGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.group\.v1\.GroupService/StreamGroupIds$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -348,30 +400,79 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/GetExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/ListExpenseIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/UpdateExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/DeleteExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/StreamExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expense\.v1\.ExpenseService/StreamExpenseIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -404,26 +505,68 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/ListExpenseIdsForCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/ListCategoryIdsForExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/DeleteExpenseCategoryRelation$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/StreamExpenseIdsForCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensecategoryrelation\.v1\.ExpenseCategoryRelationService/StreamCategoryIdsForExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -456,30 +599,79 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/GetPerson$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/ListPersonIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/UpdatePerson$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/DeletePerson$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/StreamPerson$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.person\.v1\.PersonService/StreamPersonIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -512,26 +704,68 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.currency\.v1\.CurrencyService/GetExchangeRate$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.currency\.v1\.CurrencyService/ListCurrencies$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.currency\.v1\.CurrencyService/StreamCurrency$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.currency\.v1\.CurrencyService/StreamExchangeRate$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.currency\.v1\.CurrencyService/StreamCurrencies$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -564,30 +798,79 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/GetCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/ListCategoryIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/UpdateCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/DeleteCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/StreamCategory$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.category\.v1\.CategoryService/StreamCategoryIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets
@@ -620,34 +903,90 @@ haExpenseSplitter:
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/GetExpenseStake$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/ListExpenseStakeIdsInExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/ListExpenseStakeIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/DeleteExpenseStake$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStake$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStakeIdsInExpense$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
             - pathRegex: /service\.expensestake\.v1\.ExpenseStakeService/StreamExpenseStakeIdsInGroup$
               methods:
                 - POST
                 - OPTIONS
+              authenticators:
+                - handler: anonymous
+              authorizer:
+                handler: allow
+              mutators:
+                - handler: noop
+                  config: {}
         deployLinkerdServiceProfile: true # TODO: actually implement a Linkerd service profile
         imagePullPolicy: *imagePullPolicy
         imagePullSecrets: *imagePullSecrets

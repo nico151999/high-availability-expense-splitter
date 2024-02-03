@@ -7,7 +7,7 @@ metadata:
     cert-manager.io/cluster-issuer: {{ .Values.haExpenseSplitter.clusterCertIssuer | quote }}
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     nginx.ingress.kubernetes.io/server-snippet: "grpc_read_timeout 86400s; grpc_send_timeout 86400s;"
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/use-regex: "false"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-methods: "{{ $.Values.haExpenseSplitter.services.cors.allowedMethods }}"
@@ -24,31 +24,13 @@ spec:
     - host: "{{ $.Values.haExpenseSplitter.services.ingress.host }}"
       http:
         paths:
-          - path: '/grpc.reflection.v1alpha.ServerReflection'
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: "{{ include "service-name-service" (include "reflectionService-shortName" .) }}"
+                name: "{{ $.Values.haExpenseSplitter.oathkeeper.service }}"
                 port:
-                  name: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
-          - path: '/grpc.reflection.v1.ServerReflection'
-            pathType: Prefix
-            backend:
-              service:
-                name: "{{ include "service-name-service" (include "reflectionService-shortName" .) }}"
-                port:
-                  name: "{{ include "service-name-port" (include "reflectionService-shortName" .) }}"
-          {{- range $serviceName, $serviceSpec := $.Values.haExpenseSplitter.services.specs }}
-            {{- range $_, $endpoint := $serviceSpec.ingress.endpoints }}
-          - path: {{ $endpoint.pathRegex }}
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: "{{ include "service-name-service" $serviceName }}"
-                port:
-                  name: "{{ include "service-name-port" $serviceName }}"
-            {{- end }}
-          {{- end}}
+                  number: {{ $.Values.haExpenseSplitter.oathkeeper.port }}
   tls:
     - hosts:
         - "{{$.Values.haExpenseSplitter.services.ingress.host}}"
